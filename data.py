@@ -36,7 +36,7 @@ class Data():
                 self.output[name] = pylab.loadtxt(filename,
                                                   comments='#')
         if len(self.output)==0:
-            print "model "+self.name+" found no files!"
+            print "No output found in "+self.base
         #if os.path.isfile(self.base+"background.dat"):
             #self.output['background'] = pylab.loadtxt(self.base+"background.dat",
                                                       #comments='#')
