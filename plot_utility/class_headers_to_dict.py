@@ -6,9 +6,9 @@ import sys
 from collections import defaultdict
 
 
-def class_headers_to_dict(h_list):
-    """Take a list of column headers and return a dictionary relating a
-    variable name with its column number """
+def class_headers_list_to_dict(h_list):
+    """Take a list of column headers and return a dictionary {variable: column}
+    """
 
     title_col_list = zip(h_list, range(len(h_list)))
     title_col_list.sort()  # Make sure var[N] are in order.
@@ -43,6 +43,15 @@ def class_headers_to_dict(h_list):
     return var_col_dic
 
 
+def class_headers_to_dict(filename):
+    """Read the CLASS output and return a dictionary {variable: column}"""
+
+    h_list = lch.list_variables(filename)
+    var_col_dic = class_headers_list_to_dict(h_list)
+
+    return var_col_dic
+
+
 def main():
 
     parser = argparse.ArgumentParser(
@@ -53,8 +62,7 @@ def main():
 
     args = parser.parse_args()
 
-    h_list = lch.list_variables(args.filepath)
-    class_headers_to_dict(h_list)
+    print class_headers_to_dict(args.filepath)
 
     return 1
 
