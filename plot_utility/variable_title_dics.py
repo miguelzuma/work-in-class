@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+
 title_var_dic = {
     # Repeated titles are omitted as they are associated to the same variable
     # Recall var_ncdm will be a list title var_ncdm[N]
@@ -171,3 +172,5 @@ title_var_dic = {
     # Recall that 'dens[N]-lens[M]'
     'dens-lens': 'd_l'  # d_l[N][M]
 }
+
+var_title_dic = dict(title_var_dic.items())
