@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import variable_title_dics as vtd
+import list_class_headers as lch
 import re
 import sys
 from collections import defaultdict
@@ -50,6 +51,20 @@ def class_headers_to_dict(filename):
     var_col_dic = class_headers_list_to_dict(h_list)
 
     return var_col_dic
+
+
+def class_file_title_var_dic(filename):
+    """Read the CLASS output and return a dictionary {title: var} with just the
+    elements in the present file"""
+
+    h_list = lch.list_variables(filename)
+    title_var_dic = {}
+
+    for title in h_list:
+        var = vtd.title_var_dic[title]
+        title_var_dic[title] = var
+
+    return title_var_dic  # Just the titles present in the read file
 
 
 def main():

@@ -33,6 +33,14 @@ def print_beautifully(h_list):
     return 1
 
 
+def check_two_header_lists(filename1, filename2):
+
+    if list_variables(filename1) == list_variables(filename2):
+        return True
+    else:
+        return False
+
+
 def main():
 
     parser = argparse.ArgumentParser(

@@ -173,4 +173,4 @@ title_var_dic = {
     'dens-lens': 'd_l'  # d_l[N][M]
 }
 
-var_title_dic = dict(title_var_dic.items())
+var_title_dic = {var: title for title, var in title_var_dic.iteritems()}
