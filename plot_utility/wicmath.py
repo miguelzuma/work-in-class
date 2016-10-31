@@ -16,8 +16,8 @@ def relative_deviation(x, y, cx, cy):  # c stands for compare
         cf = interp1d(cx, cy)
 
         # Create an x-array contained by the interpolation boundaries
-        X = x[x > max(x[0], cx[0])]  # Wrong if max is at position 0.
-        X = X[X < min(x[-1], cx[-1])]
+        X = x[x >= min(cx)]
+        X = X[X <= max(cx)]
 
         # Use the y-values of the X-array
         b1 = np.where(x == X[0])[0][0]
