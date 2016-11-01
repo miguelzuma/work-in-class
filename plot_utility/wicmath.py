@@ -4,11 +4,11 @@ import numpy as np
 from scipy.interpolate import interp1d
 
 
-def relative_deviation(x, y, cx, cy):  # c stands for compare
-    """Return relative deviation between [cx, cy] and [x, y]."""
+def __deviation(x, y, cx, cy, kind):
 
     if len(x) == len(cx) and not (x - cx).all():
-        rel_dev = np.divide(np.subtract(y, cy), cy)
+        abs_dev = np.subtract(y, cy)
+        cY = cy
         X = x
 
     else:
@@ -26,6 +26,27 @@ def relative_deviation(x, y, cx, cy):  # c stands for compare
         Y = y[b1:b2 + 1]
         cY = cf(X)
 
-        rel_dev = np.divide(np.subtract(Y, cY), cY)
+        abs_dev = np.subtract(Y, cY)
+
+    if kind == 'abs':
+        return X, abs_dev
+    elif kind == 'rel':
+        return X, np.divide(abs_dev, cY)
+    else:
+        raise ValueError("Deviation kind must be 'abs' or 'rel'")
+
+
+def relative_deviation(x, y, cx, cy):  # c stands for compare
+    """Return relative deviation between [cx, cy] and [x, y]."""
+
+    X, rel_dev = __deviation(x, y, cx, cy, 'rel')
 
     return X, np.multiply(rel_dev, 100)
+
+
+def absolute_deviation(x, y, cx, cy):
+    """Return absolute deviation between [cx, cy] and [x, y]."""
+
+    X, abs_dev = __deviation(x, y, cx, cy, 'abs')
+
+    return X, abs_dev
