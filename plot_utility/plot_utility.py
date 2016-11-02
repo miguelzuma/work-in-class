@@ -4,10 +4,17 @@ import class_headers_to_dict as chd
 import matplotlib.pyplot as plt
 import variable_title_dics as vtd
 import wicmath
-from list_class_headers import check_two_header_lists
+# from list_class_headers import check_two_header_lists
 import quintessence
 import numpy as np
+import matplotlib.cm as cm
 import sys
+
+
+def __colors(length):
+    color = iter(cm.rainbow(np.linspace(0, 1, length)))
+
+    return color
 
 
 def __plot_close(output):
@@ -40,14 +47,12 @@ def __filter_data(filename, col, min_x):
         return __filter_lower_x(filename, col, min_x)
 
 
-def __deviation(X, Y):
+def __deviation(x, y, cx, cy, kind):
 
-    if 'abs' in Y['dev']:
-        x_rel, y_rel = wicmath.absolute_deviation(X['data'], Y['data'],
-                                                  X['cdata'], Y['cdata'])
+    if 'abs' in kind:
+        x_rel, y_rel = wicmath.absolute_deviation(x, y, cx, cy)
     else:
-        x_rel, y_rel = wicmath.relative_deviation(X['data'], Y['data'],
-                                                  X['cdata'], Y['cdata'])
+        x_rel, y_rel = wicmath.relative_deviation(x, y, cx, cy)
 
     return x_rel, y_rel
 
@@ -55,11 +60,18 @@ def __deviation(X, Y):
 def __plot_alone(X, Y):
     f, ax_plt = plt.subplots(1, 1)
 
-    ax_plt.plot(X['data'], Y['data'])
+    for x_data, y_data, y_legend in zip(X['data'], Y['data'], Y['legend']):
+        ax_plt.plot(x_data, y_data, label=y_legend)
+
     ax_plt.set_xscale(X['scale'])
     ax_plt.set_yscale(Y['scale'])
     ax_plt.set_xlabel(X['label'])
     ax_plt.set_ylabel(Y['label'])
+
+    ax_plt.legend(loc='center', bbox_to_anchor=(0.5, -0.09),
+                  ncol=3, fancybox=True, shadow=True)
+
+    plt.tight_layout()
 
     return 1
 
@@ -67,27 +79,52 @@ def __plot_alone(X, Y):
 def __plot_compare(X, Y):
     f, (ax_plt, ax_dev) = plt.subplots(2, 1, sharex='col')
 
+    if len(X['data']) == len(X['cdata']):
+        color = __colors(len(X['data']))
+
+        zipped = zip(X['data'], Y['data'], X['cdata'], Y['cdata'], Y['legend'],
+                     Y['clegend'])
+
+        for x_data, y_data, x_cdata, y_cdata, y_legend, y_clegend in zipped:
+
+            c = next(color)
+            ax_plt.plot(x_data, y_data, color=c, label=y_legend)
+            ax_plt.plot(x_cdata, y_cdata, '--', color=c, label=y_clegend)
+
+            x_rel, y_rel = __deviation(x_data, y_data, x_cdata, y_cdata,
+                                       Y['dev'])
+
+            y_rel[abs(y_rel) > Y['rd_max']] = np.nan
+            ax_dev.plot(x_rel, y_rel, color=c)
+
+    else:
+
+        for x_data, y_data, y_legend in zip(X['data'], Y['data'], Y['legend']):
+            ax_plt.plot(x_data, y_data, label=y_legend)
+            x_rel, y_rel = __deviation(x_data, y_data, X['cdata'], Y['cdata'],
+                                       Y['dev'])
+
+            y_rel[abs(y_rel) > Y['rd_max']] = np.nan
+            ax_dev.plot(x_rel, y_rel)
+
+        ax_plt.plot(X['cdata'], Y['cdata'], '--', label=Y['clegend'])
+
     ax_plt.set_xscale(X['scale'])
     ax_plt.set_yscale(Y['scale'])
     ax_plt.set_ylabel(Y['label'])
-    ax_plt.plot(X['data'], Y['data'], label=Y['legend'])
-    ax_plt.plot(X['cdata'], Y['cdata'], '--', label=Y['clegend'])
-
-    ax_plt.legend(loc='center', bbox_to_anchor=(0.5, -0.06),
-                  ncol=3, fancybox=True, shadow=True)
 
     ax_dev.set_xscale(X['scale'])
     ax_dev.set_yscale(Y['cscale'])
     ax_dev.set_xlabel(X['label'])
     ax_dev.set_ylabel(Y['clabel'])
 
-    x_rel, y_rel = __deviation(X, Y)
+    size = len(X['data'])
 
-    y_rel[abs(y_rel) > Y['rd_max']] = np.nan
+    # TODO: Tune better the factors controlling legend's position.
+    ax_plt.legend(loc='center', bbox_to_anchor=(0.5, (-0.03 - 0.05 * size)),
+                  ncol=2, fancybox=True, shadow=True, prop={'size': 10})
 
-    ax_dev.plot(x_rel, y_rel)
-
-    plt.tight_layout()
+    plt.tight_layout(h_pad=1 + 1 * size)
 
     return 1
 
@@ -118,32 +155,48 @@ def plot_columns(filename, x='', y='', min_x=0, x_scale='log', y_scale='log',
                  compare_with_legend='', compare_with_scale='linear',
                  rd_max=np.inf, dev='rel', output=''):
 
-    """Given a CLASS output file plot its selected variables x, y. If variable
-    labels are not set or misspelled, print the possible ones"""
+    """Given a CLASS output file (or list of files) plot its selected variables
+    x, y. If variable labels are not set or misspelled, print the possible
+    ones"""
     # TODO: Add support to understand input like y='p_smg/rho_smg'
     X = {'var':  x, 'min': min_x, 'scale': x_scale}
     Y = {'var':  y, 'scale': y_scale, 'rd_max': rd_max, 'cscale':
-         compare_with_scale}
+         compare_with_scale, 'dev': dev}
 
     Y['clabel'] = 'rel. dev. [%]' if 'abs' not in dev else 'abs. dev.'
 
-    var_col_dic = chd.class_headers_to_dict(filename)
+    X['data'], Y['data'], Y['legend'] = [], [], []
 
-    usecols = (var_col_dic[x], var_col_dic[y])  # If x/y is not a valid key, it
-                                                # returns an empty list. (see
-                                                # chd module)
+    if type(filename) is str:
+        filename = [filename]
+    if type(y_legend) is str:
+        y_legend = [y_legend]
 
-    X['data'], Y['data'] = __try_loadtxt(filename, min_x, usecols)
+    y_legend.extend([''] * (len(filename) - len(y_legend)))
+    # If subtraction <= 0 y_legend remains as it is.
+
+    for f, legend in zip(filename, y_legend):  # Zip clips element not paired.
+        var_col_dic = chd.class_headers_to_dict(f)
+
+        usecols = (var_col_dic[x], var_col_dic[y])  # If x/y is not a valid key, it
+                                                    # returns an empty list. (see
+                                                    # chd module)
+        x_data, y_data = __try_loadtxt(f, min_x, usecols)
+        X['data'].append(x_data)
+        Y['data'].append(y_data)
+        Y['legend'].append(legend or f.split('/')[-1])  # Label for legend
+
     X['label'] = x_label or vtd.var_title_dic[x]
     Y['label'] = y_label or vtd.var_title_dic[y]
-
-    Y['legend'] = y_legend or filename.split('/')[-1]  # Label for legend
 
     if not compare_with:
         __plot_alone(X, Y)
     else:
-        if not check_two_header_lists(filename, compare_with):
-            sys.exit("File headers don't coincide")
+        # Both headers do not need to be equal, just have the plotting
+        # variables.
+        #
+        # if not check_two_header_lists(filename[0], compare_with):
+        #     sys.exit("File headers don't coincide")
 
         X['cdata'], Y['cdata'] = __try_loadtxt(compare_with, min_x, usecols)
 
@@ -158,44 +211,57 @@ def plot_w(filename, x='z', w_add=0, min_x=0, x_scale='log', y_scale='log',
            compare_with_scale='linear', output='', theory=''):
     """Plot the equation of state from a background CLASS output. It compares
     the result of p_smg/rho_smg and p(phi)_smg/rho(phi)_smg"""
-
-    if 'background' not in filename.split('/')[-1]:
-        raise ValueError("File must contain background quantities. If it is " +
-                         "indeed a background file, include in its name " +
-                         "'background' (e.g. quintessence_background.dat)")
-
     X = {'var':  x, 'min': min_x, 'scale': x_scale}
-    Y = {'var':  'w', 'scale': y_scale, 'label': 'w', 'legend': 'p/rho',
-         'rd_max': rd_max, 'dev': dev, 'cscale': compare_with_scale}
+    Y = {'var':  'w', 'scale': y_scale, 'label': 'w', 'rd_max': rd_max, 'dev':
+         dev, 'cscale': compare_with_scale}
 
+    X['label'] = x_label or vtd.var_title_dic[x]
     Y['clabel'] = 'rel. dev. [%]' if 'abs' not in dev else 'abs. dev.'
 
-    var_col_dic = chd.class_headers_to_dict(filename)
-    usecols = (var_col_dic[x], var_col_dic['p_smg'], var_col_dic['rho_smg'])
+    X['data'], Y['data'], Y['legend'] = [], [], []
+    X['cdata'], Y['cdata'], Y['clegend'] = [], [], []
 
-    data = __filter_data(filename, usecols[0], min_x)
+    if type(filename) is str:
+        filename = [filename]
+    if type(y_legend) is str:
+        y_legend = [y_legend]
 
-    X['data'], p_smg, rho_smg = np.loadtxt(data, usecols=usecols, unpack=True)
-    X['label'] = x_label or vtd.var_title_dic[x]
+    if any('background' not in f.split('/')[-1] for f in filename):
+        raise ValueError("File must contain background quantities. If it is " +
+                         "indeed a background file, include in its name " +
+                         "'background' (e.g. quintessence_background.dat).")
 
-    w = np.divide(p_smg, rho_smg)
+    y_legend.extend([''] * (len(filename) - len(y_legend)))
 
-    Y['data'] = w
+    for f, legend in zip(filename, y_legend):
+
+        var_col_dic = chd.class_headers_to_dict(f)
+        usecols = (var_col_dic[x], var_col_dic['p_smg'], var_col_dic['rho_smg'])
+
+        data = __filter_data(f, usecols[0], min_x)
+
+        x_data, p_smg, rho_smg = np.loadtxt(data, usecols=usecols, unpack=True)
+        w = np.divide(p_smg, rho_smg)
+
+        X['data'].append(x_data)
+        Y['data'].append(np.add(w, w_add))
+
+        s = legend or f.split('/')[-1]
+        Y['legend'].append('p/rho [' + s + ']')  # Label for legend
+
+        data = __filter_data(f, usecols[0], min_x)
+
+        if theory == 'quintessence':
+            cw, clegend = quintessence.w(data, var_col_dic)
+
+        Y['cdata'].append(np.add(cw, w_add))
+        Y['clegend'].append(clegend + '\n [' + s + ']')
+
     X['cdata'] = X['data']
-
-    data = __filter_data(filename, usecols[0], min_x)
-
-    if theory == 'quintessence':
-        cw, clegend = quintessence.w(data, var_col_dic)
-
-    Y['cdata'] = cw
-    Y['clegend'] = clegend
 
     if w_add:
         Y['var'] = str(w_add) + ' + ' + Y['var']
         Y['label'] = str(w_add) + ' + ' + Y['label']
-        Y['data'] = np.add(w, w_add)  # 1+w
-        Y['cdata'] = np.add(cw, w_add)
 
     __plot_compare(X, Y)
 
@@ -206,6 +272,8 @@ def plot_w0_wa(filename, min_z=False, x_scale='linear', y_scale='linear',
                x_label='', y_label='', y_legend='', rd_max=np.inf, output='',
                theory=''):
     """Plot the evolution of wa with w0 where w(a) \simeq w0 + (a0-a) w'(a0)."""
+    # TODO: Implement acceptance of various files. Or eliminate function if
+    # useless...
 
     if 'background' not in filename.split('/')[-1]:
         raise ValueError("File must contain background quantities. If it is " +
