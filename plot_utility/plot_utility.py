@@ -175,6 +175,8 @@ def plot_columns(filename, x='', y='', min_x=0, x_scale='log', y_scale='log',
     y_legend.extend([''] * (len(filename) - len(y_legend)))
     # If subtraction <= 0 y_legend remains as it is.
 
+    # TODO: Write function for both loops.
+
     for f, legend in zip(filename, y_legend):  # Zip clips element not paired.
         var_col_dic = chd.class_headers_to_dict(f)
 
@@ -197,10 +199,25 @@ def plot_columns(filename, x='', y='', min_x=0, x_scale='log', y_scale='log',
         #
         # if not check_two_header_lists(filename[0], compare_with):
         #     sys.exit("File headers don't coincide")
+        if type(compare_with) is str:
+            compare_with = [compare_with]
+        if type(compare_with_legend) is str:
+            compare_with_legend = [compare_with_legend]
 
-        X['cdata'], Y['cdata'] = __try_loadtxt(compare_with, min_x, usecols)
+        compare_with_legend.extend([''] * (len(compare_with) -
+                                           len(compare_with_legend)))
 
-        Y['clegend'] = compare_with_legend or compare_with.split('/')[-1]
+        for f, legend in zip(compare_with, compare_with_legend):
+            var_col_dic = chd.class_headers_to_dict(f)
+
+            usecols = (var_col_dic[x], var_col_dic[y])  # If x/y is not a valid key, it
+                                                        # returns an empty list. (see
+                                                        # chd module)
+            x_data, y_data = __try_loadtxt(f, min_x, usecols)
+            X['cdata'].append(x_data)
+            Y['cdata'].append(y_data)
+            Y['clegend'].append(legend or f.split('/')[-1])  # Label for legend
+
         __plot_compare(X, Y)
 
     __plot_close(output)
