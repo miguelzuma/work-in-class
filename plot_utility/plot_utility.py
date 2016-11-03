@@ -6,9 +6,164 @@ import variable_title_dics as vtd
 import wicmath
 # from list_class_headers import check_two_header_lists
 import quintessence
+import model_independent_variables as miv
 import numpy as np
 import matplotlib.cm as cm
 import sys
+
+
+def __exit_variable_error(filename):
+    title_var_dic = chd.class_file_title_var_dic(filename)
+    title_var_str = ""
+    for title, var in title_var_dic.iteritems():
+        title_var_str += ''.join("'" + title + "'" + ': ' + "'" + var +
+                                 "'" + '\n')
+
+    my_err = ("You probably used wrong variable labels. See bellow " +
+              "the avaibles ones for the present file:" +
+              filename.split('/')[-1] + '\n' + title_var_str)
+
+    sys.exit(my_err)
+
+
+def __prepare_input_for_loop(filename, y_legend):
+    if type(filename) is str:
+        filename = [filename]
+    if type(y_legend) is str:
+        y_legend = [y_legend]
+
+    y_legend.extend([''] * (len(filename) - len(y_legend)))
+    # If subtraction <= 0 y_legend remains as it is.
+
+    return filename, y_legend
+
+
+def __check_variables_in_files(filename, x, y=''):
+    for f in filename:
+        try:
+            var_col_dic = chd.class_headers_to_dict(f)
+            1 + var_col_dic[x]  # 1 + [] if x is not a key
+            if y:
+                1 + var_col_dic[y]
+
+        except TypeError:
+            __exit_variable_error(f)
+
+
+def __init_dictionaries(var, min_x, labels, scales, cscale, rd_max, dev,
+                        y_add=0):
+
+    X = {
+        'var': var[0],
+        'min': min_x,
+        'scale': scales[0],
+        'label':  labels[0] or vtd.var_title_dic[var[0]]
+    }
+
+    Y = {
+        'var': var[1],
+        'scale': scales[1],
+        'label':  labels[1] or vtd.var_title_dic[var[1]],
+        'clabel': 'rel. dev. [%]' if 'abs' not in dev else 'abs. dev.',
+        'cscale': cscale,
+        'rd_max': rd_max,
+        'dev': dev,
+        'add': y_add
+    }
+
+    if y_add:
+        Y['var'] = str(y_add) + ' + ' + Y['var']
+        Y['label'] = str(y_add) + ' + ' + Y['label']
+
+    return X, Y
+
+
+def __load_columns_file_loop(X, Y, filename, y_legend, compare=False):
+
+    data = 'data'
+    legend = 'legend'
+
+    if compare:
+        data = 'c' + data
+        legend = 'c' + legend
+
+    X[data], Y[data], Y[legend] = [], [], []
+
+    for f, lgd in zip(filename, y_legend):  # Zip clips elements not paired.
+        var_col_dic = chd.class_headers_to_dict(f)
+        # If x/y is not a valid key, it returns an empty list. (see chd module)
+        usecols = (var_col_dic[X['var']], var_col_dic[Y['var']])
+        xy_data = __filter_data(f, usecols[0], X['min'])
+        x_data, y_data = np.loadtxt(xy_data, usecols=usecols, unpack=True)
+
+        X[data].append(x_data)
+        Y[data].append(y_data)
+        Y[legend].append(lgd or f.split('/')[-1])  # Label for legend
+
+    return 1
+
+
+def __load_var_data_legend_loop(X, Y, filename, y_legend, func, cfunc):
+
+    X['data'], Y['data'], Y['legend'] = [], [], []
+    X['cdata'], Y['cdata'], Y['clegend'] = [], [], []
+
+    y_add = Y['add']
+
+    for f, lgd in zip(filename, y_legend):
+
+        var_col_dic = chd.class_headers_to_dict(f)
+        filter_col = var_col_dic[X['var']]
+        data = __filter_data(f, filter_col, X['min'])
+
+        x_data, y_data, legend = func(X['var'], f, var_col_dic)
+
+        X['data'].append(np.add(y_add, x_data))
+        Y['data'].append(np.add(y_add, y_data))
+
+        s = lgd or f.split('/')[-1]
+        Y['legend'].append(legend + ' [' + s + ']')  # Label for legend
+
+        data = __filter_data(f, filter_col, X['min'])
+
+        y_cdata, clegend = cfunc(data, var_col_dic)
+
+        Y['cdata'].append(np.add(y_add, y_cdata))
+        Y['clegend'].append(clegend + '\n [' + s + ']')
+
+    X['cdata'] = X['data']
+
+    return 1
+
+
+def __filter_lower_x(filename, x_col, min_x):
+    """Filter values lower than min_x in x_col"""
+
+    with open(filename, 'r') as f:
+        for line in f:
+            if not line.startswith('#'):
+                if float(line.split()[x_col]) >= min_x:
+                    yield line
+
+
+def __filter_data(filename, col, min_x):
+    """In case min_x is provided, filter all values lower than it"""
+
+    if not min_x:
+        return filename
+
+    else:
+        return __filter_lower_x(filename, col, min_x)
+
+
+def __deviation(x, y, cx, cy, kind):
+
+    if 'abs' in kind:
+        x_rel, y_rel = wicmath.absolute_deviation(x, y, cx, cy)
+    else:
+        x_rel, y_rel = wicmath.relative_deviation(x, y, cx, cy)
+
+    return x_rel, y_rel
 
 
 def __colors(length):
@@ -27,36 +182,6 @@ def __plot_close(output):
     plt.close()
 
 
-def __filter_lower_x(filename, x_col, min_x):
-    """Filter values lower than min_x in x_col"""
-
-    with open(filename, 'r') as f:
-        for i, line in enumerate(f):
-            if not line.startswith('#'):
-                if float(line.split()[x_col]) >= min_x:
-                    yield line
-
-
-def __filter_data(filename, col, min_x):
-    """In case min_x is provided, filter all values lower than it"""
-
-    if not min:
-        return filename
-
-    else:
-        return __filter_lower_x(filename, col, min_x)
-
-
-def __deviation(x, y, cx, cy, kind):
-
-    if 'abs' in kind:
-        x_rel, y_rel = wicmath.absolute_deviation(x, y, cx, cy)
-    else:
-        x_rel, y_rel = wicmath.relative_deviation(x, y, cx, cy)
-
-    return x_rel, y_rel
-
-
 def __plot_alone(X, Y):
     f, ax_plt = plt.subplots(1, 1)
 
@@ -68,6 +193,7 @@ def __plot_alone(X, Y):
     ax_plt.set_xlabel(X['label'])
     ax_plt.set_ylabel(Y['label'])
 
+    # TODO: Improve legend position management.
     ax_plt.legend(loc='center', bbox_to_anchor=(0.5, -0.09),
                   ncol=3, fancybox=True, shadow=True)
 
@@ -76,38 +202,51 @@ def __plot_alone(X, Y):
     return 1
 
 
+def __plot_compare_dirty_job(data, cdata, legends, color, Y):
+    x_data, y_data = data
+    x_cdata, y_cdata = cdata
+    y_legend, y_clegend = legends
+    ax_plt, ax_dev = Y['axes']
+
+    c = next(color)
+    ax_plt.plot(x_data, y_data, color=c, label=y_legend)
+
+    if len(Y['cdata']) == len(Y['data']):  # TODO: Double check. __p_c and here.
+        ax_plt.plot(x_cdata, y_cdata, '--', color=c, label=y_clegend)
+
+    x_rel, y_rel = __deviation(x_data, y_data, x_cdata, y_cdata,
+                               Y['dev'])
+    y_rel[abs(y_rel) > Y['rd_max']] = np.nan
+    ax_dev.plot(x_rel, y_rel, color=c)
+
+
 def __plot_compare(X, Y):
-    f, (ax_plt, ax_dev) = plt.subplots(2, 1, sharex='col')
+    f, Y['axes'] = plt.subplots(2, 1, sharex='col')
+    ax_plt, ax_dev = Y['axes']
+
+    color = __colors(len(Y['data']))
 
     if len(X['data']) == len(X['cdata']):
-        color = __colors(len(X['data']))
-
         zipped = zip(X['data'], Y['data'], X['cdata'], Y['cdata'], Y['legend'],
                      Y['clegend'])
 
         for x_data, y_data, x_cdata, y_cdata, y_legend, y_clegend in zipped:
+            __plot_compare_dirty_job([x_data, y_data], [x_cdata, y_cdata],
+                                     [y_legend, y_clegend], color, Y)
 
-            c = next(color)
-            ax_plt.plot(x_data, y_data, color=c, label=y_legend)
-            ax_plt.plot(x_cdata, y_cdata, '--', color=c, label=y_clegend)
+    elif len(X['cdata']) == 1:
 
-            x_rel, y_rel = __deviation(x_data, y_data, x_cdata, y_cdata,
-                                       Y['dev'])
-
-            y_rel[abs(y_rel) > Y['rd_max']] = np.nan
-            ax_dev.plot(x_rel, y_rel, color=c)
-
-    else:
+        x_cdata, y_cdata = X['cdata'][0], Y['cdata'][0]
+        y_clegend = Y['clegend'][0]
 
         for x_data, y_data, y_legend in zip(X['data'], Y['data'], Y['legend']):
-            ax_plt.plot(x_data, y_data, label=y_legend)
-            x_rel, y_rel = __deviation(x_data, y_data, X['cdata'], Y['cdata'],
-                                       Y['dev'])
+            __plot_compare_dirty_job([x_data, y_data], [x_cdata, y_cdata],
+                                     [y_legend, y_clegend], color, Y)
 
-            y_rel[abs(y_rel) > Y['rd_max']] = np.nan
-            ax_dev.plot(x_rel, y_rel)
+        ax_plt.plot(x_cdata, y_cdata, '--', label=y_clegend)
 
-        ax_plt.plot(X['cdata'], Y['cdata'], '--', label=Y['clegend'])
+    else:
+        raise ValueError("compare_with must be of the same size as filename")
 
     ax_plt.set_xscale(X['scale'])
     ax_plt.set_yscale(Y['scale'])
@@ -129,27 +268,6 @@ def __plot_compare(X, Y):
     return 1
 
 
-def __try_loadtxt(filename, min_x, usecols):
-    """Try loading data. If variable labels were wrong, print the possible
-    options and exit"""
-    try:
-        x, y = np.loadtxt(__filter_data(filename, usecols[0], min_x),
-                          usecols=usecols, unpack=True)
-
-        return x, y
-
-    except TypeError:
-        title_var_dic = chd.class_file_title_var_dic(filename)
-        title_var_str = ""
-        for title, var in title_var_dic.iteritems():
-            title_var_str += ''.join("'" + title + "'" + ': ' + "'" + var +
-                                     "'" + '\n')
-
-        sys.exit("You probably used wrong variable labels. See bellow the" +
-                 " avaibles ones for the present file: " +
-                 filename.split('/')[-1] + '\n' + title_var_str)
-
-
 def plot_columns(filename, x='', y='', min_x=0, x_scale='log', y_scale='log',
                  x_label='', y_label='', y_legend='', compare_with='',
                  compare_with_legend='', compare_with_scale='linear',
@@ -159,128 +277,22 @@ def plot_columns(filename, x='', y='', min_x=0, x_scale='log', y_scale='log',
     x, y. If variable labels are not set or misspelled, print the possible
     ones"""
     # TODO: Add support to understand input like y='p_smg/rho_smg'
-    X = {'var':  x, 'min': min_x, 'scale': x_scale}
-    Y = {'var':  y, 'scale': y_scale, 'rd_max': rd_max, 'cscale':
-         compare_with_scale, 'dev': dev}
+    filename, y_legend = __prepare_input_for_loop(filename, y_legend)
+    __check_variables_in_files(filename, x, y)
+    X, Y = __init_dictionaries([x, y], min_x, [x_label, y_label], [x_scale,
+                               y_scale], compare_with_scale, rd_max, dev)
 
-    Y['clabel'] = 'rel. dev. [%]' if 'abs' not in dev else 'abs. dev.'
-
-    X['data'], Y['data'], Y['legend'] = [], [], []
-
-    if type(filename) is str:
-        filename = [filename]
-    if type(y_legend) is str:
-        y_legend = [y_legend]
-
-    y_legend.extend([''] * (len(filename) - len(y_legend)))
-    # If subtraction <= 0 y_legend remains as it is.
-
-    # TODO: Write function for both loops.
-
-    for f, legend in zip(filename, y_legend):  # Zip clips element not paired.
-        var_col_dic = chd.class_headers_to_dict(f)
-
-        usecols = (var_col_dic[x], var_col_dic[y])  # If x/y is not a valid key, it
-                                                    # returns an empty list. (see
-                                                    # chd module)
-        x_data, y_data = __try_loadtxt(f, min_x, usecols)
-        X['data'].append(x_data)
-        Y['data'].append(y_data)
-        Y['legend'].append(legend or f.split('/')[-1])  # Label for legend
-
-    X['label'] = x_label or vtd.var_title_dic[x]
-    Y['label'] = y_label or vtd.var_title_dic[y]
+    __load_columns_file_loop(X, Y, filename, y_legend)
 
     if not compare_with:
         __plot_alone(X, Y)
     else:
-        # Both headers do not need to be equal, just have the plotting
-        # variables.
-        #
-        # if not check_two_header_lists(filename[0], compare_with):
-        #     sys.exit("File headers don't coincide")
-        if type(compare_with) is str:
-            compare_with = [compare_with]
-        if type(compare_with_legend) is str:
-            compare_with_legend = [compare_with_legend]
+        cw, cwl = __prepare_input_for_loop(compare_with, compare_with_legend)
 
-        compare_with_legend.extend([''] * (len(compare_with) -
-                                           len(compare_with_legend)))
-
-        for f, legend in zip(compare_with, compare_with_legend):
-            var_col_dic = chd.class_headers_to_dict(f)
-
-            usecols = (var_col_dic[x], var_col_dic[y])  # If x/y is not a valid key, it
-                                                        # returns an empty list. (see
-                                                        # chd module)
-            x_data, y_data = __try_loadtxt(f, min_x, usecols)
-            X['cdata'].append(x_data)
-            Y['cdata'].append(y_data)
-            Y['clegend'].append(legend or f.split('/')[-1])  # Label for legend
+        __load_columns_file_loop(X, Y, cw, cwl,
+                                 compare=True)
 
         __plot_compare(X, Y)
-
-    __plot_close(output)
-
-
-def plot_w(filename, x='z', w_add=0, min_x=0, x_scale='log', y_scale='log',
-           x_label='', y_label='', y_legend='', rd_max=np.inf, dev='rel',
-           compare_with_scale='linear', output='', theory=''):
-    """Plot the equation of state from a background CLASS output. It compares
-    the result of p_smg/rho_smg and p(phi)_smg/rho(phi)_smg"""
-    X = {'var':  x, 'min': min_x, 'scale': x_scale}
-    Y = {'var':  'w', 'scale': y_scale, 'label': 'w', 'rd_max': rd_max, 'dev':
-         dev, 'cscale': compare_with_scale}
-
-    X['label'] = x_label or vtd.var_title_dic[x]
-    Y['clabel'] = 'rel. dev. [%]' if 'abs' not in dev else 'abs. dev.'
-
-    X['data'], Y['data'], Y['legend'] = [], [], []
-    X['cdata'], Y['cdata'], Y['clegend'] = [], [], []
-
-    if type(filename) is str:
-        filename = [filename]
-    if type(y_legend) is str:
-        y_legend = [y_legend]
-
-    if any('background' not in f.split('/')[-1] for f in filename):
-        raise ValueError("File must contain background quantities. If it is " +
-                         "indeed a background file, include in its name " +
-                         "'background' (e.g. quintessence_background.dat).")
-
-    y_legend.extend([''] * (len(filename) - len(y_legend)))
-
-    for f, legend in zip(filename, y_legend):
-
-        var_col_dic = chd.class_headers_to_dict(f)
-        usecols = (var_col_dic[x], var_col_dic['p_smg'], var_col_dic['rho_smg'])
-
-        data = __filter_data(f, usecols[0], min_x)
-
-        x_data, p_smg, rho_smg = np.loadtxt(data, usecols=usecols, unpack=True)
-        w = np.divide(p_smg, rho_smg)
-
-        X['data'].append(x_data)
-        Y['data'].append(np.add(w, w_add))
-
-        s = legend or f.split('/')[-1]
-        Y['legend'].append('p/rho [' + s + ']')  # Label for legend
-
-        data = __filter_data(f, usecols[0], min_x)
-
-        if theory == 'quintessence':
-            cw, clegend = quintessence.w(data, var_col_dic)
-
-        Y['cdata'].append(np.add(cw, w_add))
-        Y['clegend'].append(clegend + '\n [' + s + ']')
-
-    X['cdata'] = X['data']
-
-    if w_add:
-        Y['var'] = str(w_add) + ' + ' + Y['var']
-        Y['label'] = str(w_add) + ' + ' + Y['label']
-
-    __plot_compare(X, Y)
 
     __plot_close(output)
 
@@ -292,23 +304,79 @@ def plot_w0_wa(filename, min_z=False, x_scale='linear', y_scale='linear',
     # TODO: Implement acceptance of various files. Or eliminate function if
     # useless...
 
-    if 'background' not in filename.split('/')[-1]:
-        raise ValueError("File must contain background quantities. If it is " +
-                         "indeed a background file, include in its name " +
-                         "'background' (e.g. quintessence_background.dat)")
-
     X = {'scale': x_scale, 'label': 'w0'}
-    Y = {'scale': y_scale, 'label': 'wa', 'legend': filename.split('/')[-1],
-         'rd_max': rd_max}
+    Y = {'scale': y_scale, 'label': 'wa', 'rd_max': rd_max}
 
-    var_col_dic = chd.class_headers_to_dict(filename)
-    data = __filter_data(filename, var_col_dic['z'], min_z)
+    X['data'], Y['data'], Y['legend'] = [], [], []
+
+    filename, y_legend = __prepare_input_for_loop(filename, y_legend)
 
     if theory == 'quintessence':
-        w0, wa = quintessence.w0_wa(data, var_col_dic)
+        w0_wa = quintessence.w0_wa
 
-    X['data'], Y['data'] = w0, wa
+    for f, lgd in zip(filename, y_legend):  # Zip clips elements not paired.
+        var_col_dic = chd.class_headers_to_dict(f)
+        # If x/y is not a valid key, it returns an empty list. (see chd module)
+        data = __filter_data(f, var_col_dic['z'], min_z)
+        x_data, y_data = w0_wa(data, var_col_dic)
+
+        X['data'].append(x_data)
+        Y['data'].append(y_data)
+        Y['legend'].append(lgd or f.split('/')[-1])  # Label for legend
 
     __plot_alone(X, Y)
+
+    __plot_close(output)
+
+
+def plot_w(filename, x='z', y_add=0, min_x=0, x_scale='log', y_scale='log',
+           x_label='', y_label='', y_legend='', rd_max=np.inf, dev='rel',
+           compare_with_scale='linear', output='', theory=''):
+    """Plot the equation of state from a background CLASS output. It compares
+    the result of p_smg/rho_smg and p(phi)_smg/rho(phi)_smg"""
+
+    filename, y_legend = __prepare_input_for_loop(filename, y_legend)
+    __check_variables_in_files(filename, x)
+
+    y = 'w'
+    y_label = y_label or 'w'
+    X, Y = __init_dictionaries([x, y], min_x, [x_label, y_label], [x_scale,
+                               y_scale], compare_with_scale, rd_max, dev,
+                               y_add=y_add)
+
+    w = miv.w
+
+    if theory == 'quintessence':
+        cw = quintessence.w
+
+    __load_var_data_legend_loop(X, Y, filename, y_legend, w, cw)
+
+    __plot_compare(X, Y)
+
+    __plot_close(output)
+
+
+def plot_alphaK(filename, x='z', y_add=0, min_x=0, x_scale='log',
+                y_scale='log', x_label='', y_label='', y_legend='',
+                rd_max=np.inf, dev='rel', compare_with_scale='linear',
+                output='', theory=''):
+
+    filename, y_legend = __prepare_input_for_loop(filename, y_legend)
+    __check_variables_in_files(filename, x)
+
+    y = 'alpha_K'
+    y_label = y_label or 'alpha_k'
+    X, Y = __init_dictionaries([x, y], min_x, [x_label, y_label], [x_scale,
+                               y_scale], compare_with_scale, rd_max, dev,
+                               y_add=y_add)
+
+    alphaK = miv.alphaK
+
+    if theory == 'quintessence':
+        calphaK = quintessence.alphaK
+
+    __load_var_data_legend_loop(X, Y, filename, y_legend, alphaK, calphaK)
+
+    __plot_compare(X, Y)
 
     __plot_close(output)

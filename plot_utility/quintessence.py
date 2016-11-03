@@ -1,6 +1,18 @@
 #!/usr/bin/python
 
 import numpy as np
+import sys
+
+
+def __try_loadtxt(data, usecols, kind):
+    """Try loading data. If variable labels were wrong, print the possible
+    options and exit"""
+    try:
+        x = np.loadtxt(data, usecols=usecols, unpack=True)
+        return x
+
+    except TypeError:  # Raised when var_col_dic returns [] (wrong key)
+        sys.exit("Check you are using the correct file: needed " + kind)
 
 
 def w(data, var_col_dic):
@@ -10,8 +22,7 @@ def w(data, var_col_dic):
     usecols = (var_col_dic['z'], var_col_dic["phi_prime_smg"],
                var_col_dic['phi_smg'])
 
-    z, phi_prime_smg, phi_smg = np.loadtxt(data, usecols=usecols,
-                                           unpack=True)
+    z, phi_prime_smg, phi_smg = __try_loadtxt(data, usecols, "background")
 
     ######
     # The following variables are exclusive of monomial quintessence
@@ -41,8 +52,8 @@ def w0_wa(data, var_col_dic):
                var_col_dic['phi_smg'], var_col_dic['rho_smg'],
                var_col_dic['H'])
 
-    z, phi_prime_smg, phi_smg, rho_smg, H = np.loadtxt(data, usecols=usecols,
-                                                       unpack=True)
+    z, phi_prime_smg, phi_smg, rho_smg, H = __try_loadtxt(data, usecols,
+                                                       "background")
 
     ######
     # The following variables are exclusive of monomial quintessence
@@ -71,3 +82,23 @@ def w0_wa(data, var_col_dic):
     wa = np.multiply(pre_factor, np.add(summand1, summand2))
 
     return w0, wa
+
+
+def alphaK(data, var_col_dic):
+    """Fill dictionary Y with the evolution of alpha_K for
+    quintessence_monomial"""
+
+    usecols = (var_col_dic['rho_b'], var_col_dic['rho_cdm'],
+               var_col_dic['rho_crit'])
+
+    rho_b, rho_cdm, rho_crit = __try_loadtxt(data, usecols, "background")
+
+    Omega_m = np.divide(np.add(rho_b, rho_cdm), rho_crit)
+
+    wx, wx_legend = w(data, var_col_dic)
+
+    alphaK = np.multiply(np.subtract(1, Omega_m), np.add(1, wx))
+
+    legend = '(1-Omega_m)(1+w)'
+
+    return alphaK, legend
