@@ -142,9 +142,9 @@ def __filter_outranged_x(filename, x_col, x_min, x_max):
 
     with open(filename, 'r') as f:
         for line in f:
-            if not line.startswith('#'):
+            if '#' not in line:
                 x = float(line.split()[x_col])
-                if x>= x_min and x<=x_max:
+                if x >= x_min and x <= x_max:
                     yield line
 
 
@@ -289,7 +289,7 @@ def __plot_compare(X, Y):
     return 1
 
 
-def plot_columns(filename, x='', y='', x_min=-np.inf, x_mas=np.inf, x_scale='log',
+def plot_columns(filename, x='', y='', x_min=-np.inf, x_max=np.inf, x_scale='log',
         y_scale='log', x_label='', y_label='', y_legend='', compare_with='',
         compare_with_legend='', compare_with_scale='linear', rd_max=np.inf,
         dev='rel', output=''):
@@ -350,7 +350,7 @@ def plot_w0_wa(filename, z_min=-np.inf, z_max=np.inf, x_scale='linear',
     __plot_out_and_close(output, Y)
 
 
-def plot_w(filename, x='z', y_add=0, x_min=-np.inf, x_max=-np.inf, x_scale='log', y_scale='log',
+def plot_w(filename, x='z', y_add=0, x_min=-np.inf, x_max=np.inf, x_scale='log', y_scale='log',
            x_label='', y_label='', y_legend='', rd_max=np.inf, dev='rel',
            compare_with_scale='linear', output='', theory=''):
     """Plot the equation of state from a background CLASS output. It compares

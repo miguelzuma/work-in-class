@@ -9,7 +9,7 @@ def list_variables(filename):
     with open(filename) as f:
         prev_line = ""
         for line in f:
-            if ('#' in line) is False:
+            if '#' not in line:
                 break
             prev_line = line
 
