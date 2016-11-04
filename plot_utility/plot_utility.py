@@ -180,11 +180,23 @@ def __colors(length):
     return color
 
 
-def __plot_close(output):
+def __plot_out_and_close(output, Y):
+    ax_plt = Y['axes'][0]
+    size = len(Y['data'])
+
+    # TODO: Tune better the factors controlling legend's position.
+
     if output:
-        plt.savefig(output)
+        ax_plt.legend(loc='center', bbox_to_anchor=(0.5, (-0.3 - 0.06 * size)),
+                      ncol=2, fancybox=True, shadow=True, prop={'size': 10})
+        plt.tight_layout(h_pad=3 + 1.5 * size)
+        plt.savefig(output, bbox_inches='tight')
 
     else:
+        ax_plt.legend(loc='center', bbox_to_anchor=(0.5, (-0.03 - 0.05 *
+                                                          size)), ncol=2,
+                      fancybox=True, shadow=True, prop={'size': 10})
+        plt.tight_layout(h_pad=1 + 1 * size)
         plt.show()
 
     plt.close()
@@ -192,6 +204,7 @@ def __plot_close(output):
 
 def __plot_alone(X, Y):
     f, ax_plt = plt.subplots(1, 1)
+    Y['axes'] = [ax_plt]  # For compatibility with __plot_out_and_close
 
     for x_data, y_data, y_legend in zip(X['data'], Y['data'], Y['legend']):
         ax_plt.plot(x_data, y_data, label=y_legend)
@@ -202,10 +215,10 @@ def __plot_alone(X, Y):
     ax_plt.set_ylabel(Y['label'])
 
     # TODO: Improve legend position management.
-    ax_plt.legend(loc='center', bbox_to_anchor=(0.5, -0.09),
-                  ncol=3, fancybox=True, shadow=True)
+    # ax_plt.legend(loc='center', bbox_to_anchor=(0.5, -0.09),
+    #               ncol=3, fancybox=True, shadow=True)
 
-    plt.tight_layout()
+    # plt.tight_layout()
 
     return 1
 
@@ -265,13 +278,13 @@ def __plot_compare(X, Y):
     ax_dev.set_xlabel(X['label'])
     ax_dev.set_ylabel(Y['clabel'])
 
-    size = len(X['data'])
+    # size = len(X['data'])
 
     # TODO: Tune better the factors controlling legend's position.
-    ax_plt.legend(loc='center', bbox_to_anchor=(0.5, (-0.03 - 0.05 * size)),
-                  ncol=2, fancybox=True, shadow=True, prop={'size': 10})
+    # ax_plt.legend(loc='center', bbox_to_anchor=(0.5, (-0.03 - 0.05 * size)),
+    #               ncol=2, fancybox=True, shadow=True, prop={'size': 10})
 
-    plt.tight_layout(h_pad=1 + 1 * size)
+    # plt.tight_layout(h_pad=1 + 1 * size)
 
     return 1
 
@@ -302,7 +315,7 @@ def plot_columns(filename, x='', y='', x_min=-np.inf, x_mas=np.inf, x_scale='log
 
         __plot_compare(X, Y)
 
-    __plot_close(output)
+    __plot_out_and_close(output, Y)
 
 
 def plot_w0_wa(filename, z_min=-np.inf, z_max=np.inf, x_scale='linear',
@@ -334,7 +347,7 @@ def plot_w0_wa(filename, z_min=-np.inf, z_max=np.inf, x_scale='linear',
 
     __plot_alone(X, Y)
 
-    __plot_close(output)
+    __plot_out_and_close(output, Y)
 
 
 def plot_w(filename, x='z', y_add=0, x_min=-np.inf, x_max=-np.inf, x_scale='log', y_scale='log',
@@ -360,7 +373,7 @@ def plot_w(filename, x='z', y_add=0, x_min=-np.inf, x_max=-np.inf, x_scale='log'
 
     __plot_compare(X, Y)
 
-    __plot_close(output)
+    __plot_out_and_close(output, Y)
 
 
 def plot_alphaK(filename, x='z', y_add=0, x_min=-np.inf, x_max=np.inf,
@@ -386,4 +399,4 @@ def plot_alphaK(filename, x='z', y_add=0, x_min=-np.inf, x_max=np.inf,
 
     __plot_compare(X, Y)
 
-    __plot_close(output)
+    __plot_out_and_close(output, Y)
