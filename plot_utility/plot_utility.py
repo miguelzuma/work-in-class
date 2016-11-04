@@ -26,7 +26,7 @@ def __exit_variable_error(filename):
     sys.exit(my_err)
 
 
-def __prepare_input_for_loop(filename, y_legend):
+def __prepare_input_for_loop(filename, y_legend, IC={}):
     if type(filename) is str:
         filename = [filename]
     if type(y_legend) is str:
@@ -35,7 +35,12 @@ def __prepare_input_for_loop(filename, y_legend):
     y_legend.extend([''] * (len(filename) - len(y_legend)))
     # If subtraction <= 0 y_legend remains as it is.
 
-    return filename, y_legend
+    if IC:
+        if type(IC) is dict:
+            IC = [IC]
+        return filename, y_legend, IC
+    else:
+        return filename, y_legend
 
 
 def __check_variables_in_files(filename, x, y=''):
@@ -51,7 +56,7 @@ def __check_variables_in_files(filename, x, y=''):
 
 
 def __init_dictionaries(var, x_boundaries, labels, scales, cscale, rd_max, dev,
-                        y_add=0):
+                        y_add=0, IC={}):
 
     X = {
         'var': var[0],
@@ -69,7 +74,8 @@ def __init_dictionaries(var, x_boundaries, labels, scales, cscale, rd_max, dev,
         'cscale': cscale,
         'rd_max': rd_max,
         'dev': dev,
-        'add': y_add
+        'add': y_add,
+        'IC': IC
     }
 
     if y_add:
@@ -110,8 +116,12 @@ def __load_var_data_legend_loop(X, Y, filename, y_legend, func, cfunc):
     X['cdata'], Y['cdata'], Y['clegend'] = [], [], []
 
     y_add = Y['add']
+    IC = Y['IC']
 
-    for f, lgd in zip(filename, y_legend):
+    if len(IC) != len(filename):
+        sys.exit("There must be as much IC as input files.")
+
+    for f, lgd, ic in zip(filename, y_legend, IC):
 
         var_col_dic = chd.class_headers_to_dict(f)
         filter_col = var_col_dic[X['var']]
@@ -127,7 +137,7 @@ def __load_var_data_legend_loop(X, Y, filename, y_legend, func, cfunc):
 
         data = __filter_data(f, filter_col, X['min'], X['max'])
 
-        y_cdata, clegend = cfunc(data, var_col_dic)
+        y_cdata, clegend = cfunc(data, var_col_dic, ic)
 
         Y['cdata'].append(np.add(y_add, y_cdata))
         Y['clegend'].append(clegend + '\n [' + s + ']')
@@ -289,11 +299,11 @@ def __plot_compare(X, Y):
     return 1
 
 
-def plot_columns(filename, x='', y='', x_min=-np.inf, x_max=np.inf, x_scale='log',
-        y_scale='log', x_label='', y_label='', y_legend='', compare_with='',
-        compare_with_legend='', compare_with_scale='linear', rd_max=np.inf,
-        dev='rel', output=''):
-
+def plot_columns(filename, x='', y='', x_min=-np.inf, x_max=np.inf,
+                 x_scale='log', y_scale='log', x_label='', y_label='',
+                 y_legend='', compare_with='', compare_with_legend='',
+                 compare_with_scale='linear', rd_max=np.inf, dev='rel',
+                 output=''):
     """Given a CLASS output file (or list of files) plot its selected variables
     x, y. If variable labels are not set or misspelled, print the possible
     ones"""
@@ -301,7 +311,8 @@ def plot_columns(filename, x='', y='', x_min=-np.inf, x_max=np.inf, x_scale='log
     filename, y_legend = __prepare_input_for_loop(filename, y_legend)
     __check_variables_in_files(filename, x, y)
     X, Y = __init_dictionaries([x, y], [x_min, x_max], [x_label, y_label],
-            [x_scale, y_scale], compare_with_scale, rd_max, dev)
+                               [x_scale, y_scale], compare_with_scale, rd_max,
+                               dev)
 
     __load_columns_file_loop(X, Y, filename, y_legend)
 
@@ -319,8 +330,8 @@ def plot_columns(filename, x='', y='', x_min=-np.inf, x_max=np.inf, x_scale='log
 
 
 def plot_w0_wa(filename, z_min=-np.inf, z_max=np.inf, x_scale='linear',
-        y_scale='linear', x_label='', y_label='', y_legend='', rd_max=np.inf,
-        output='', theory=''):
+               y_scale='linear', x_label='', y_label='', y_legend='',
+               rd_max=np.inf, output='', theory='', IC={}):
     """Plot the evolution of wa with w0 where w(a) \simeq w0 + (a0-a) w'(a0)."""
     # TODO: Implement acceptance of various files. Or eliminate function if
     # useless...
@@ -350,19 +361,21 @@ def plot_w0_wa(filename, z_min=-np.inf, z_max=np.inf, x_scale='linear',
     __plot_out_and_close(output, Y)
 
 
-def plot_w(filename, x='z', y_add=0, x_min=-np.inf, x_max=np.inf, x_scale='log', y_scale='log',
-           x_label='', y_label='', y_legend='', rd_max=np.inf, dev='rel',
-           compare_with_scale='linear', output='', theory=''):
+def plot_w(filename, x='z', y_add=0, x_min=-np.inf, x_max=np.inf,
+           x_scale='log', y_scale='log', x_label='', y_label='', y_legend='',
+           rd_max=np.inf, dev='rel', compare_with_scale='linear', output='',
+           theory='', IC={}):
     """Plot the equation of state from a background CLASS output. It compares
     the result of p_smg/rho_smg and p(phi)_smg/rho(phi)_smg"""
 
-    filename, y_legend = __prepare_input_for_loop(filename, y_legend)
+    filename, y_legend, IC = __prepare_input_for_loop(filename, y_legend, IC)
     __check_variables_in_files(filename, x)
 
     y = 'w'
     y_label = y_label or 'w'
-    X, Y = __init_dictionaries([x, y], [x_min, x_max], [x_label, y_label], [x_scale,
-        y_scale], compare_with_scale, rd_max, dev, y_add=y_add)
+    X, Y = __init_dictionaries([x, y], [x_min, x_max], [x_label, y_label],
+                               [x_scale, y_scale], compare_with_scale, rd_max,
+                               dev, y_add=y_add, IC=IC)
 
     w = miv.w
 
@@ -377,18 +390,20 @@ def plot_w(filename, x='z', y_add=0, x_min=-np.inf, x_max=np.inf, x_scale='log',
 
 
 def plot_alphaK(filename, x='z', y_add=0, x_min=-np.inf, x_max=np.inf,
-        x_scale='log', y_scale='log', x_label='', y_label='', y_legend='',
-                rd_max=np.inf, dev='rel', compare_with_scale='linear',
-                output='', theory=''):
+                x_scale='log', y_scale='log', x_label='', y_label='',
+                y_legend='', rd_max=np.inf, dev='rel',
+                compare_with_scale='linear', output='', theory='', IC={}):
+    """Plot alpha_k from a background CLASS output and compare it with
+    other calculation of alpha_k"""
 
-    filename, y_legend = __prepare_input_for_loop(filename, y_legend)
+    filename, y_legend, IC = __prepare_input_for_loop(filename, y_legend, IC)
     __check_variables_in_files(filename, x)
 
     y = 'alpha_K'
     y_label = y_label or 'alpha_k'
-    X, Y = __init_dictionaries([x, y], [x_min, x_max], [x_label, y_label], [x_scale,
-                               y_scale], compare_with_scale, rd_max, dev,
-                               y_add=y_add)
+    X, Y = __init_dictionaries([x, y], [x_min, x_max], [x_label, y_label],
+                               [x_scale, y_scale], compare_with_scale, rd_max,
+                               dev, y_add=y_add, IC=IC)
 
     alphaK = miv.alphaK
 

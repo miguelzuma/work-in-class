@@ -20,7 +20,7 @@ def __try_loadtxt(data, usecols, kind):
         sys.exit("Check you are using the correct file: needed " + kind)
 
 
-def w(data, var_col_dic):
+def w(data, var_col_dic, IC):
     """Fill dictionary Y with the equation of state for
     quintessence_monomial. Note data must be a generator or list"""
 
@@ -32,9 +32,15 @@ def w(data, var_col_dic):
     ######
     # The following variables are exclusive of monomial quintessence
     ######
-    V0 = 1.74646e-07  # This is the value V0* printed in screen when class is
-                      # run.
-    N = 2
+    IC_keys = ['V0', 'N']
+    try:
+        V0 = IC['V0']  # This is the value V0* printed in screen when class is
+                       # run.
+        N = IC['N']
+    except KeyError:
+        sys.exit("IC must be a dictionary with keys: " + IC_keys)
+
+
     V = np.multiply(V0, np.power(phi_smg, N))  # Quintessence_monomial
     ######
 
@@ -49,7 +55,7 @@ def w(data, var_col_dic):
     return w, legend
 
 
-def w0_wa(data, var_col_dic):
+def w0_wa(data, var_col_dic, IC):
     """Return w0, wa values during the evolution of phi, where w(a) \simeq w0 +
     (a0-a) w'(a0). Note data must be a generator or list."""
 
@@ -63,9 +69,14 @@ def w0_wa(data, var_col_dic):
     ######
     # The following variables are exclusive of monomial quintessence
     ######
-    V0 = 1.74646e-07  # This is the value V0* printed in screen when class is
-                      # run.
-    N = 2
+    IC_keys = ['V0', 'N']
+    try:
+        V0 = IC['V0']  # This is the value V0* printed in screen when class is
+                       # run.
+        N = IC['N']
+    except KeyError:
+        sys.exit("IC must be a dictionary with keys: " + IC_keys)
+
     P = np.power(phi_smg, N)
     P_phi = np.multiply(N, np.power(phi_smg, N - 1))
     V = np.multiply(V0, P)  # Quintessence_monomial
@@ -89,7 +100,7 @@ def w0_wa(data, var_col_dic):
     return w0, wa
 
 
-def alphaK(data, var_col_dic):
+def alphaK(data, var_col_dic, IC):
     """Fill dictionary Y with the evolution of alpha_K for
     quintessence_monomial. Note data must be a generator or list."""
 
@@ -106,7 +117,7 @@ def alphaK(data, var_col_dic):
 
     data2 = __data_gen(data_list)
 
-    wx, wx_legend = w(data2, var_col_dic)
+    wx, wx_legend = w(data2, var_col_dic, IC)
 
     alphaK = np.multiply(np.subtract(1, Omega_m), np.add(1, wx))
 
