@@ -9,7 +9,7 @@ def list_variables(filename):
     with open(filename) as f:
         prev_line = ""
         for line in f:
-            if line.startswith('#') is False:
+            if ('#' in line) is False:
                 break
             prev_line = line
 
@@ -19,7 +19,7 @@ def list_variables(filename):
     return h_list
 
 
-def print_beautifully(h_list):
+def __print_beautifully(h_list):
 
     h_list = zip(range(len(h_list)), h_list)
 
@@ -51,7 +51,7 @@ def main():
 
     args = parser.parse_args()
 
-    print_beautifully(list_variables(args.filepath))
+    __print_beautifully(list_variables(args.filepath))
 
     return 1
 
