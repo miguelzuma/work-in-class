@@ -50,12 +50,13 @@ def __check_variables_in_files(filename, x, y=''):
             __exit_variable_error(f)
 
 
-def __init_dictionaries(var, min_x, labels, scales, cscale, rd_max, dev,
+def __init_dictionaries(var, x_boundaries, labels, scales, cscale, rd_max, dev,
                         y_add=0):
 
     X = {
         'var': var[0],
-        'min': min_x,
+        'min': x_boundaries[0],
+        'max': x_boundaries[1],
         'scale': scales[0],
         'label':  labels[0] or vtd.var_title_dic[var[0]]
     }
@@ -93,7 +94,7 @@ def __load_columns_file_loop(X, Y, filename, y_legend, compare=False):
         var_col_dic = chd.class_headers_to_dict(f)
         # If x/y is not a valid key, it returns an empty list. (see chd module)
         usecols = (var_col_dic[X['var']], var_col_dic[Y['var']])
-        xy_data = __filter_data(f, usecols[0], X['min'])
+        xy_data = __filter_data(f, usecols[0], X['min'], X['max'])
         x_data, y_data = np.loadtxt(xy_data, usecols=usecols, unpack=True)
 
         X[data].append(x_data)
@@ -114,9 +115,9 @@ def __load_var_data_legend_loop(X, Y, filename, y_legend, func, cfunc):
 
         var_col_dic = chd.class_headers_to_dict(f)
         filter_col = var_col_dic[X['var']]
-        data = __filter_data(f, filter_col, X['min'])
+        data = __filter_data(f, filter_col, X['min'], X['max'])
 
-        x_data, y_data, legend = func(X['var'], f, var_col_dic)
+        x_data, y_data, legend = func(X['var'], data, var_col_dic)
 
         X['data'].append(np.add(y_add, x_data))
         Y['data'].append(np.add(y_add, y_data))
@@ -124,7 +125,7 @@ def __load_var_data_legend_loop(X, Y, filename, y_legend, func, cfunc):
         s = lgd or f.split('/')[-1]
         Y['legend'].append(legend + ' [' + s + ']')  # Label for legend
 
-        data = __filter_data(f, filter_col, X['min'])
+        data = __filter_data(f, filter_col, X['min'], X['max'])
 
         y_cdata, clegend = cfunc(data, var_col_dic)
 
@@ -136,24 +137,31 @@ def __load_var_data_legend_loop(X, Y, filename, y_legend, func, cfunc):
     return 1
 
 
-def __filter_lower_x(filename, x_col, min_x):
-    """Filter values lower than min_x in x_col"""
+def __filter_outranged_x(filename, x_col, x_min, x_max):
+    """Filter values lower than x_min in x_col"""
 
     with open(filename, 'r') as f:
         for line in f:
             if not line.startswith('#'):
-                if float(line.split()[x_col]) >= min_x:
+                x = float(line.split()[x_col])
+                if x>= x_min and x<=x_max:
                     yield line
 
 
-def __filter_data(filename, col, min_x):
-    """In case min_x is provided, filter all values lower than it"""
+def __data_gen(filename):
+    with open(filename) as f:
+        for line in f:
+            yield line
 
-    if not min_x:
-        return filename
+
+def __filter_data(filename, col, x_min, x_max):
+    """In case x_min is provided, filter all values lower than it"""
+
+    if x_min == -np.inf and x_max == np.inf:
+        return __data_gen(filename)
 
     else:
-        return __filter_lower_x(filename, col, min_x)
+        return __filter_outranged_x(filename, col, x_min, x_max)
 
 
 def __deviation(x, y, cx, cy, kind):
@@ -268,10 +276,10 @@ def __plot_compare(X, Y):
     return 1
 
 
-def plot_columns(filename, x='', y='', min_x=0, x_scale='log', y_scale='log',
-                 x_label='', y_label='', y_legend='', compare_with='',
-                 compare_with_legend='', compare_with_scale='linear',
-                 rd_max=np.inf, dev='rel', output=''):
+def plot_columns(filename, x='', y='', x_min=-np.inf, x_mas=np.inf, x_scale='log',
+        y_scale='log', x_label='', y_label='', y_legend='', compare_with='',
+        compare_with_legend='', compare_with_scale='linear', rd_max=np.inf,
+        dev='rel', output=''):
 
     """Given a CLASS output file (or list of files) plot its selected variables
     x, y. If variable labels are not set or misspelled, print the possible
@@ -279,8 +287,8 @@ def plot_columns(filename, x='', y='', min_x=0, x_scale='log', y_scale='log',
     # TODO: Add support to understand input like y='p_smg/rho_smg'
     filename, y_legend = __prepare_input_for_loop(filename, y_legend)
     __check_variables_in_files(filename, x, y)
-    X, Y = __init_dictionaries([x, y], min_x, [x_label, y_label], [x_scale,
-                               y_scale], compare_with_scale, rd_max, dev)
+    X, Y = __init_dictionaries([x, y], [x_min, x_max], [x_label, y_label],
+            [x_scale, y_scale], compare_with_scale, rd_max, dev)
 
     __load_columns_file_loop(X, Y, filename, y_legend)
 
@@ -297,9 +305,9 @@ def plot_columns(filename, x='', y='', min_x=0, x_scale='log', y_scale='log',
     __plot_close(output)
 
 
-def plot_w0_wa(filename, min_z=False, x_scale='linear', y_scale='linear',
-               x_label='', y_label='', y_legend='', rd_max=np.inf, output='',
-               theory=''):
+def plot_w0_wa(filename, z_min=-np.inf, z_max=np.inf, x_scale='linear',
+        y_scale='linear', x_label='', y_label='', y_legend='', rd_max=np.inf,
+        output='', theory=''):
     """Plot the evolution of wa with w0 where w(a) \simeq w0 + (a0-a) w'(a0)."""
     # TODO: Implement acceptance of various files. Or eliminate function if
     # useless...
@@ -317,7 +325,7 @@ def plot_w0_wa(filename, min_z=False, x_scale='linear', y_scale='linear',
     for f, lgd in zip(filename, y_legend):  # Zip clips elements not paired.
         var_col_dic = chd.class_headers_to_dict(f)
         # If x/y is not a valid key, it returns an empty list. (see chd module)
-        data = __filter_data(f, var_col_dic['z'], min_z)
+        data = __filter_data(f, var_col_dic['z'], z_min, z_max)
         x_data, y_data = w0_wa(data, var_col_dic)
 
         X['data'].append(x_data)
@@ -329,7 +337,7 @@ def plot_w0_wa(filename, min_z=False, x_scale='linear', y_scale='linear',
     __plot_close(output)
 
 
-def plot_w(filename, x='z', y_add=0, min_x=0, x_scale='log', y_scale='log',
+def plot_w(filename, x='z', y_add=0, x_min=-np.inf, x_max=-np.inf, x_scale='log', y_scale='log',
            x_label='', y_label='', y_legend='', rd_max=np.inf, dev='rel',
            compare_with_scale='linear', output='', theory=''):
     """Plot the equation of state from a background CLASS output. It compares
@@ -340,9 +348,8 @@ def plot_w(filename, x='z', y_add=0, min_x=0, x_scale='log', y_scale='log',
 
     y = 'w'
     y_label = y_label or 'w'
-    X, Y = __init_dictionaries([x, y], min_x, [x_label, y_label], [x_scale,
-                               y_scale], compare_with_scale, rd_max, dev,
-                               y_add=y_add)
+    X, Y = __init_dictionaries([x, y], [x_min, x_max], [x_label, y_label], [x_scale,
+        y_scale], compare_with_scale, rd_max, dev, y_add=y_add)
 
     w = miv.w
 
@@ -356,8 +363,8 @@ def plot_w(filename, x='z', y_add=0, min_x=0, x_scale='log', y_scale='log',
     __plot_close(output)
 
 
-def plot_alphaK(filename, x='z', y_add=0, min_x=0, x_scale='log',
-                y_scale='log', x_label='', y_label='', y_legend='',
+def plot_alphaK(filename, x='z', y_add=0, x_min=-np.inf, x_max=np.inf,
+        x_scale='log', y_scale='log', x_label='', y_label='', y_legend='',
                 rd_max=np.inf, dev='rel', compare_with_scale='linear',
                 output='', theory=''):
 
@@ -366,7 +373,7 @@ def plot_alphaK(filename, x='z', y_add=0, min_x=0, x_scale='log',
 
     y = 'alpha_K'
     y_label = y_label or 'alpha_k'
-    X, Y = __init_dictionaries([x, y], min_x, [x_label, y_label], [x_scale,
+    X, Y = __init_dictionaries([x, y], [x_min, x_max], [x_label, y_label], [x_scale,
                                y_scale], compare_with_scale, rd_max, dev,
                                y_add=y_add)
 

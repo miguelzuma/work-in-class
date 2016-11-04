@@ -4,6 +4,11 @@ import numpy as np
 import sys
 
 
+def __data_gen(data_list):
+    for line in data_list:
+        yield line
+
+
 def __try_loadtxt(data, usecols, kind):
     """Try loading data. If variable labels were wrong, print the possible
     options and exit"""
@@ -17,7 +22,7 @@ def __try_loadtxt(data, usecols, kind):
 
 def w(data, var_col_dic):
     """Fill dictionary Y with the equation of state for
-    quintessence_monomial"""
+    quintessence_monomial. Note data must be a generator or list"""
 
     usecols = (var_col_dic['z'], var_col_dic["phi_prime_smg"],
                var_col_dic['phi_smg'])
@@ -46,7 +51,7 @@ def w(data, var_col_dic):
 
 def w0_wa(data, var_col_dic):
     """Return w0, wa values during the evolution of phi, where w(a) \simeq w0 +
-    (a0-a) w'(a0)."""
+    (a0-a) w'(a0). Note data must be a generator or list."""
 
     usecols = (var_col_dic['z'], var_col_dic["phi_prime_smg"],
                var_col_dic['phi_smg'], var_col_dic['rho_smg'],
@@ -86,16 +91,22 @@ def w0_wa(data, var_col_dic):
 
 def alphaK(data, var_col_dic):
     """Fill dictionary Y with the evolution of alpha_K for
-    quintessence_monomial"""
+    quintessence_monomial. Note data must be a generator or list."""
+
+    data_list = list(data)
 
     usecols = (var_col_dic['rho_b'], var_col_dic['rho_cdm'],
                var_col_dic['rho_crit'])
 
-    rho_b, rho_cdm, rho_crit = __try_loadtxt(data, usecols, "background")
+    data1 = __data_gen(data_list)
+
+    rho_b, rho_cdm, rho_crit = __try_loadtxt(data1, usecols, "background")
 
     Omega_m = np.divide(np.add(rho_b, rho_cdm), rho_crit)
 
-    wx, wx_legend = w(data, var_col_dic)
+    data2 = __data_gen(data_list)
+
+    wx, wx_legend = w(data2, var_col_dic)
 
     alphaK = np.multiply(np.subtract(1, Omega_m), np.add(1, wx))
 
