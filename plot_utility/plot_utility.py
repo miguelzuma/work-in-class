@@ -361,7 +361,7 @@ def plot_w0_wa(filename, z_min=-np.inf, z_max=np.inf, x_scale='linear',
     __plot_out_and_close(output, Y)
 
 
-def plot_w(filename, x='z', y_add=0, x_min=-np.inf, x_max=np.inf,
+def plot_check_w(filename, x='z', y_add=0, x_min=-np.inf, x_max=np.inf,
            x_scale='log', y_scale='log', x_label='', y_label='', y_legend='',
            rd_max=np.inf, dev='rel', compare_with_scale='linear', output='',
            theory='', IC={}):
@@ -389,7 +389,7 @@ def plot_w(filename, x='z', y_add=0, x_min=-np.inf, x_max=np.inf,
     __plot_out_and_close(output, Y)
 
 
-def plot_alphaK(filename, x='z', y_add=0, x_min=-np.inf, x_max=np.inf,
+def plot_check_alphaK(filename, x='z', y_add=0, x_min=-np.inf, x_max=np.inf,
                 x_scale='log', y_scale='log', x_label='', y_label='',
                 y_legend='', rd_max=np.inf, dev='rel',
                 compare_with_scale='linear', output='', theory='', IC={},
