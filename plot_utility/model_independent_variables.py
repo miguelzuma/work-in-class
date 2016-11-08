@@ -15,6 +15,21 @@ def __try_loadtxt(data, usecols, kind):
         sys.exit("Check you are using the correct file: needed " + kind)
 
 
+def columns(x, y):
+    def columns_data(X, data, var_col_dic):
+        X = x  # X kept for compatibility. Needed three arguments
+
+        usecols = (var_col_dic[X], var_col_dic[y])
+
+        x_data, y_data = __try_loadtxt(data, usecols, 'any.')
+
+        legend = ''
+
+        return x_data, y_data, legend
+
+    return columns_data
+
+
 def alphaK(kineticity_safe):
     def alphaK_corrected(x, data, var_col_dic):
 

@@ -85,27 +85,28 @@ def __init_dictionaries(var, x_boundaries, labels, scales, cscale, rd_max, dev,
     return X, Y
 
 
-def __load_columns_file_loop(X, Y, filename, y_legend, compare=False):
+def __load_columns_file_loop(X, Y, filename, y_legend, func, compare=False):
 
-    data = 'data'
-    legend = 'legend'
+    kdata = 'data'
+    klegend = 'legend'
 
     if compare:
-        data = 'c' + data
-        legend = 'c' + legend
+        kdata = 'c' + kdata
+        klegend = 'c' + klegend
 
-    X[data], Y[data], Y[legend] = [], [], []
+    X[kdata], Y[kdata], Y[klegend] = [], [], []
 
     for f, lgd in zip(filename, y_legend):  # Zip clips elements not paired.
         var_col_dic = chd.class_headers_to_dict(f)
-        # If x/y is not a valid key, it returns an empty list. (see chd module)
-        usecols = (var_col_dic[X['var']], var_col_dic[Y['var']])
-        xy_data = __filter_data(f, usecols[0], X['min'], X['max'])
-        x_data, y_data = np.loadtxt(xy_data, usecols=usecols, unpack=True)
+        filter_col = var_col_dic[X['var']]
+        data = __filter_data(f, filter_col, X['min'], X['max'])
+        x_data, y_data, legend = func(X['var'], data, var_col_dic)
 
-        X[data].append(x_data)
-        Y[data].append(y_data)
-        Y[legend].append(lgd or f.split('/')[-1])  # Label for legend
+        X[kdata].append(x_data)
+        Y[kdata].append(y_data)
+
+        s = lgd or f.split('/')[-1]
+        Y[klegend].append(legend + ' [' + s + ']')  # Label for legend
 
     return 1
 
@@ -314,15 +315,15 @@ def plot_columns(filename, x='', y='', x_min=-np.inf, x_max=np.inf,
                                [x_scale, y_scale], compare_with_scale, rd_max,
                                dev)
 
-    __load_columns_file_loop(X, Y, filename, y_legend)
+    columns = miv.columns(x,y)
+    __load_columns_file_loop(X, Y, filename, y_legend, columns)
 
     if not compare_with:
         __plot_alone(X, Y)
     else:
         cw, cwl = __prepare_input_for_loop(compare_with, compare_with_legend)
 
-        __load_columns_file_loop(X, Y, cw, cwl,
-                                 compare=True)
+        __load_columns_file_loop(X, Y, cw, cwl, columns, compare=True)
 
         __plot_compare(X, Y)
 
@@ -362,9 +363,9 @@ def plot_w0_wa(filename, z_min=-np.inf, z_max=np.inf, x_scale='linear',
 
 
 def plot_check_w(filename, x='z', y_add=0, x_min=-np.inf, x_max=np.inf,
-           x_scale='log', y_scale='log', x_label='', y_label='', y_legend='',
-           rd_max=np.inf, dev='rel', compare_with_scale='linear', output='',
-           theory='', IC={}):
+                 x_scale='log', y_scale='log', x_label='', y_label='',
+                 y_legend='', rd_max=np.inf, dev='rel',
+                 compare_with_scale='linear', output='', theory='', IC={}):
     """Plot the equation of state from a background CLASS output. It compares
     the result of p_smg/rho_smg and p(phi)_smg/rho(phi)_smg"""
 
@@ -416,3 +417,67 @@ def plot_check_alphaK(filename, x='z', y_add=0, x_min=-np.inf, x_max=np.inf,
     __plot_compare(X, Y)
 
     __plot_out_and_close(output, Y)
+
+
+def plot_w(filename, x='z', y_add=0, x_min=-np.inf, x_max=np.inf,
+           x_scale='log', y_scale='log', x_label='', y_label='', y_legend='',
+           compare_with='', compare_with_legend='', rd_max=np.inf, dev='rel',
+           compare_with_scale='linear', output='', IC={}):
+
+    filename, y_legend, IC = __prepare_input_for_loop(filename, y_legend, IC)
+    __check_variables_in_files(filename, x)
+
+    y = 'w'
+    y_label = y_label or 'w'
+    X, Y = __init_dictionaries([x, y], [x_min, x_max], [x_label, y_label],
+                               [x_scale, y_scale], compare_with_scale, rd_max,
+                               dev, y_add=y_add, IC=IC)
+
+    w = miv.w
+
+    __load_columns_file_loop(X, Y, filename, y_legend, w)
+
+    if not compare_with:
+        __plot_alone(X, Y)
+    else:
+        cw, cwl = __prepare_input_for_loop(compare_with, compare_with_legend)
+
+        __load_columns_file_loop(X, Y, cw, cwl, w, compare=True)
+
+        __plot_compare(X, Y)
+
+    __plot_out_and_close(output, Y)
+
+
+def plot_alphaK(filename, x='z', y_add=0, x_min=-np.inf, x_max=np.inf,
+                x_scale='log', y_scale='log', x_label='', y_label='',
+                y_legend='', rd_max=np.inf, dev='rel',
+                compare_with_scale='linear', compare_with='',
+                compare_with_legend='', output='', theory='', IC={},
+                kineticity_safe=0):
+
+    filename, y_legend, IC = __prepare_input_for_loop(filename, y_legend, IC)
+    __check_variables_in_files(filename, x)
+
+    y = 'alpha_K'
+    y_label = y_label or 'alpha_k'
+    X, Y = __init_dictionaries([x, y], [x_min, x_max], [x_label, y_label],
+                               [x_scale, y_scale], compare_with_scale, rd_max,
+                               dev, y_add=y_add, IC=IC)
+
+    alphaK = miv.alphaK(kineticity_safe)
+
+    __load_columns_file_loop(X, Y, filename, y_legend, alphaK)
+
+    if not compare_with:
+        __plot_alone(X, Y)
+    else:
+        cw, cwl = __prepare_input_for_loop(compare_with, compare_with_legend)
+
+        __load_columns_file_loop(X, Y, cw, cwl, alphaK, compare=True)
+
+        __plot_compare(X, Y)
+
+    __plot_out_and_close(output, Y)
+
+
