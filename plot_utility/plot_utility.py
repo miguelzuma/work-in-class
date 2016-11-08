@@ -289,8 +289,8 @@ def __plot_compare(X, Y):
     size = len(X['data'])
     # TODO: Tune better the factors controlling legend's position.
     ax_plt.legend(loc='center', bbox_to_anchor=(0.5, (-0.03 - 0.05 *
-                                                        size)), ncol=2,
-                    fancybox=True, shadow=True, prop={'size': 10})
+                                                      size)), ncol=2,
+                  fancybox=True, shadow=True, prop={'size': 10})
     plt.tight_layout(h_pad=1 + 1 * size)
 
     return 1
@@ -311,7 +311,7 @@ def plot_columns(filename, x='', y='', x_min=-np.inf, x_max=np.inf,
                                [x_scale, y_scale], compare_with_scale, rd_max,
                                dev)
 
-    columns = miv.columns(x,y)
+    columns = miv.columns(x, y)
     __load_columns_file_loop(X, Y, filename, y_legend, columns)
 
     if not compare_with:
@@ -387,10 +387,10 @@ def plot_check_w(filename, x='z', y_add=0, x_min=-np.inf, x_max=np.inf,
 
 
 def plot_check_alphaK(filename, x='z', y_add=0, x_min=-np.inf, x_max=np.inf,
-                x_scale='log', y_scale='log', x_label='', y_label='',
-                y_legend='', rd_max=np.inf, dev='rel',
-                compare_with_scale='linear', output='', theory='', IC={},
-                choice=1, kineticity_safe=0):
+                      x_scale='log', y_scale='log', x_label='', y_label='',
+                      y_legend='', rd_max=np.inf, dev='rel',
+                      compare_with_scale='linear', output='', theory='', IC={},
+                      choice=1, kineticity_safe=0):
     """Plot alpha_k from a background CLASS output and compare it with
     other calculation of alpha_k"""
 
@@ -419,7 +419,9 @@ def plot_w(filename, x='z', y_add=0, x_min=-np.inf, x_max=np.inf,
            x_scale='log', y_scale='log', x_label='', y_label='', y_legend='',
            compare_with='', compare_with_legend='', rd_max=np.inf, dev='rel',
            compare_with_scale='linear', output='', IC={}):
-
+    """Given a CLASS background output file (or list of files) plot the
+    equation of state vs x (default 'z'). If x-variable label is misspelled,
+    print the possible ones"""
     filename, y_legend, IC = __prepare_input_for_loop(filename, y_legend, IC)
     __check_variables_in_files(filename, x)
 
@@ -451,6 +453,9 @@ def plot_alphaK(filename, x='z', y_add=0, x_min=-np.inf, x_max=np.inf,
                 compare_with_scale='linear', compare_with='',
                 compare_with_legend='', output='', theory='', IC={},
                 kineticity_safe=0):
+    """Given a CLASS background output file (or list of files) plot alpha_k
+    vs x (default 'z'). If x-variable label is misspelled, print the possible
+    ones"""
 
     filename, y_legend, IC = __prepare_input_for_loop(filename, y_legend, IC)
     __check_variables_in_files(filename, x)
@@ -475,5 +480,3 @@ def plot_alphaK(filename, x='z', y_add=0, x_min=-np.inf, x_max=np.inf,
         __plot_compare(X, Y)
 
     __print_and_close(output, Y)
-
-
