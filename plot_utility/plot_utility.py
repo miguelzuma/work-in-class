@@ -90,6 +90,8 @@ def __load_columns_file_loop(X, Y, filename, y_legend, func, compare=False):
     kdata = 'data'
     klegend = 'legend'
 
+    y_add = Y['add']
+
     if compare:
         kdata = 'c' + kdata
         klegend = 'c' + klegend
@@ -103,7 +105,7 @@ def __load_columns_file_loop(X, Y, filename, y_legend, func, compare=False):
         x_data, y_data, legend = func(X['var'], data, var_col_dic)
 
         X[kdata].append(x_data)
-        Y[kdata].append(y_data)
+        Y[kdata].append(np.add(y_add, y_data))
 
         s = lgd or f.split('/')[-1]
         Y[klegend].append(legend + ' [' + s + ']')  # Label for legend
@@ -130,7 +132,7 @@ def __load_var_data_legend_loop(X, Y, filename, y_legend, func, cfunc):
 
         x_data, y_data, legend = func(X['var'], data, var_col_dic)
 
-        X['data'].append(np.add(y_add, x_data))
+        X['data'].append(x_data)
         Y['data'].append(np.add(y_add, y_data))
 
         s = lgd or f.split('/')[-1]
