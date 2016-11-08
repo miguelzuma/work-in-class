@@ -15,15 +15,20 @@ def __try_loadtxt(data, usecols, kind):
         sys.exit("Check you are using the correct file: needed " + kind)
 
 
-def alphaK(x, data, var_col_dic):
+def alphaK(kineticity_safe):
+    def alphaK_corrected(x, data, var_col_dic):
 
-    usecols = (var_col_dic[x], var_col_dic['kineticity_smg'])
+        usecols = (var_col_dic[x], var_col_dic['kineticity_smg'])
 
-    x_data, alpha_K = __try_loadtxt(data, usecols, 'background')
+        x_data, alpha_K = __try_loadtxt(data, usecols, 'background')
 
-    legend = 'alpha_k'
+        alpha_K = np.subtract(alpha_K, kineticity_safe)
 
-    return x_data, alpha_K, legend
+        legend = 'alpha_k'
+
+        return x_data, alpha_K, legend
+
+    return alphaK_corrected
 
 
 def w(x, data, var_col_dic):

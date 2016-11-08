@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import numpy as np
+import model_independent_variables as miv
 import sys
 
 
@@ -100,7 +101,18 @@ def w0_wa(data, var_col_dic, IC):
     return w0, wa
 
 
-def alphaK(data, var_col_dic, IC):
+def alphaK(choice):
+    alpha = {
+        1: alphaK1,
+        2: alphaK2,
+        3: alphaK3,
+        4: alphaK4
+    }
+
+    return alpha[choice]
+
+
+def alphaK1(data, var_col_dic, IC):
     """Fill dictionary Y with the evolution of alpha_K for
     quintessence_monomial. Note data must be a generator or list."""
 
@@ -122,5 +134,81 @@ def alphaK(data, var_col_dic, IC):
     alphaK = np.multiply(np.subtract(1, Omega_m), np.add(1, wx))
 
     legend = '(1-Omega_m)(1+w)'
+
+    return alphaK, legend
+
+
+def alphaK2(data, var_col_dic, IC):
+    """Fill dictionary Y with the evolution of alpha_K for
+    quintessence_monomial. Note data must be a generator or list."""
+
+    data_list = list(data)
+
+    usecols = (var_col_dic['rho_b'], var_col_dic['rho_cdm'],
+               var_col_dic['rho_crit'])
+
+    data1 = __data_gen(data_list)
+
+    rho_b, rho_cdm, rho_crit = __try_loadtxt(data1, usecols, "background")
+
+    Omega_m = np.divide(np.add(rho_b, rho_cdm), rho_crit)
+
+    data2 = __data_gen(data_list)
+
+    x_data, wx, legend = miv.w('z', data2, var_col_dic)
+
+    alphaK = np.multiply(np.subtract(1, Omega_m), np.add(1, wx))
+
+    legend = 'Omega_smg(1+p/rho)'
+
+    return alphaK, legend
+
+
+def alphaK3(data, var_col_dic, IC):
+    """Fill dictionary Y with the evolution of alpha_K for
+    quintessence_monomial. Note data must be a generator or list."""
+
+    data_list = list(data)
+
+    usecols = (var_col_dic['rho_smg'], var_col_dic['rho_crit'])
+
+    data1 = __data_gen(data_list)
+
+    rho_smg, rho_crit = __try_loadtxt(data1, usecols, "background")
+
+    Omega_smg = np.divide(rho_smg, rho_crit)
+
+    data2 = __data_gen(data_list)
+
+    wx, wx_legend = w(data2, var_col_dic, IC)
+
+    alphaK = np.multiply(Omega_smg, np.add(1, wx))
+
+    legend = 'Omega_smg(1+w)'
+
+    return alphaK, legend
+
+
+def alphaK4(data, var_col_dic, IC):
+    """Fill dictionary Y with the evolution of alpha_K for
+    quintessence_monomial. Note data must be a generator or list."""
+
+    data_list = list(data)
+
+    usecols = (var_col_dic['rho_smg'], var_col_dic['rho_crit'])
+
+    data1 = __data_gen(data_list)
+
+    rho_smg, rho_crit = __try_loadtxt(data1, usecols, "background")
+
+    Omega_smg = np.divide(rho_smg, rho_crit)
+
+    data2 = __data_gen(data_list)
+
+    x_data, wx, legend = miv.w('z', data2, var_col_dic)
+
+    alphaK = np.multiply(Omega_smg, np.add(1, wx))
+
+    legend = 'Omega_smg(1+p/rho)'
 
     return alphaK, legend

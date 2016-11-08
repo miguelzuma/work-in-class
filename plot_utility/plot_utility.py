@@ -392,7 +392,8 @@ def plot_w(filename, x='z', y_add=0, x_min=-np.inf, x_max=np.inf,
 def plot_alphaK(filename, x='z', y_add=0, x_min=-np.inf, x_max=np.inf,
                 x_scale='log', y_scale='log', x_label='', y_label='',
                 y_legend='', rd_max=np.inf, dev='rel',
-                compare_with_scale='linear', output='', theory='', IC={}):
+                compare_with_scale='linear', output='', theory='', IC={},
+                choice=1, kineticity_safe=0):
     """Plot alpha_k from a background CLASS output and compare it with
     other calculation of alpha_k"""
 
@@ -405,10 +406,10 @@ def plot_alphaK(filename, x='z', y_add=0, x_min=-np.inf, x_max=np.inf,
                                [x_scale, y_scale], compare_with_scale, rd_max,
                                dev, y_add=y_add, IC=IC)
 
-    alphaK = miv.alphaK
+    alphaK = miv.alphaK(kineticity_safe)
 
     if theory == 'quintessence':
-        calphaK = quintessence.alphaK
+        calphaK = quintessence.alphaK(choice)
 
     __load_var_data_legend_loop(X, Y, filename, y_legend, alphaK, calphaK)
 
