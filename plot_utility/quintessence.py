@@ -160,7 +160,7 @@ def alphaK(choice, theory):
 
         alphaK = np.multiply(np.subtract(1, Omega_m), np.add(1, wx))
 
-        legend = 'Omega_smg(1+p/rho)'
+        legend = '(1-Omega_m)(1+p/rho)'
 
         return alphaK, legend
 
