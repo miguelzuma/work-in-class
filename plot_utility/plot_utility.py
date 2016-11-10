@@ -200,7 +200,7 @@ def __print_and_close(output, Y):
         ax_plt.legend(loc='center', bbox_to_anchor=(0.5, (-0.3 - 0.06 * size)),
                       ncol=2, fancybox=True, shadow=True, prop={'size': 10})
         plt.tight_layout(h_pad=3 + 1.5 * size)
-        plt.savefig(output, bbox_inches='tight', dpi=1000)
+        plt.savefig(output, bbox_inches='tight', dpi=300)
 
     else:
         plt.show()
