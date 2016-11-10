@@ -21,39 +21,50 @@ def __try_loadtxt(data, usecols, kind):
         sys.exit("Check you are using the correct file: needed " + kind)
 
 
-def w(data, var_col_dic, IC):
-    """Fill dictionary Y with the equation of state for
-    quintessence_monomial. Note data must be a generator or list"""
+def w(theory):
+    def __V(theory, IC, phi_smg):
+        try:
+            if theory == 'quintessence_monomial':
+                IC_keys = ['V0', 'N']
+                # This is the value V0* printed in screen when class is run.
+                V0 = IC['V0']
+                N = IC['N']
+                V = np.multiply(V0, np.power(phi_smg, N))
 
-    usecols = (var_col_dic['z'], var_col_dic["phi_prime_smg"],
-               var_col_dic['phi_smg'])
+            elif theory == 'quintessence_exponential':
+                IC_keys = ['lambda']
+                lbd = IC['lambda']
+                V = np.exp(-np.multiply(lbd, phi_smg))
 
-    z, phi_prime_smg, phi_smg = __try_loadtxt(data, usecols, "background")
+            else:
+                sys.exit("Theory not yet implemented.")
 
-    ######
-    # The following variables are exclusive of monomial quintessence
-    ######
-    IC_keys = ['V0', 'N']
-    try:
-        V0 = IC['V0']  # This is the value V0* printed in screen when class is
-                       # run.
-        N = IC['N']
-    except KeyError:
-        sys.exit("IC must be a dictionary with keys: " + IC_keys)
+        except KeyError:
+            sys.exit("IC must be a dictionary with keys: " + IC_keys)
 
+        return V
 
-    V = np.multiply(V0, np.power(phi_smg, N))  # Quintessence_monomial
-    ######
+    def w_in(data, var_col_dic, IC):
+        """Fill dictionary Y with the equation of state for
+        quintessence_monomial. Note data must be a generator or list"""
 
-    phi_dot = np.multiply(phi_prime_smg, np.add(z, 1))
-    phi_dot2 = np.power(phi_dot, 2)
+        usecols = (var_col_dic['z'], var_col_dic["phi_prime_smg"],
+                   var_col_dic['phi_smg'])
 
-    w = np.divide(np.subtract(phi_dot2, np.multiply(2, V)),
-                  np.add(phi_dot2, np.multiply(2, V)))
+        z, phi_prime_smg, phi_smg = __try_loadtxt(data, usecols, "background")
 
-    legend = '(phi_dot^2 - 2V)/(phi_dot^2 + 2V)'
+        V = __V(theory, IC, phi_smg)
 
-    return w, legend
+        phi_dot = np.multiply(phi_prime_smg, np.add(z, 1))
+        phi_dot2 = np.power(phi_dot, 2)
+
+        w = np.divide(np.subtract(phi_dot2, np.multiply(2, V)),
+                      np.add(phi_dot2, np.multiply(2, V)))
+
+        legend = '(phi_dot^2 - 2V)/(phi_dot^2 + 2V)'
+
+        return w, legend
+    return w_in
 
 
 def w0_wa(data, var_col_dic, IC):
@@ -101,7 +112,106 @@ def w0_wa(data, var_col_dic, IC):
     return w0, wa
 
 
-def alphaK(choice):
+def alphaK(choice, theory):
+
+    def alphaK1(data, var_col_dic, IC):
+        """Fill dictionary Y with the evolution of alpha_K for
+        quintessence_monomial. Note data must be a generator or list."""
+
+        data_list = list(data)
+
+        usecols = (var_col_dic['rho_b'], var_col_dic['rho_cdm'],
+                var_col_dic['rho_crit'])
+
+        data1 = __data_gen(data_list)
+
+        rho_b, rho_cdm, rho_crit = __try_loadtxt(data1, usecols, "background")
+
+        Omega_m = np.divide(np.add(rho_b, rho_cdm), rho_crit)
+
+        data2 = __data_gen(data_list)
+
+        wx, wx_legend = w(theory)(data2, var_col_dic, IC)
+
+        alphaK = np.multiply(np.subtract(1, Omega_m), np.add(1, wx))
+
+        legend = '(1-Omega_m)(1+w)'
+
+        return alphaK, legend
+
+    def alphaK2(data, var_col_dic, IC):
+        """Fill dictionary Y with the evolution of alpha_K for
+        quintessence_monomial. Note data must be a generator or list."""
+
+        data_list = list(data)
+
+        usecols = (var_col_dic['rho_b'], var_col_dic['rho_cdm'],
+                var_col_dic['rho_crit'])
+
+        data1 = __data_gen(data_list)
+
+        rho_b, rho_cdm, rho_crit = __try_loadtxt(data1, usecols, "background")
+
+        Omega_m = np.divide(np.add(rho_b, rho_cdm), rho_crit)
+
+        data2 = __data_gen(data_list)
+
+        x_data, wx, legend = miv.w('z', data2, var_col_dic)
+
+        alphaK = np.multiply(np.subtract(1, Omega_m), np.add(1, wx))
+
+        legend = 'Omega_smg(1+p/rho)'
+
+        return alphaK, legend
+
+    def alphaK3(data, var_col_dic, IC):
+        """Fill dictionary Y with the evolution of alpha_K for
+        quintessence_monomial. Note data must be a generator or list."""
+
+        data_list = list(data)
+
+        usecols = (var_col_dic['rho_smg'], var_col_dic['rho_crit'])
+
+        data1 = __data_gen(data_list)
+
+        rho_smg, rho_crit = __try_loadtxt(data1, usecols, "background")
+
+        Omega_smg = np.divide(rho_smg, rho_crit)
+
+        data2 = __data_gen(data_list)
+
+        wx, wx_legend = w(theory)(data2, var_col_dic, IC)
+
+        alphaK = np.multiply(Omega_smg, np.add(1, wx))
+
+        legend = 'Omega_smg(1+w)'
+
+        return alphaK, legend
+
+    def alphaK4(data, var_col_dic, IC):
+        """Fill dictionary Y with the evolution of alpha_K for
+        quintessence_monomial. Note data must be a generator or list."""
+
+        data_list = list(data)
+
+        usecols = (var_col_dic['rho_smg'], var_col_dic['rho_crit'])
+
+        data1 = __data_gen(data_list)
+
+        rho_smg, rho_crit = __try_loadtxt(data1, usecols, "background")
+
+        Omega_smg = np.divide(rho_smg, rho_crit)
+
+        data2 = __data_gen(data_list)
+
+        x_data, wx, legend = miv.w('z', data2, var_col_dic)
+
+        alphaK = np.multiply(Omega_smg, np.add(1, wx))
+
+        legend = 'Omega_smg(1+p/rho)'
+
+        return alphaK, legend
+
     alpha = {
         1: alphaK1,
         2: alphaK2,
@@ -110,105 +220,3 @@ def alphaK(choice):
     }
 
     return alpha[choice]
-
-
-def alphaK1(data, var_col_dic, IC):
-    """Fill dictionary Y with the evolution of alpha_K for
-    quintessence_monomial. Note data must be a generator or list."""
-
-    data_list = list(data)
-
-    usecols = (var_col_dic['rho_b'], var_col_dic['rho_cdm'],
-               var_col_dic['rho_crit'])
-
-    data1 = __data_gen(data_list)
-
-    rho_b, rho_cdm, rho_crit = __try_loadtxt(data1, usecols, "background")
-
-    Omega_m = np.divide(np.add(rho_b, rho_cdm), rho_crit)
-
-    data2 = __data_gen(data_list)
-
-    wx, wx_legend = w(data2, var_col_dic, IC)
-
-    alphaK = np.multiply(np.subtract(1, Omega_m), np.add(1, wx))
-
-    legend = '(1-Omega_m)(1+w)'
-
-    return alphaK, legend
-
-
-def alphaK2(data, var_col_dic, IC):
-    """Fill dictionary Y with the evolution of alpha_K for
-    quintessence_monomial. Note data must be a generator or list."""
-
-    data_list = list(data)
-
-    usecols = (var_col_dic['rho_b'], var_col_dic['rho_cdm'],
-               var_col_dic['rho_crit'])
-
-    data1 = __data_gen(data_list)
-
-    rho_b, rho_cdm, rho_crit = __try_loadtxt(data1, usecols, "background")
-
-    Omega_m = np.divide(np.add(rho_b, rho_cdm), rho_crit)
-
-    data2 = __data_gen(data_list)
-
-    x_data, wx, legend = miv.w('z', data2, var_col_dic)
-
-    alphaK = np.multiply(np.subtract(1, Omega_m), np.add(1, wx))
-
-    legend = 'Omega_smg(1+p/rho)'
-
-    return alphaK, legend
-
-
-def alphaK3(data, var_col_dic, IC):
-    """Fill dictionary Y with the evolution of alpha_K for
-    quintessence_monomial. Note data must be a generator or list."""
-
-    data_list = list(data)
-
-    usecols = (var_col_dic['rho_smg'], var_col_dic['rho_crit'])
-
-    data1 = __data_gen(data_list)
-
-    rho_smg, rho_crit = __try_loadtxt(data1, usecols, "background")
-
-    Omega_smg = np.divide(rho_smg, rho_crit)
-
-    data2 = __data_gen(data_list)
-
-    wx, wx_legend = w(data2, var_col_dic, IC)
-
-    alphaK = np.multiply(Omega_smg, np.add(1, wx))
-
-    legend = 'Omega_smg(1+w)'
-
-    return alphaK, legend
-
-
-def alphaK4(data, var_col_dic, IC):
-    """Fill dictionary Y with the evolution of alpha_K for
-    quintessence_monomial. Note data must be a generator or list."""
-
-    data_list = list(data)
-
-    usecols = (var_col_dic['rho_smg'], var_col_dic['rho_crit'])
-
-    data1 = __data_gen(data_list)
-
-    rho_smg, rho_crit = __try_loadtxt(data1, usecols, "background")
-
-    Omega_smg = np.divide(rho_smg, rho_crit)
-
-    data2 = __data_gen(data_list)
-
-    x_data, wx, legend = miv.w('z', data2, var_col_dic)
-
-    alphaK = np.multiply(Omega_smg, np.add(1, wx))
-
-    legend = 'Omega_smg(1+p/rho)'
-
-    return alphaK, legend

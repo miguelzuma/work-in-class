@@ -378,8 +378,7 @@ def plot_check_w(filename, x='z', y_add=0, x_min=-np.inf, x_max=np.inf,
 
     w = miv.w
 
-    if theory == 'quintessence':
-        cw = quintessence.w
+    cw = quintessence.w(theory)
 
     __load_var_data_legend_loop(X, Y, filename, y_legend, w, cw)
 
@@ -407,8 +406,9 @@ def plot_check_alphaK(filename, x='z', y_add=0, x_min=-np.inf, x_max=np.inf,
 
     alphaK = miv.alphaK(kineticity_safe)
 
-    if theory == 'quintessence':
-        calphaK = quintessence.alphaK(choice)
+    calphaK = quintessence.alphaK(choice, theory)
+
+    print calphaK
 
     __load_var_data_legend_loop(X, Y, filename, y_legend, alphaK, calphaK)
 
