@@ -182,7 +182,7 @@ def alphaK(choice, theory):
 
         wx, wx_legend = w(theory)(data2, var_col_dic, IC)
 
-        alphaK = np.multiply(Omega_smg, np.add(1, wx))
+        alphaK = np.multiply(np.multiply(3, Omega_smg), np.add(1, wx))
 
         legend = 'Omega_smg(1+w)'
 
@@ -206,7 +206,7 @@ def alphaK(choice, theory):
 
         x_data, wx, legend = miv.w('z', data2, var_col_dic)
 
-        alphaK = np.multiply(Omega_smg, np.add(1, wx))
+        alphaK = np.multiply(np.multiply(3, Omega_smg), np.add(1, wx))
 
         legend = 'Omega_smg(1+p/rho)'
 
