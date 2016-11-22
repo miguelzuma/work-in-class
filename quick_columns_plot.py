@@ -36,7 +36,7 @@ def plot(filename, x=0, y=1, x_abs=False, y_abs=False,
 def plot_color(filename, x=0, y=1, c=2, x_abs=False, y_abs=False,
                x_scale='linear', y_scale='linear', x_label='col_0',
                y_label='col_1', c_label='', size=14, title='', vmax=None,
-               vmin=None):
+               vmin=None, cmap=1, xmin=None, xmax=None, ymin=None, ymax=None):
 
     x, y, c = np.loadtxt(filename, usecols=(x, y, c), unpack=True)
 
@@ -47,7 +47,16 @@ def plot_color(filename, x=0, y=1, c=2, x_abs=False, y_abs=False,
 
     fig, ax = plt.subplots()
 
-    cax = ax.scatter(x, y, s=size, c=c, cmap=cm.coolwarm, vmax=vmax, vmin=vmin)
+    colormap = {
+        1: cm.coolwarm,
+        2: cm.magma,
+        3: cm.Blues,
+        4: cm.afmhot,
+    }
+
+    cax = ax.scatter(x, y, s=size, c=c, cmap=colormap[cmap], vmax=vmax,
+                     vmin=vmin)
+
     ax.set_title(title)
     ax.set_xscale(x_scale)
     ax.set_yscale(y_scale)
@@ -61,5 +70,7 @@ def plot_color(filename, x=0, y=1, c=2, x_abs=False, y_abs=False,
 
     cbar = fig.colorbar(cax)
     cbar.set_label(c_label)
+
+    plt.axis([xmin, xmax, ymin, ymax])
 
     plt.show()
