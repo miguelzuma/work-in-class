@@ -50,7 +50,7 @@ def plot_color(filename, x=0, y=1, c=2, x_abs=False, y_abs=False,
 
     colormap = {
         1: cm.coolwarm,
-        2: cm.magma,
+        2: cm.plasma,
         3: cm.Blues,
         4: cm.afmhot,
     }
@@ -83,7 +83,7 @@ def plot_3d(filename, x=0, y=1, z=2, c=None, x_abs=False, y_abs=False,
 
     colormap = {
         1: cm.coolwarm,
-        2: cm.magma,
+        2: cm.plasma,
         3: cm.Blues,
         4: cm.afmhot,
     }
