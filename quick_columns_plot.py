@@ -3,18 +3,36 @@
 from matplotlib import pyplot as plt
 import numpy as np
 from matplotlib import cm
+from mpl_toolkits.mplot3d import Axes3D
+
+
+def __filter_outranged_x(filename, usecols, mins, maxs):
+    """Filter values lower than x_min in x_col"""
+
+    with open(filename, 'r') as f:
+        for line in f:
+            if '#' not in line:
+                c = 0
+                for col, x_min, x_max in zip(usecols, mins, maxs):
+                    x = float(line.split()[col])
+                    if x < x_min or x > x_max:
+                        break
+                    c += 1
+
+                if c == 3:
+                    yield line
 
 
 def plot(filename, x=0, y=1, x_abs=False, y_abs=False,
          x_scale='linear', y_scale='linear', x_label='x', y_label='y',
          scatter=False, size=12, title=''):
 
-    x, y = np.loadtxt(filename, usecols=(x, y), unpack=True)
+    xs, ys = np.loadtxt(filename, usecols=(x, y), unpack=True)
 
     if x_abs:
-        x = np.fabs(x)
+        xs = np.fabs(xs)
     if y_abs:
-        y = np.fabs(y)
+        ys = np.fabs(ys)
 
     f, ax = plt.subplots(1, 1)
     ax.set_xscale(x_scale)
@@ -26,9 +44,9 @@ def plot(filename, x=0, y=1, x_abs=False, y_abs=False,
         plt.title(title)
 
     if scatter:
-        ax.scatter(x, y, s=size)
+        ax.scatter(xs, ys, s=size)
     else:
-        ax.plot(x, y, linewidth=size)
+        ax.plot(xs, ys, linewidth=size)
 
     plt.show()
     plt.close()
@@ -41,12 +59,12 @@ def plot_color(filename, x=0, y=1, c=2, x_abs=False, y_abs=False,
                ymax=None):
 
     fig, ax = plt.subplots()
-    x, y, c = np.loadtxt(filename, usecols=(x, y, c), unpack=True)
+    xs, ys, cs = np.loadtxt(filename, usecols=(x, y, c), unpack=True)
 
     if x_abs:
-        x = np.fabs(x)
+        xs = np.fabs(xs)
     if y_abs:
-        y = np.fabs(y)
+        ys = np.fabs(ys)
 
     colormap = {
         1: cm.coolwarm,
@@ -55,7 +73,7 @@ def plot_color(filename, x=0, y=1, c=2, x_abs=False, y_abs=False,
         4: cm.afmhot,
     }
 
-    cax = ax.scatter(x, y, s=size, c=c, cmap=colormap[cmap], vmax=vmax,
+    cax = ax.scatter(xs, ys, s=size, c=cs, cmap=colormap[cmap], vmax=vmax,
                      vmin=vmin)
 
     ax.set_title(title)
@@ -76,10 +94,15 @@ def plot_color(filename, x=0, y=1, c=2, x_abs=False, y_abs=False,
 def plot_3d(filename, x=0, y=1, z=2, c=None, x_abs=False, y_abs=False,
             z_abs=False, x_scale='linear', y_scale='linear', z_scale='linear',
             x_label='col_0', y_label='col_1', z_label='None', c_label='',
-            size=30, title='', vmax=None, vmin=None, cmap=1, xmin=None,
-            xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
+            size=30, title='', vmax=None, vmin=None, cmap=1, xmin=-np.inf,
+            xmax=np.inf, ymin=-np.inf, ymax=np.inf, zmin=-np.inf, zmax=np.inf,
             depthshade=0, xy_plot=False, line_ini=None, line_end=None,
             line_label=None):
+
+    filtercols = (x, y, z)
+    mins = (xmin, ymin, zmin)
+    maxs = (xmax, ymax, zmax)
+    data_filtered = __filter_outranged_x(filename, filtercols, mins, maxs)
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -90,26 +113,28 @@ def plot_3d(filename, x=0, y=1, z=2, c=None, x_abs=False, y_abs=False,
         3: cm.Blues,
         4: cm.afmhot,
     }
+
     if c is not None:
         cmap = colormap[cmap]
-        x, y, z, c = np.loadtxt(filename, usecols=(x, y, z, c), unpack=True)
+        xs, ys, zs, cs = np.loadtxt(data_filtered, usecols=(x, y, z, c),
+                                    unpack=True)
     else:
         cmap = None
-        x, y, z = np.loadtxt(filename, usecols=(x, y, z), unpack=True)
+        xs, ys, zs = np.loadtxt(data_filtered, usecols=(x, y, z), unpack=True)
 
     if x_abs:
-        x = np.fabs(x)
+        xs = np.fabs(xs)
     if y_abs:
-        y = np.fabs(y)
+        ys = np.fabs(ys)
     if z_abs:
-        z = np.fabs(z)
+        zs = np.fabs(zs)
 
-    cax = ax.scatter(x, y, z, s=size, c=c, cmap=cmap, vmax=vmax, vmin=vmin,
+    cax = ax.scatter(xs, ys, zs, s=size, c=cs, cmap=cmap, vmax=vmax, vmin=vmin,
                      depthshade=depthshade)
 
     if xy_plot:
-        zmin_aux = zmin or ax.set_zlim3d()[0]
-        ax.plot(x, y, zmin_aux)
+        zmin_aux = (zmin != -np.inf) or ax.set_zlim3d()[0]
+        ax.plot(xs, ys, zmin_aux)
 
     # Consider allowing any kind of line. ATM just straight lines.
     if (line_ini is not None) and (line_end is not None):
@@ -131,10 +156,6 @@ def plot_3d(filename, x=0, y=1, z=2, c=None, x_abs=False, y_abs=False,
 
     cbar = fig.colorbar(cax)
     cbar.set_label(c_label)
-
-    ax.set_xlim3d([xmin, xmax])
-    ax.set_ylim3d([ymin, ymax])
-    ax.set_zlim3d([zmin, zmax])
 
     ax.legend()
 
