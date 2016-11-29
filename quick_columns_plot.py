@@ -129,12 +129,17 @@ def plot_3d(filename, x=0, y=1, z=2, c=None, x_abs=False, y_abs=False,
     if z_abs:
         zs = np.fabs(zs)
 
-    cax = ax.scatter(xs, ys, zs, s=size, c=cs, cmap=cmap, vmax=vmax, vmin=vmin,
-                     depthshade=depthshade)
+    if c is not None:
+        cax = ax.scatter(xs, ys, zs, s=size, c=cs, cmap=cmap, vmax=vmax,
+                         vmin=vmin, depthshade=depthshade)
+        cbar = fig.colorbar(cax)
+        cbar.set_label(c_label)
+    else:
+        cax = ax.scatter(xs, ys, zs, s=size)
 
     if xy_plot:
         zmin_aux = (zmin != -np.inf) or ax.set_zlim3d()[0]
-        ax.plot(xs, ys, zmin_aux)
+        ax.scatter(xs, ys, zmin_aux, s=3, color='g')
 
     # Consider allowing any kind of line. ATM just straight lines.
     if (line_ini is not None) and (line_end is not None):
@@ -153,9 +158,6 @@ def plot_3d(filename, x=0, y=1, z=2, c=None, x_abs=False, y_abs=False,
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     ax.set_zlabel(z_label)
-
-    cbar = fig.colorbar(cax)
-    cbar.set_label(c_label)
 
     ax.legend()
 
