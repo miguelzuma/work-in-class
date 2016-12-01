@@ -93,7 +93,7 @@ def plot_color(filename, x=0, y=1, c=2, x_abs=False, y_abs=False,
 
 def plot_3d(filename, x=0, y=1, z=2, c=None, x_abs=False, y_abs=False,
             z_abs=False, x_scale='linear', y_scale='linear', z_scale='linear',
-            x_label='col_0', y_label='col_1', z_label='None', c_label='',
+            x_label='col_0', y_label='col_1', z_label='col_2', c_label='',
             size=30, title='', vmax=None, vmin=None, cmap=1, xmin=-np.inf,
             xmax=np.inf, ymin=-np.inf, ymax=np.inf, zmin=-np.inf, zmax=np.inf,
             depthshade=0, xy_plot=False, line_ini=None, line_end=None,
