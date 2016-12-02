@@ -54,6 +54,7 @@ def plot(filename, x=0, y=1, x_abs=False, y_abs=False,
     else:
         ax.plot(xs, ys, linewidth=size)
 
+    plt.axis([xmin, xmax, ymin, ymax])
     plt.show()
     plt.close()
 
@@ -96,6 +97,7 @@ def plot_color(filename, x=0, y=1, c=2, x_abs=False, y_abs=False,
     cbar = fig.colorbar(cax)
     cbar.set_label(c_label)
 
+    plt.axis([xmin, xmax, ymin, ymax])
     plt.show()
     plt.close()
 
