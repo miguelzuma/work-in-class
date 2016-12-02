@@ -19,15 +19,21 @@ def __filter_outranged_x(filename, usecols, mins, maxs):
                         break
                     c += 1
 
-                if c == 3:
+                if c == len(usecols):
                     yield line
 
 
 def plot(filename, x=0, y=1, x_abs=False, y_abs=False,
          x_scale='linear', y_scale='linear', x_label='x', y_label='y',
-         scatter=False, size=12, title=''):
+         scatter=False, size=12, title='', xmin=-np.inf, xmax=np.inf,
+         ymin=-np.inf, ymax=np.inf):
 
-    xs, ys = np.loadtxt(filename, usecols=(x, y), unpack=True)
+    filtercols = (x, y)
+    mins = (xmin, ymin)
+    maxs = (xmax, ymax)
+    data_filtered = __filter_outranged_x(filename, filtercols, mins, maxs)
+
+    xs, ys = np.loadtxt(data_filtered, usecols=(x, y), unpack=True)
 
     if x_abs:
         xs = np.fabs(xs)
@@ -55,11 +61,16 @@ def plot(filename, x=0, y=1, x_abs=False, y_abs=False,
 def plot_color(filename, x=0, y=1, c=2, x_abs=False, y_abs=False,
                x_scale='linear', y_scale='linear', x_label='col_0',
                y_label='col_1', z_label='None', c_label='', size=30, title='',
-               vmax=None, vmin=None, cmap=1, xmin=None, xmax=None, ymin=None,
-               ymax=None):
+               vmax=None, vmin=None, cmap=1, xmin=-np.inf, xmax=np.inf,
+               ymin=-np.inf, ymax=np.inf):
+
+    filtercols = (x, y)
+    mins = (xmin, ymin)
+    maxs = (xmax, ymax)
+    data_filtered = __filter_outranged_x(filename, filtercols, mins, maxs)
 
     fig, ax = plt.subplots()
-    xs, ys, cs = np.loadtxt(filename, usecols=(x, y, c), unpack=True)
+    xs, ys, cs = np.loadtxt(data_filtered, usecols=(x, y, c), unpack=True)
 
     if x_abs:
         xs = np.fabs(xs)
@@ -84,8 +95,6 @@ def plot_color(filename, x=0, y=1, c=2, x_abs=False, y_abs=False,
 
     cbar = fig.colorbar(cax)
     cbar.set_label(c_label)
-
-    plt.axis([xmin, xmax, ymin, ymax])
 
     plt.show()
     plt.close()
