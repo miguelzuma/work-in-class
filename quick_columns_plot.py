@@ -138,7 +138,7 @@ def plot_3d(filename, x=0, y=1, z=2, c=None, x_abs=False, y_abs=False,
         cax = ax.scatter(xs, ys, zs, s=size)
 
     if xy_plot:
-        zmin_aux = (zmin != -np.inf) or ax.set_zlim3d()[0]
+        zmin_aux = ax.set_zlim3d()[0]
         ax.scatter(xs, ys, zmin_aux, s=3, color='g')
 
     # Consider allowing any kind of line. ATM just straight lines.
