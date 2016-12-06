@@ -6,6 +6,14 @@ from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 
 
+__colormap = {
+    None: None,  # For compatibility with cmap=None. We skip an if this way.
+    1: cm.coolwarm,
+    2: cm.plasma,
+    3: cm.Blues,
+    4: cm.afmhot,
+}
+
 def __filter_outranged_x(filename, usecols, mins, maxs):
     """Filter values lower than x_min in x_col"""
 
@@ -62,7 +70,7 @@ def plot(filename, x=0, y=1, x_abs=False, y_abs=False,
 def plot_color(filename, x=0, y=1, c=2, x_abs=False, y_abs=False,
                xscale='linear', yscale='linear', xlabel='col_0',
                ylabel='col_1', zlabel='None', clabel='', size=30, title='',
-               vmax=None, vmin=None, cmap=1, xmin=-np.inf, xmax=np.inf,
+               vmax=None, vmin=None, cmap=None, xmin=-np.inf, xmax=np.inf,
                ymin=-np.inf, ymax=np.inf, density=True, bins=None,
                gridsize=100):
 
@@ -79,19 +87,13 @@ def plot_color(filename, x=0, y=1, c=2, x_abs=False, y_abs=False,
     if y_abs:
         ys = np.fabs(ys)
 
-    colormap = {
-        1: cm.coolwarm,
-        2: cm.plasma,
-        3: cm.Blues,
-        4: cm.afmhot,
-    }
 
     if density:
         cax = ax.hexbin(xs, ys, bins=bins, gridsize=gridsize, xscale=xscale,
-                        yscale=yscale)
+                        yscale=yscale, cmap=__colormap[cmap])
     else:
-        cax = ax.scatter(xs, ys, s=size, c=cs, cmap=colormap[cmap], vmax=vmax,
-                         vmin=vmin)
+        cax = ax.scatter(xs, ys, s=size, c=cs, cmap=__colormap[cmap],
+                         vmax=vmax, vmin=vmin)
         ax.set_xscale(xscale)
         ax.set_yscale(yscale)
 
@@ -110,7 +112,7 @@ def plot_color(filename, x=0, y=1, c=2, x_abs=False, y_abs=False,
 def plot_3d(filename, x=0, y=1, z=2, c=None, x_abs=False, y_abs=False,
             z_abs=False, xscale='linear', yscale='linear', zscale='linear',
             xlabel='col_0', ylabel='col_1', zlabel='col_2', clabel='',
-            size=30, title='', vmax=None, vmin=None, cmap=1, xmin=-np.inf,
+            size=30, title='', vmax=None, vmin=None, cmap=None, xmin=-np.inf,
             xmax=np.inf, ymin=-np.inf, ymax=np.inf, zmin=-np.inf, zmax=np.inf,
             depthshade=0, xy_plot=False, line_ini=None, line_end=None,
             line_label=None):
@@ -123,15 +125,8 @@ def plot_3d(filename, x=0, y=1, z=2, c=None, x_abs=False, y_abs=False,
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    colormap = {
-        1: cm.coolwarm,
-        2: cm.plasma,
-        3: cm.Blues,
-        4: cm.afmhot,
-    }
-
     if c is not None:
-        cmap = colormap[cmap]
+        cmap = __colormap[cmap]
         xs, ys, zs, cs = np.loadtxt(data_filtered, usecols=(x, y, z, c),
                                     unpack=True)
     else:
