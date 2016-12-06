@@ -63,7 +63,8 @@ def plot_color(filename, x=0, y=1, c=2, x_abs=False, y_abs=False,
                x_scale='linear', y_scale='linear', x_label='col_0',
                y_label='col_1', z_label='None', c_label='', size=30, title='',
                vmax=None, vmin=None, cmap=1, xmin=-np.inf, xmax=np.inf,
-               ymin=-np.inf, ymax=np.inf):
+               ymin=-np.inf, ymax=np.inf, density=True, bins=None,
+               gridsize=100):
 
     filtercols = (x, y)
     mins = (xmin, ymin)
@@ -85,12 +86,16 @@ def plot_color(filename, x=0, y=1, c=2, x_abs=False, y_abs=False,
         4: cm.afmhot,
     }
 
-    cax = ax.scatter(xs, ys, s=size, c=cs, cmap=colormap[cmap], vmax=vmax,
-                     vmin=vmin)
+    if density:
+        cax = ax.hexbin(xs, ys, bins=bins, gridsize=gridsize, xscale=x_scale,
+                        yscale=y_scale)
+    else:
+        cax = ax.scatter(xs, ys, s=size, c=cs, cmap=colormap[cmap], vmax=vmax,
+                         vmin=vmin)
+        ax.set_xscale(x_scale)
+        ax.set_yscale(y_scale)
 
     ax.set_title(title)
-    ax.set_xscale(x_scale)
-    ax.set_yscale(y_scale)
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
 
