@@ -24,7 +24,7 @@ def __filter_outranged_x(filename, usecols, mins, maxs):
 
 
 def plot(filename, x=0, y=1, x_abs=False, y_abs=False,
-         x_scale='linear', y_scale='linear', x_label='x', y_label='y',
+         xscale='linear', yscale='linear', xlabel='x', ylabel='y',
          scatter=False, size=12, title='', xmin=-np.inf, xmax=np.inf,
          ymin=-np.inf, ymax=np.inf):
 
@@ -41,10 +41,10 @@ def plot(filename, x=0, y=1, x_abs=False, y_abs=False,
         ys = np.fabs(ys)
 
     f, ax = plt.subplots(1, 1)
-    ax.set_xscale(x_scale)
-    ax.set_yscale(y_scale)
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
+    ax.set_xscale(xscale)
+    ax.set_yscale(yscale)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
 
     if title:
         plt.title(title)
@@ -60,8 +60,8 @@ def plot(filename, x=0, y=1, x_abs=False, y_abs=False,
 
 
 def plot_color(filename, x=0, y=1, c=2, x_abs=False, y_abs=False,
-               x_scale='linear', y_scale='linear', x_label='col_0',
-               y_label='col_1', z_label='None', c_label='', size=30, title='',
+               xscale='linear', yscale='linear', xlabel='col_0',
+               ylabel='col_1', zlabel='None', clabel='', size=30, title='',
                vmax=None, vmin=None, cmap=1, xmin=-np.inf, xmax=np.inf,
                ymin=-np.inf, ymax=np.inf, density=True, bins=None,
                gridsize=100):
@@ -87,20 +87,20 @@ def plot_color(filename, x=0, y=1, c=2, x_abs=False, y_abs=False,
     }
 
     if density:
-        cax = ax.hexbin(xs, ys, bins=bins, gridsize=gridsize, xscale=x_scale,
-                        yscale=y_scale)
+        cax = ax.hexbin(xs, ys, bins=bins, gridsize=gridsize, xscale=xscale,
+                        yscale=yscale)
     else:
         cax = ax.scatter(xs, ys, s=size, c=cs, cmap=colormap[cmap], vmax=vmax,
                          vmin=vmin)
-        ax.set_xscale(x_scale)
-        ax.set_yscale(y_scale)
+        ax.set_xscale(xscale)
+        ax.set_yscale(yscale)
 
     ax.set_title(title)
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
 
     cbar = fig.colorbar(cax)
-    cbar.set_label(c_label)
+    cbar.set_label(clabel)
 
     plt.axis('tight')
     plt.show()
@@ -108,8 +108,8 @@ def plot_color(filename, x=0, y=1, c=2, x_abs=False, y_abs=False,
 
 
 def plot_3d(filename, x=0, y=1, z=2, c=None, x_abs=False, y_abs=False,
-            z_abs=False, x_scale='linear', y_scale='linear', z_scale='linear',
-            x_label='col_0', y_label='col_1', z_label='col_2', c_label='',
+            z_abs=False, xscale='linear', yscale='linear', zscale='linear',
+            xlabel='col_0', ylabel='col_1', zlabel='col_2', clabel='',
             size=30, title='', vmax=None, vmin=None, cmap=1, xmin=-np.inf,
             xmax=np.inf, ymin=-np.inf, ymax=np.inf, zmin=-np.inf, zmax=np.inf,
             depthshade=0, xy_plot=False, line_ini=None, line_end=None,
@@ -149,7 +149,7 @@ def plot_3d(filename, x=0, y=1, z=2, c=None, x_abs=False, y_abs=False,
         cax = ax.scatter(xs, ys, zs, s=size, c=cs, cmap=cmap, vmax=vmax,
                          vmin=vmin, depthshade=depthshade)
         cbar = fig.colorbar(cax)
-        cbar.set_label(c_label)
+        cbar.set_label(clabel)
     else:
         cax = ax.scatter(xs, ys, zs, s=size)
 
@@ -168,12 +168,12 @@ def plot_3d(filename, x=0, y=1, z=2, c=None, x_abs=False, y_abs=False,
         print "Line not drawn. You must enter the initial and end points"
 
     ax.set_title(title)
-    ax.set_xscale(x_scale)
-    ax.set_yscale(y_scale)
-    ax.set_zscale(z_scale)
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
-    ax.set_zlabel(z_label)
+    ax.set_xscale(xscale)
+    ax.set_yscale(yscale)
+    ax.set_zscale(zscale)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_zlabel(zlabel)
 
     ax.legend()
 
