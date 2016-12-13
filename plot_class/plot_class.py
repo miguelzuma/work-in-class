@@ -349,38 +349,6 @@ def plot_columns(filename, x='', y='', x_add=0, y_add=0, x_abs=False,
     __print_and_close(output, Y)
 
 
-def plot_w0_wa(filename, z_min=-np.inf, z_max=np.inf, x_scale='linear',
-               y_scale='linear', x_label='', y_label='', y_legend='',
-               rd_max=np.inf, output='', theory='', IC={}):
-    """Plot the evolution of wa with w0 where w(a) \simeq w0 + (a0-a) w'(a0)."""
-    # TODO: Implement acceptance of various files. Or eliminate function if
-    # useless...
-
-    X = {'scale': x_scale, 'label': 'w0'}
-    Y = {'scale': y_scale, 'label': 'wa', 'rd_max': rd_max}
-
-    X['data'], Y['data'], Y['legend'] = [], [], []
-
-    filename, y_legend = __prepare_input_for_loop(filename, y_legend)
-
-    if theory == 'quintessence':
-        w0_wa = quintessence.w0_wa
-
-    for f, lgd in zip(filename, y_legend):  # Zip clips elements not paired.
-        var_col_dic = chd.class_headers_to_dict(f)
-        # If x/y is not a valid key, it returns an empty list. (see chd module)
-        data = __filter_data(f, var_col_dic['z'], z_min, z_max)
-        x_data, y_data = w0_wa(data, var_col_dic)
-
-        X['data'].append(x_data)
-        Y['data'].append(y_data)
-        Y['legend'].append(lgd or f.split('/')[-1])  # Label for legend
-
-    __plot_alone(X, Y)
-
-    __print_and_close(output, Y)
-
-
 def plot_check_w(filename, x='z', x_add=0, y_add=0, x_abs=False, y_abs=False,
                  x_min=-np.inf, x_max=np.inf, x_scale='log', y_scale='log',
                  x_label='', y_label='', y_legend='', rd_max=np.inf, dev='rel',
