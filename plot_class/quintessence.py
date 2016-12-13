@@ -23,13 +23,26 @@ def __try_loadtxt(data, usecols, kind):
 
 def w(theory):
     def __V(theory, IC, phi_smg):
+        c = 2.99792458e8  # Speed of light
+        M_H = 1.e5 / c  # Hubble rate
+
         try:
             if theory == 'quintessence_monomial':
                 IC_keys = ['V0', 'N']
                 # This is the value V0* printed in screen when class is run.
                 V0 = IC['V0']
                 N = IC['N']
-                V = np.multiply(V0, np.power(phi_smg, N))
+                V = M_H ** 2 * np.multiply(V0, np.power(phi_smg, N))
+
+            elif theory == 'quintessence_binomial':
+                IC_keys = ['V1', 'N1', 'V2', 'N2']
+                # This is the value V0* printed in screen when class is run.
+                V1 = IC['V1']
+                N1 = IC['N1']
+                V2 = IC['V2']
+                N2 = IC['N2']
+                V = M_H ** 2 * np.add(np.multiply(V1, np.power(phi_smg, N1)),
+                                 np.multiply(V2, np.power(phi_smg, N2)))
 
             elif theory == 'quintessence_exponential':
                 IC_keys = ['lambda']
@@ -40,7 +53,7 @@ def w(theory):
                 sys.exit("Theory not yet implemented.")
 
         except KeyError:
-            sys.exit("IC must be a dictionary with keys: " + IC_keys)
+            sys.exit("IC must be a dictionary with keys: {}".format(IC_keys))
 
         return V
 
