@@ -38,9 +38,8 @@ def __prepare_input_for_loop(filename, y_legend, IC={}):
     if IC:
         if type(IC) is dict:
             IC = [IC]
-        return filename, y_legend, IC
-    else:
-        return filename, y_legend
+
+    return filename, y_legend, IC
 
 
 def __check_variables_in_files(filename, x, y=''):
