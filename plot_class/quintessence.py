@@ -21,62 +21,79 @@ def __try_loadtxt(data, usecols, kind):
         sys.exit("Check you are using the correct file: needed " + kind)
 
 
+def __V(theory, IC, phi_smg):
+    c = 2.99792458e8  # Speed of light
+    M_H = 1.e5 / c  # Hubble rate
+
+    def no_theory():
+        sys.exit("Theory not yet implemented.")
+
+    def quintessence_monomial():
+        IC_keys = ['V0', 'N']
+        V0 = IC['V0']
+        N = IC['N']
+        V = M_H ** 2 * np.multiply(V0, np.power(phi_smg, N))
+
+        return V, IC_keys
+
+    def quintessence_binomial():
+        IC_keys = ['V1', 'N1', 'V2', 'N2']
+        V1 = IC['V1']
+        N1 = IC['N1']
+        V2 = IC['V2']
+        N2 = IC['N2']
+        V = M_H ** 2 * np.add(np.multiply(V1, np.power(phi_smg, N1)),
+                                np.multiply(V2, np.power(phi_smg, N2)))
+
+        return V, IC_keys
+
+    def quintessence_eft():
+        IC_keys = ['V0', 'E_F', 'n_min', 'n_Q', 'zeta_2', 'zeta_4']
+        V0 = IC['V0']
+        E_F = IC['E_F']
+        n_min = IC['n_min']
+        n_Q = IC['n_Q']
+        zeta_2 = IC['zeta_2']
+        zeta_4 = IC['zeta_4']
+        n_max = n_min + n_Q - 1
+
+        for n in np.arange(n_min, n_max):
+            zeta_n = 'zeta_{}'.format(n)
+            IC_keys.append(zeta_n)
+
+        f = zeta_2 * (E_F * phi_smg) ** 2 + zeta_4 * (E_F * phi_smg) ** 4
+        fsum = 0
+        for n in np.arange(n_min, n_max):
+            zeta_n = 'zeta_{}'.format(n)
+            fsum += IC[zeta_n] * (E_F * phi_smg) ** n
+
+        V = M_H ** 2 * V0 * (f + fsum)
+
+        return V, IC_keys
+
+    def quintessence_exponential():
+        IC_keys = ['lambda']
+        lbd = IC['lambda']
+        V = np.exp(-np.multiply(lbd, phi_smg))
+
+        return V, IC_keys
+
+
+    theories = {'quintessence_monomial': quintessence_monomial,
+                'quintessence_binomial': quintessence_binomial,
+                'quintessence_eft': quintessence_eft,
+                'quintessence_exponential': quintessence_exponential}
+
+    try:
+        V, IC_keys = theories.get(theory, no_theory)()
+
+    except KeyError:
+        sys.exit("IC must be a dictionary with keys: {}".format(IC_keys))
+
+    return V
+
+
 def w(theory):
-    def __V(theory, IC, phi_smg):
-        c = 2.99792458e8  # Speed of light
-        M_H = 1.e5 / c  # Hubble rate
-
-        try:
-            if theory == 'quintessence_monomial':
-                IC_keys = ['V0', 'N']
-                V0 = IC['V0']
-                N = IC['N']
-                V = M_H ** 2 * np.multiply(V0, np.power(phi_smg, N))
-
-            elif theory == 'quintessence_binomial':
-                IC_keys = ['V1', 'N1', 'V2', 'N2']
-                V1 = IC['V1']
-                N1 = IC['N1']
-                V2 = IC['V2']
-                N2 = IC['N2']
-                V = M_H ** 2 * np.add(np.multiply(V1, np.power(phi_smg, N1)),
-                                      np.multiply(V2, np.power(phi_smg, N2)))
-
-            elif theory == 'quintessence_eft':
-                IC_keys = ['V0', 'E_F', 'n_min', 'n_Q', 'zeta_2', 'zeta_4']
-                V0 = IC['V0']
-                E_F = IC['E_F']
-                n_min = IC['n_min']
-                n_Q = IC['n_Q']
-                zeta_2 = IC['zeta_2']
-                zeta_4 = IC['zeta_4']
-                n_max = n_min + n_Q - 1
-
-                for n in np.arange(n_min, n_max):
-                    zeta_n = 'zeta_{}'.format(n)
-                    IC_keys.append(zeta_n)
-
-                f = zeta_2 * (E_F * phi_smg) ** 2 + zeta_4 * (E_F * phi_smg) ** 4
-                fsum = 0
-                for n in np.arange(n_min, n_max):
-                    zeta_n = 'zeta_{}'.format(n)
-                    fsum += IC[zeta_n] * (E_F * phi_smg) ** n
-
-                V = M_H ** 2 * V0 * (f + fsum)
-
-            elif theory == 'quintessence_exponential':
-                IC_keys = ['lambda']
-                lbd = IC['lambda']
-                V = np.exp(-np.multiply(lbd, phi_smg))
-
-            else:
-                sys.exit("Theory not yet implemented.")
-
-        except KeyError:
-            sys.exit("IC must be a dictionary with keys: {}".format(IC_keys))
-
-        return V
-
     def w_in(data, var_col_dic, IC):
         """Fill dictionary Y with the equation of state for
         quintessence_monomial. Note data must be a generator or list"""
