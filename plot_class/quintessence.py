@@ -29,20 +29,40 @@ def w(theory):
         try:
             if theory == 'quintessence_monomial':
                 IC_keys = ['V0', 'N']
-                # This is the value V0* printed in screen when class is run.
                 V0 = IC['V0']
                 N = IC['N']
                 V = M_H ** 2 * np.multiply(V0, np.power(phi_smg, N))
 
             elif theory == 'quintessence_binomial':
                 IC_keys = ['V1', 'N1', 'V2', 'N2']
-                # This is the value V0* printed in screen when class is run.
                 V1 = IC['V1']
                 N1 = IC['N1']
                 V2 = IC['V2']
                 N2 = IC['N2']
                 V = M_H ** 2 * np.add(np.multiply(V1, np.power(phi_smg, N1)),
-                                 np.multiply(V2, np.power(phi_smg, N2)))
+                                      np.multiply(V2, np.power(phi_smg, N2)))
+
+            elif theory == 'quintessence_eft':
+                IC_keys = ['V0', 'E_F', 'n_min', 'n_Q', 'zeta_2', 'zeta_4']
+                V0 = IC['V0']
+                E_F = IC['E_F']
+                n_min = IC['n_min']
+                n_Q = IC['n_Q']
+                zeta_2 = IC['zeta_2']
+                zeta_4 = IC['zeta_4']
+                n_max = n_min + n_Q - 1
+
+                for n in np.arange(n_min, n_max):
+                    zeta_n = 'zeta_{}'.format(n)
+                    IC_keys.append(zeta_n)
+
+                f = zeta_2 * (E_F * phi_smg) ** 2 + zeta_4 * (E_F * phi_smg) ** 4
+                fsum = 0
+                for n in np.arange(n_min, n_max):
+                    zeta_n = 'zeta_{}'.format(n)
+                    fsum += IC[zeta_n] * (E_F * phi_smg) ** n
+
+                V = M_H ** 2 * V0 * (f + fsum)
 
             elif theory == 'quintessence_exponential':
                 IC_keys = ['lambda']
