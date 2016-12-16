@@ -14,6 +14,7 @@ __colormap = {
     4: cm.afmhot,
 }
 
+
 def __filter_outranged_x(filename, usecols, mins, maxs):
     """Filter values lower than x_min in x_col"""
 
@@ -71,12 +72,12 @@ def plot_color(filename, x=0, y=1, c=2, x_abs=False, y_abs=False,
                xscale='linear', yscale='linear', xlabel='col_0',
                ylabel='col_1', zlabel='None', clabel='', size=30, title='',
                vmax=None, vmin=None, cmap=None, xmin=-np.inf, xmax=np.inf,
-               ymin=-np.inf, ymax=np.inf, density=False, bins=None,
-               gridsize=100):
+               ymin=-np.inf, ymax=np.inf, cmin=-np.inf, cmax=np.inf,
+               density=False, bins=None, gridsize=100):
 
-    filtercols = (x, y)
-    mins = (xmin, ymin)
-    maxs = (xmax, ymax)
+    filtercols = (x, y, c)
+    mins = (xmin, ymin, cmin)
+    maxs = (xmax, ymax, cmax)
     data_filtered = __filter_outranged_x(filename, filtercols, mins, maxs)
 
     fig, ax = plt.subplots()
@@ -86,7 +87,6 @@ def plot_color(filename, x=0, y=1, c=2, x_abs=False, y_abs=False,
         xs = np.fabs(xs)
     if y_abs:
         ys = np.fabs(ys)
-
 
     if density:
         cax = ax.hexbin(xs, ys, bins=bins, gridsize=gridsize, xscale=xscale,
@@ -114,12 +114,17 @@ def plot_3d(filename, x=0, y=1, z=2, c=None, x_abs=False, y_abs=False,
             xlabel='col_0', ylabel='col_1', zlabel='col_2', clabel='',
             size=30, title='', vmax=None, vmin=None, cmap=None, xmin=-np.inf,
             xmax=np.inf, ymin=-np.inf, ymax=np.inf, zmin=-np.inf, zmax=np.inf,
-            depthshade=0, xy_plot=False, line_ini=None, line_end=None,
-            line_label=None):
+            cmin=-np.inf, cmax=np.inf, depthshade=0, xy_plot=False,
+            line_ini=None, line_end=None, line_label=None):
 
-    filtercols = (x, y, z)
-    mins = (xmin, ymin, zmin)
-    maxs = (xmax, ymax, zmax)
+    filtercols = [x, y, z]
+    mins = [xmin, ymin, zmin]
+    maxs = [xmax, ymax, zmax]
+    if c is not None:
+        filtercols.append(c)
+        mins.append(cmin)
+        maxs.append(cmax)
+
     data_filtered = __filter_outranged_x(filename, filtercols, mins, maxs)
 
     fig = plt.figure()
@@ -130,7 +135,6 @@ def plot_3d(filename, x=0, y=1, z=2, c=None, x_abs=False, y_abs=False,
         xs, ys, zs, cs = np.loadtxt(data_filtered, usecols=(x, y, z, c),
                                     unpack=True)
     else:
-        cmap = None
         xs, ys, zs = np.loadtxt(data_filtered, usecols=(x, y, z), unpack=True)
 
     if x_abs:
