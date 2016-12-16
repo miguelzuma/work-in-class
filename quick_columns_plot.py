@@ -71,7 +71,7 @@ def plot_color(filename, x=0, y=1, c=2, x_abs=False, y_abs=False,
                xscale='linear', yscale='linear', xlabel='col_0',
                ylabel='col_1', zlabel='None', clabel='', size=30, title='',
                vmax=None, vmin=None, cmap=None, xmin=-np.inf, xmax=np.inf,
-               ymin=-np.inf, ymax=np.inf, density=True, bins=None,
+               ymin=-np.inf, ymax=np.inf, density=False, bins=None,
                gridsize=100):
 
     filtercols = (x, y)
