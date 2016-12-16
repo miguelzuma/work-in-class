@@ -29,15 +29,15 @@ def __V(theory, IC, phi_smg):
         sys.exit("Theory not yet implemented.")
 
     def quintessence_monomial():
-        IC_keys = ['V0', 'N']
+        IC['keys'] = ['V0', 'N']
         V0 = IC['V0']
         N = IC['N']
         V = M_H ** 2 * np.multiply(V0, np.power(phi_smg, N))
 
-        return V, IC_keys
+        return V
 
     def quintessence_binomial():
-        IC_keys = ['V1', 'N1', 'V2', 'N2']
+        IC['keys'] = ['V1', 'N1', 'V2', 'N2']
         V1 = IC['V1']
         N1 = IC['N1']
         V2 = IC['V2']
@@ -45,10 +45,10 @@ def __V(theory, IC, phi_smg):
         V = M_H ** 2 * np.add(np.multiply(V1, np.power(phi_smg, N1)),
                                 np.multiply(V2, np.power(phi_smg, N2)))
 
-        return V, IC_keys
+        return V
 
     def quintessence_eft():
-        IC_keys = ['V0', 'E_F', 'n_min', 'n_Q', 'zeta_2', 'zeta_4']
+        IC['keys'] = ['V0', 'E_F', 'n_min', 'n_Q', 'zeta_2', 'zeta_4']
         V0 = IC['V0']
         E_F = IC['E_F']
         n_min = IC['n_min']
@@ -57,38 +57,82 @@ def __V(theory, IC, phi_smg):
         zeta_4 = IC['zeta_4']
         n_max = n_min + n_Q - 1
 
-        for n in np.arange(n_min, n_max):
+        for n in np.arange(n_min, n_max + 1):
             zeta_n = 'zeta_{}'.format(n)
-            IC_keys.append(zeta_n)
+            IC['keys'].append(zeta_n)
 
         f = zeta_2 * (E_F * phi_smg) ** 2 + zeta_4 * (E_F * phi_smg) ** 4
         fsum = 0
-        for n in np.arange(n_min, n_max):
+        for n in np.arange(n_min, n_max + 1):
             zeta_n = 'zeta_{}'.format(n)
             fsum += IC[zeta_n] * (E_F * phi_smg) ** n
 
         V = M_H ** 2 * V0 * (f + fsum)
 
-        return V, IC_keys
+        return V
+
+    def quintessence_axion():
+        IC['keys'] = ['V0', 'E_F', 'E_NP', 'n_max']
+        V0 = IC['V0']
+        E_F = IC['E_F']
+        E_NP = IC['E_NP']
+        n_max = IC['n_max']
+
+        for n in np.arange(2, n_max + 1):
+            zeta_n = 'zeta_{}'.format(n)
+            IC['keys'].append(zeta_n)
+
+        f = 1 + np.cos(E_F * phi_smg)
+        fsum = 0
+        for n in np.arange(2, n_max + 1):
+            zeta_n = 'zeta_{}'.format(n)
+            fsum += IC[zeta_n] * E_NP ** (n - 1) * np.cos(n * E_F * phi_smg)
+
+        V = M_H ** 2 * V0 * (f + fsum)
+
+        return V
+
+    def quintessence_modulus():
+        IC['keys'] = ['V0', 'E_D', 'p_D', 'n_max', 'alpha']
+        V0 = IC['V0']
+        E_D = IC['E_D']
+        p_D = IC['p_D']
+        n_max = IC['n_max']
+        alpha = IC['alpha']
+
+        for n in np.arange(0, n_max + 1):
+            zeta_n = 'zeta_{}'.format(n)
+            IC['keys'].append(zeta_n)
+
+        fsum = 0
+        for n in np.arange(0, n_max + 1):
+            zeta_n = 'zeta_{}'.format(n)
+            fsum += IC[zeta_n] * E_D ** n * np.exp(alpha * (p_D - n) * phi_smg)
+
+        V = M_H ** 2 * V0 * fsum
+
+        return V
 
     def quintessence_exponential():
-        IC_keys = ['lambda']
+        IC['keys'] = ['lambda']
         lbd = IC['lambda']
         V = np.exp(-np.multiply(lbd, phi_smg))
 
-        return V, IC_keys
+        return V
 
 
     theories = {'quintessence_monomial': quintessence_monomial,
                 'quintessence_binomial': quintessence_binomial,
                 'quintessence_eft': quintessence_eft,
+                'quintessence_axion': quintessence_axion,
+                'quintessence_modulus': quintessence_modulus,
                 'quintessence_exponential': quintessence_exponential}
 
     try:
-        V, IC_keys = theories.get(theory, no_theory)()
+        V = theories.get(theory, no_theory)()
 
     except KeyError:
-        sys.exit("IC must be a dictionary with keys: {}".format(IC_keys))
+        sys.exit("IC must be a dictionary with keys: {}".format(IC['keys']))
 
     return V
 
