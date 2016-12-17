@@ -21,29 +21,123 @@ def __try_loadtxt(data, usecols, kind):
         sys.exit("Check you are using the correct file: needed " + kind)
 
 
-def w(theory):
-    def __V(theory, IC, phi_smg):
-        try:
-            if theory == 'quintessence_monomial':
-                IC_keys = ['V0', 'N']
-                # This is the value V0* printed in screen when class is run.
-                V0 = IC['V0']
-                N = IC['N']
-                V = np.multiply(V0, np.power(phi_smg, N))
+def __V(theory, IC, phi_smg):
+    c = 2.99792458e8  # Speed of light
+    M_H = 1.e5 / c  # Hubble rate
 
-            elif theory == 'quintessence_exponential':
-                IC_keys = ['lambda']
-                lbd = IC['lambda']
-                V = np.exp(-np.multiply(lbd, phi_smg))
+    def no_theory():
+        sys.exit("Theory not yet implemented.")
 
-            else:
-                sys.exit("Theory not yet implemented.")
-
-        except KeyError:
-            sys.exit("IC must be a dictionary with keys: " + IC_keys)
+    def quintessence_monomial():
+        IC['keys'] = ['V0', 'N']
+        V0 = IC['V0']
+        N = IC['N']
+        V = M_H ** 2 * np.multiply(V0, np.power(phi_smg, N))
 
         return V
 
+    def quintessence_binomial():
+        IC['keys'] = ['V1', 'N1', 'V2', 'N2']
+        V1 = IC['V1']
+        N1 = IC['N1']
+        V2 = IC['V2']
+        N2 = IC['N2']
+        V = M_H ** 2 * np.add(np.multiply(V1, np.power(phi_smg, N1)),
+                                np.multiply(V2, np.power(phi_smg, N2)))
+
+        return V
+
+    def quintessence_eft():
+        IC['keys'] = ['V0', 'E_F', 'n_min', 'n_Q', 'zeta_2', 'zeta_4']
+        V0 = IC['V0']
+        E_F = IC['E_F']
+        n_min = IC['n_min']
+        n_Q = IC['n_Q']
+        zeta_2 = IC['zeta_2']
+        zeta_4 = IC['zeta_4']
+        n_max = n_min + n_Q - 1
+
+        for n in np.arange(n_min, n_max + 1):
+            zeta_n = 'zeta_{}'.format(n)
+            IC['keys'].append(zeta_n)
+
+        f = zeta_2 * (E_F * phi_smg) ** 2 + zeta_4 * (E_F * phi_smg) ** 4
+        fsum = 0
+        for n in np.arange(n_min, n_max + 1):
+            zeta_n = 'zeta_{}'.format(n)
+            fsum += IC[zeta_n] * (E_F * phi_smg) ** n
+
+        V = M_H ** 2 * V0 * (f + fsum)
+
+        return V
+
+    def quintessence_axion():
+        IC['keys'] = ['V0', 'E_F', 'E_NP', 'n_max']
+        V0 = IC['V0']
+        E_F = IC['E_F']
+        E_NP = IC['E_NP']
+        n_max = IC['n_max']
+
+        for n in np.arange(2, n_max + 1):
+            zeta_n = 'zeta_{}'.format(n)
+            IC['keys'].append(zeta_n)
+
+        f = 1 + np.cos(E_F * phi_smg)
+        fsum = 0
+        for n in np.arange(2, n_max + 1):
+            zeta_n = 'zeta_{}'.format(n)
+            fsum += IC[zeta_n] * E_NP ** (n - 1) * np.cos(n * E_F * phi_smg)
+
+        V = M_H ** 2 * V0 * (f + fsum)
+
+        return V
+
+    def quintessence_modulus():
+        IC['keys'] = ['V0', 'E_D', 'p_D', 'n_max', 'alpha']
+        V0 = IC['V0']
+        E_D = IC['E_D']
+        p_D = IC['p_D']
+        n_max = IC['n_max']
+        alpha = IC['alpha']
+
+        for n in np.arange(0, n_max + 1):
+            zeta_n = 'zeta_{}'.format(n)
+            IC['keys'].append(zeta_n)
+
+        fsum = 0
+        for n in np.arange(0, n_max + 1):
+            zeta_n = 'zeta_{}'.format(n)
+            fsum += IC[zeta_n] * E_D ** n * np.exp(alpha * (p_D - n) * phi_smg)
+
+        V = M_H ** 2 * V0 * fsum
+
+        return V
+
+    def quintessence_exponential():
+        IC['keys'] = ['lambda']
+        lbd = IC['lambda']
+        V = np.exp(-np.multiply(lbd, phi_smg))
+
+        return V
+
+
+    theories = {'quintessence_monomial': quintessence_monomial,
+                'quintessence_binomial': quintessence_binomial,
+                'quintessence_eft': quintessence_eft,
+                'quintessence_axion': quintessence_axion,
+                'quintessence_modulus': quintessence_modulus,
+                'quintessence_exponential': quintessence_exponential}
+
+    try:
+        V = theories.get(theory, no_theory)()
+
+    except KeyError:
+        sys.exit("IC must be a dictionary with keys: {}".format(IC['keys']))
+
+    return V
+
+
+def w(theory):
     def w_in(data, var_col_dic, IC):
         """Fill dictionary Y with the equation of state for
         quintessence_monomial. Note data must be a generator or list"""
@@ -65,51 +159,6 @@ def w(theory):
 
         return w, legend
     return w_in
-
-
-def w0_wa(data, var_col_dic, IC):
-    """Return w0, wa values during the evolution of phi, where w(a) \simeq w0 +
-    (a0-a) w'(a0). Note data must be a generator or list."""
-
-    usecols = (var_col_dic['z'], var_col_dic["phi_prime_smg"],
-               var_col_dic['phi_smg'], var_col_dic['rho_smg'],
-               var_col_dic['H'])
-
-    z, phi_prime_smg, phi_smg, rho_smg, H = __try_loadtxt(data, usecols,
-                                                       "background")
-
-    ######
-    # The following variables are exclusive of monomial quintessence
-    ######
-    IC_keys = ['V0', 'N']
-    try:
-        V0 = IC['V0']  # This is the value V0* printed in screen when class is
-                       # run.
-        N = IC['N']
-    except KeyError:
-        sys.exit("IC must be a dictionary with keys: " + IC_keys)
-
-    P = np.power(phi_smg, N)
-    P_phi = np.multiply(N, np.power(phi_smg, N - 1))
-    V = np.multiply(V0, P)  # Quintessence_monomial
-    ######
-
-    phi_dot = np.multiply(phi_prime_smg, np.add(z, 1))
-    phi_dot2 = np.power(phi_dot, 2)
-
-    w0 = np.divide(np.subtract(phi_dot2, np.multiply(2, V)),
-                   np.add(phi_dot2, np.multiply(2, V)))
-
-    pre_factor = np.divide(np.multiply(np.add(1, z), np.divide(2 * V0, H)),
-                           np.power(rho_smg, 2))
-
-    summand1 = np.multiply(np.multiply(np.multiply(3, P), phi_dot2), H)
-
-    summand2 = np.multiply(np.multiply(P_phi, phi_dot), rho_smg)
-
-    wa = np.multiply(pre_factor, np.add(summand1, summand2))
-
-    return w0, wa
 
 
 def alphaK(choice, theory):

@@ -38,9 +38,8 @@ def __prepare_input_for_loop(filename, y_legend, IC={}):
     if IC:
         if type(IC) is dict:
             IC = [IC]
-        return filename, y_legend, IC
-    else:
-        return filename, y_legend
+
+    return filename, y_legend, IC
 
 
 def __check_variables_in_files(filename, x, y=''):
@@ -56,7 +55,7 @@ def __check_variables_in_files(filename, x, y=''):
 
 
 def __init_dictionaries(var, x_boundaries, labels, scales, cscale, rd_max, dev,
-                        xy_add=[0, 0], IC={}):
+                        xy_add=[0, 0], IC={}, xy_abs=[False, False]):
 
     x_add, y_add = xy_add
 
@@ -66,7 +65,8 @@ def __init_dictionaries(var, x_boundaries, labels, scales, cscale, rd_max, dev,
         'max': x_boundaries[1],
         'scale': scales[0],
         'label':  labels[0] or vtd.var_title_dic[var[0]],
-        'add': xy_add[0]
+        'add': xy_add[0],
+        'abs': xy_abs[0]
     }
 
     Y = {
@@ -78,6 +78,7 @@ def __init_dictionaries(var, x_boundaries, labels, scales, cscale, rd_max, dev,
         'rd_max': rd_max,
         'dev': dev,
         'add': xy_add[1],
+        'abs': xy_abs[1],
         'IC': IC
     }
 
@@ -85,6 +86,11 @@ def __init_dictionaries(var, x_boundaries, labels, scales, cscale, rd_max, dev,
         X['label'] = str(x_add) + ' + ' + X['label']
     if y_add:
         Y['label'] = str(y_add) + ' + ' + Y['label']
+
+    if xy_abs[0]:
+        X['label'] = "|" + X['label'] + "|"
+    if xy_abs[1]:
+        Y['label'] = "|" + Y['label'] + "|"
 
     return X, Y
 
@@ -113,6 +119,11 @@ def __load_columns_file_loop(X, Y, filename, y_legend, func, compare=False):
 
         s = lgd or f.split('/')[-1]
         Y[klegend].append(legend + ' [' + s + ']')  # Label for legend
+
+    if X['abs']:
+        X[kdata] = np.abs(X[kdata])
+    if Y['abs']:
+        Y[kdata] = np.abs(Y[kdata])
 
     return 1
 
@@ -148,6 +159,12 @@ def __load_var_data_legend_loop(X, Y, filename, y_legend, func, cfunc):
 
         Y['cdata'].append(np.add(y_add, y_cdata))
         Y['clegend'].append(clegend + '\n [' + s + ']')
+
+    if X['abs']:
+        X['data'] = np.abs(X['data'])
+    if Y['abs']:
+        Y['data'] = np.abs(Y['data'])
+        Y['cdata'] = np.abs(Y['cdata'])
 
     X['cdata'] = X['data']
 
@@ -299,11 +316,12 @@ def __plot_compare(X, Y):
     return 1
 
 
-def plot_columns(filename, x='', y='', x_add=0, y_add=0, x_min=-np.inf,
-                 x_max=np.inf, x_scale='log', y_scale='log', x_label='',
-                 y_label='', y_legend='', compare_with='',
-                 compare_with_legend='', compare_with_scale='linear',
-                 rd_max=np.inf, dev='rel', output=''):
+def plot_columns(filename, x='', y='', x_add=0, y_add=0, x_abs=False,
+                 y_abs=False, x_min=-np.inf, x_max=np.inf, x_scale='log',
+                 y_scale='log', x_label='', y_label='', y_legend='',
+                 compare_with='', compare_with_legend='',
+                 compare_with_scale='linear', rd_max=np.inf, dev='rel',
+                 output=''):
     """Given a CLASS output file (or list of files) plot its selected variables
     x, y. If variable labels are not set or misspelled, print the possible
     ones"""
@@ -312,7 +330,8 @@ def plot_columns(filename, x='', y='', x_add=0, y_add=0, x_min=-np.inf,
     __check_variables_in_files(filename, x, y)
     X, Y = __init_dictionaries([x, y], [x_min, x_max], [x_label, y_label],
                                [x_scale, y_scale], compare_with_scale, rd_max,
-                               dev, xy_add=[x_add, y_add])
+                               dev, xy_add=[x_add, y_add], xy_abs=[x_abs,
+                                                                   y_abs])
 
     columns = miv.columns(x, y)
     __load_columns_file_loop(X, Y, filename, y_legend, columns)
@@ -329,41 +348,9 @@ def plot_columns(filename, x='', y='', x_add=0, y_add=0, x_min=-np.inf,
     __print_and_close(output, Y)
 
 
-def plot_w0_wa(filename, z_min=-np.inf, z_max=np.inf, x_scale='linear',
-               y_scale='linear', x_label='', y_label='', y_legend='',
-               rd_max=np.inf, output='', theory='', IC={}):
-    """Plot the evolution of wa with w0 where w(a) \simeq w0 + (a0-a) w'(a0)."""
-    # TODO: Implement acceptance of various files. Or eliminate function if
-    # useless...
-
-    X = {'scale': x_scale, 'label': 'w0'}
-    Y = {'scale': y_scale, 'label': 'wa', 'rd_max': rd_max}
-
-    X['data'], Y['data'], Y['legend'] = [], [], []
-
-    filename, y_legend = __prepare_input_for_loop(filename, y_legend)
-
-    if theory == 'quintessence':
-        w0_wa = quintessence.w0_wa
-
-    for f, lgd in zip(filename, y_legend):  # Zip clips elements not paired.
-        var_col_dic = chd.class_headers_to_dict(f)
-        # If x/y is not a valid key, it returns an empty list. (see chd module)
-        data = __filter_data(f, var_col_dic['z'], z_min, z_max)
-        x_data, y_data = w0_wa(data, var_col_dic)
-
-        X['data'].append(x_data)
-        Y['data'].append(y_data)
-        Y['legend'].append(lgd or f.split('/')[-1])  # Label for legend
-
-    __plot_alone(X, Y)
-
-    __print_and_close(output, Y)
-
-
-def plot_check_w(filename, x='z', x_add=0, y_add=0, x_min=-np.inf,
-                 x_max=np.inf, x_scale='log', y_scale='log', x_label='',
-                 y_label='', y_legend='', rd_max=np.inf, dev='rel',
+def plot_check_w(filename, x='z', x_add=0, y_add=0, x_abs=False, y_abs=False,
+                 x_min=-np.inf, x_max=np.inf, x_scale='log', y_scale='log',
+                 x_label='', y_label='', y_legend='', rd_max=np.inf, dev='rel',
                  compare_with_scale='linear', output='', theory='', IC={}):
     """Plot the equation of state from a background CLASS output. It compares
     the result of p_smg/rho_smg and p(phi)_smg/rho(phi)_smg"""
@@ -375,7 +362,8 @@ def plot_check_w(filename, x='z', x_add=0, y_add=0, x_min=-np.inf,
     y_label = y_label or 'w'
     X, Y = __init_dictionaries([x, y], [x_min, x_max], [x_label, y_label],
                                [x_scale, y_scale], compare_with_scale, rd_max,
-                               dev, xy_add=[x_add, y_add], IC=IC)
+                               dev, xy_add=[x_add, y_add], IC=IC,
+                               xy_abs=[x_abs, y_abs])
 
     w = miv.w
 
@@ -388,11 +376,12 @@ def plot_check_w(filename, x='z', x_add=0, y_add=0, x_min=-np.inf,
     __print_and_close(output, Y)
 
 
-def plot_check_alphaK(filename, x='z', x_add=0, y_add=0, x_min=-np.inf,
-                      x_max=np.inf, x_scale='log', y_scale='log', x_label='',
-                      y_label='', y_legend='', rd_max=np.inf, dev='rel',
-                      compare_with_scale='linear', output='', theory='', IC={},
-                      choice=1, kineticity_safe=0):
+def plot_check_alphaK(filename, x='z', x_add=0, y_add=0, x_abs=False,
+                      y_abs=False, x_min=-np.inf, x_max=np.inf, x_scale='log',
+                      y_scale='log', x_label='', y_label='', y_legend='',
+                      rd_max=np.inf, dev='rel', compare_with_scale='linear',
+                      output='', theory='', IC={}, choice=1,
+                      kineticity_safe=0):
     """Plot alpha_k from a background CLASS output and compare it with other
     calculation of alpha_k"""
 
@@ -403,7 +392,8 @@ def plot_check_alphaK(filename, x='z', x_add=0, y_add=0, x_min=-np.inf,
     y_label = y_label or 'alpha_k'
     X, Y = __init_dictionaries([x, y], [x_min, x_max], [x_label, y_label],
                                [x_scale, y_scale], compare_with_scale, rd_max,
-                               dev, xy_add=[x_add, y_add], IC=IC)
+                               dev, xy_add=[x_add, y_add], IC=IC,
+                               xy_abs=[x_abs, y_abs])
 
     alphaK = miv.alphaK(kineticity_safe)
 
@@ -416,9 +406,10 @@ def plot_check_alphaK(filename, x='z', x_add=0, y_add=0, x_min=-np.inf,
     __print_and_close(output, Y)
 
 
-def plot_w(filename, x='z', x_add=0, y_add=0, x_min=-np.inf, x_max=np.inf,
-           x_scale='log', y_scale='log', x_label='', y_label='', y_legend='',
-           compare_with='', compare_with_legend='', rd_max=np.inf, dev='rel',
+def plot_w(filename, x='z', x_add=0, y_add=0, x_abs=False, y_abs=False,
+           x_min=-np.inf, x_max=np.inf, x_scale='log', y_scale='log',
+           x_label='', y_label='', y_legend='', compare_with='',
+           compare_with_legend='', rd_max=np.inf, dev='rel',
            compare_with_scale='linear', output='', IC={}):
     """Given a CLASS background output file (or list of files) plot the
     equation of state vs x (default 'z'). If x-variable label is misspelled,
@@ -430,7 +421,8 @@ def plot_w(filename, x='z', x_add=0, y_add=0, x_min=-np.inf, x_max=np.inf,
     y_label = y_label or 'w'
     X, Y = __init_dictionaries([x, y], [x_min, x_max], [x_label, y_label],
                                [x_scale, y_scale], compare_with_scale, rd_max,
-                               dev, xy_add=[x_add, y_add], IC=IC)
+                               dev, xy_add=[x_add, y_add], IC=IC,
+                               xy_abs=[x_abs, y_abs])
 
     w = miv.w
 
@@ -448,9 +440,9 @@ def plot_w(filename, x='z', x_add=0, y_add=0, x_min=-np.inf, x_max=np.inf,
     __print_and_close(output, Y)
 
 
-def plot_alphaK(filename, x='z', x_add=0, y_add=0, x_min=-np.inf, x_max=np.inf,
-                x_scale='log', y_scale='log', x_label='', y_label='',
-                y_legend='', rd_max=np.inf, dev='rel',
+def plot_alphaK(filename, x='z', x_add=0, y_add=0, x_abs=False, y_abs=False,
+                x_min=-np.inf, x_max=np.inf, x_scale='log', y_scale='log',
+                x_label='', y_label='', y_legend='', rd_max=np.inf, dev='rel',
                 compare_with_scale='linear', compare_with='',
                 compare_with_legend='', output='', theory='', IC={},
                 kineticity_safe=0):
@@ -465,7 +457,8 @@ def plot_alphaK(filename, x='z', x_add=0, y_add=0, x_min=-np.inf, x_max=np.inf,
     y_label = y_label or 'alpha_k'
     X, Y = __init_dictionaries([x, y], [x_min, x_max], [x_label, y_label],
                                [x_scale, y_scale], compare_with_scale, rd_max,
-                               dev, xy_add=[x_add, y_add], IC=IC)
+                               dev, xy_add=[x_add, y_add], IC=IC,
+                               xy_abs=[x_abs, y_abs])
 
     alphaK = miv.alphaK(kineticity_safe)
 
