@@ -38,8 +38,9 @@ def __prepare_input_for_loop(filename, y_legend, IC={}):
     if IC:
         if type(IC) is dict:
             IC = [IC]
+        return filename, y_legend, IC
 
-    return filename, y_legend, IC
+    return filename, y_legend
 
 
 def __check_variables_in_files(filename, x, y=''):
@@ -316,7 +317,7 @@ def __plot_compare(X, Y):
     return 1
 
 
-def plot_columns(filename, x='', y='', x_add=0, y_add=0, x_abs=False,
+def plot_columns(filename, x='z', y='', x_add=0, y_add=0, x_abs=False,
                  y_abs=False, x_min=-np.inf, x_max=np.inf, x_scale='log',
                  y_scale='log', x_label='', y_label='', y_legend='',
                  compare_with='', compare_with_legend='',
