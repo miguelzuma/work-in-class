@@ -121,7 +121,7 @@ class quintessence_monomial(Theory):
         phi_prime_ini = 1.e-100  # In Marsh et al. phi'=0, but hi_class find nan with it.
         phi_ini = np.random.uniform(low=0, high=4)
 
-        self.parameters_smg = [V0, N, phi_prime_ini, phi_ini]
+        self.parameters_smg = [N, V0, phi_prime_ini, phi_ini]
 
         return [self.parameters_smg, self.parameters_2_smg]
 
