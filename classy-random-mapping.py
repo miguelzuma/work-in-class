@@ -211,7 +211,7 @@ class quintessence_binomial(Theory):
         self.params['gravity_model'] = 'quintessence_binomial'
         self.header_common = "h \in U(0.6, 0,8), Omega_cdm \in U(0.15, 0.35), N_i \in Uz(1,7), log_10(V_i) \in (-1,1), phi_prime_ini = 1.e-100 and phi_ini \in U[0,4).\n"
         self.header = "1:w0    2:wa      3:phi_prime_ini    4:phi_ini    5:N1    6:V1    7:N2    8:V2    9:h    10:Omega_cdm\n"
-        self.header = "1:phi_prime_ini    2:phi_ini     3:N1    4:V1    5:N2    6:V2    7:h     8:Omega_cdm\n"
+        self.header_error = "1:phi_prime_ini    2:phi_ini     3:N1    4:V1    5:N2    6:V2    7:h     8:Omega_cdm\n"
 
     def compute_parameters(self):
         # phi_prime_ini = 10 ** np.random.uniform(low=0, high=2)
@@ -222,6 +222,27 @@ class quintessence_binomial(Theory):
         # Sampleamos log_10(phi_prime_ini).
 
         self.parameters_smg = [phi_prime_ini, phi_ini, N1, V1, N2, V2]
+
+        return [self.parameters_smg, self.parameters_2_smg]
+
+
+class alpha_attractor_canonical(Theory):
+    def __init__(self):
+        Theory.__init__(self)
+        self.params['gravity_model'] = 'alpha_attractor_canonical'
+        self.header_common = "h \in U(0.6, 0,8), Omega_cdm \in U(0.15, 0.35), phi_prime_ini = 1.e-100, phi_ini \in U[0,10), log_10(alpha) \in U(-2, 2), log_10(c)\in U(-2,2), p \in U(0,10), n \in U(0,10)' .\n"
+        self.header = "1:w0    2:wa      3:phi_prime_ini    4:phi_ini    5:alpha    6:c    7:p    8:n    9:h    10:Omega_cdm\n"
+        self.header_error = "1:phi_prime_ini    2:phi_ini     3:alpha    4:c    5:p    6:n    7:h     8:Omega_cdm\n"
+
+    def compute_parameters(self):
+        phi_prime_ini = 1.e-100
+        phi_ini = np.random.uniform(low=0, high=10)
+        alpha = 10 ** np.random.uniform(low=-2, high=2)
+        c = 10 ** np.random.uniform(low=-2, high=2)  # It will be overwritten by tunning_index unless
+        p = np.random.uniform(0, 10)
+        n = np.random.uniform(0, 10)
+
+        self.parameters_smg = [phi_prime_ini, phi_ini, alpha, c, p, n]
 
         return [self.parameters_smg, self.parameters_2_smg]
 
@@ -239,7 +260,8 @@ def main():
          'quintessence_binomial': quintessence_binomial,
          'quintessence_axion': quintessence_axion,
          'quintessence_eft': quintessence_eft,
-         'quintessence_modulus': quintessence_modulus}
+         'quintessence_modulus': quintessence_modulus,
+         'alpha_attractor_canonical': alpha_attractor_canonical}
 
     th = d[args.theory]()
     th.compute_data(args.points)
