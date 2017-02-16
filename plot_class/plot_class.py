@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+import os, sys
+sys.path.append(os.path.abspath('../'))
 import class_headers_to_dict as chd
 import matplotlib.pyplot as plt
 import variable_title_dics as vtd
@@ -9,7 +11,6 @@ import quintessence
 import model_independent_variables as miv
 import numpy as np
 import matplotlib.cm as cm
-import sys
 
 
 def __exit_variable_error(filename):
