@@ -41,14 +41,6 @@ class Compare():
                 # return False
             return True
 
-    def __select_key(self, y):
-        if y == 'all':
-            keys = self.__refdict.iterkeys()
-        else:
-            keys = [y]
-
-        return keys
-
     def __deviation(self, y, kind):
         ref = self.__refdict
         x = self._x
@@ -70,6 +62,50 @@ class Compare():
             output_dicts.append(d)
 
         return tuple(output_dicts)
+
+    def __plot(self, y, kind):
+        keys = self.__select_key(y)
+
+        if kind == "rel":
+            dicts = self._rdev or self.relative_deviation()
+        elif kind == "abs":
+            dicts = self._adev or self.absolute_deviation()
+
+        color = plt.cm.rainbow(np.linspace(0,1,len(dicts)))
+
+        for akey in keys:
+            i = 0  # First deviation obtained between first (d1) and second (d2) dictionaries
+            for adict in dicts:
+                X, Y = adict[akey]
+                Y_pos = Y.copy()
+                Y_neg = Y.copy()
+
+                Y_pos[Y_pos <= 0] = np.nan
+                Y_neg[Y_neg > 0] = np.nan
+
+                if np.any(np.isfinite(Y_pos)):
+                    plt.plot(X, Y_pos, c=color[i], label='d1-d{} dev.'.format(2+i))
+                if np.any(np.isfinite(Y_neg)):
+                    plt.plot(X, np.abs(Y_neg), '--', c=color[i])
+                i += 1
+
+            plt.semilogx()
+            if np.any(np.abs(Y)>0):
+                plt.semilogy()
+            plt.xlabel('z+1')
+            plt.ylabel(akey)
+            plt.title(kind)
+            plt.legend(loc="best")
+            plt.show()
+            plt.close()
+
+    def __select_key(self, y):
+        if y == 'all':
+            keys = self.__refdict.iterkeys()
+        else:
+            keys = [y]
+
+        return keys
 
     def relative_deviation(self, y='all'):
         """Returns the percentual relative deviation between the common
@@ -93,6 +129,12 @@ class Compare():
         self._dicts = args
         self.__check_x()
 
-    def plot(self, y="all"):
-        pass
+    def plot_rdev(self, y='all'):
+        self.__plot(y, 'rel')
+        return True
+
+    def plot_adev(self, y='all'):
+        self.__plot(y, 'abs')
+        return True
+
 
