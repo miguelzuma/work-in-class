@@ -92,13 +92,16 @@ class Compare():
                 Y_pos = Y.copy()
                 Y_neg = Y.copy()
 
-                Y_pos[Y_pos <= 0] = np.nan
-                Y_neg[Y_neg > 0] = np.nan
+                Y_pos[Y_pos < 0] = np.nan
+                Y_neg[Y_neg >= 0] = np.nan
+
+                label2 = label
 
                 if np.any(np.isfinite(Y_pos)):
                     plt.plot(X, Y_pos, c=color[i], label=label.format(2+i, i))
+                    label2="" # This way second plt.plot won't produce label
                 if np.any(np.isfinite(Y_neg)):
-                    plt.plot(X, np.abs(Y_neg), '--', c=color[i])
+                    plt.plot(X, np.abs(Y_neg), '--', c=color[i], label=label2.format(2+i, i))
                 i += 1
 
             plt.semilogx()
