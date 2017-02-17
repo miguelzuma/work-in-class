@@ -39,7 +39,7 @@ class Compare():
             if not dicts[0].viewkeys() == adict.viewkeys():
                 print "Dictionaries do not have the same keys some functions may not work."
                 # return False
-            return True
+        return True
 
     def __deviation(self, y, kind):
         ref = self.__refdict
@@ -68,15 +68,23 @@ class Compare():
 
         if kind == "rel":
             dicts = self._rdev or self.relative_deviation()
+            label = 'd1-d{0} rdev.'
         elif kind == "abs":
             dicts = self._adev or self.absolute_deviation()
+            label = 'd1-d{0} adev.'
+        elif kind == "normal":
+            dicts = self._dicts
+            label = '{1}'
 
         color = plt.cm.rainbow(np.linspace(0,1,len(dicts)))
 
         for akey in keys:
-            i = 0  # First deviation obtained between first (d1) and second (d2) dictionaries
+            i = 0
             for adict in dicts:
-                X, Y = adict[akey]
+                if kind == "normal":
+                    X, Y = adict[self._x], adict[akey]
+                else:
+                    X, Y = adict[akey]
                 Y_pos = Y.copy()
                 Y_neg = Y.copy()
 
@@ -84,13 +92,13 @@ class Compare():
                 Y_neg[Y_neg > 0] = np.nan
 
                 if np.any(np.isfinite(Y_pos)):
-                    plt.plot(X, Y_pos, c=color[i], label='d1-d{} dev.'.format(2+i))
+                    plt.plot(X, Y_pos, c=color[i], label=label.format(2+i, i))
                 if np.any(np.isfinite(Y_neg)):
                     plt.plot(X, np.abs(Y_neg), '--', c=color[i])
                 i += 1
 
             plt.semilogx()
-            if np.any(np.abs(Y)>0):
+            if np.any(np.abs(Y) > 0):
                 plt.semilogy()
             plt.xlabel('z+1')
             plt.ylabel(akey)
@@ -137,4 +145,9 @@ class Compare():
         self.__plot(y, 'abs')
         return True
 
+    def plot(self, y='all'):
+        self.__plot(y, 'normal')
+        return True
 
+if __name__ == "__main__":
+    pass
