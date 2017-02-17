@@ -117,6 +117,8 @@ class Compare():
     def __select_key(self, y):
         if y == 'all':
             keys = self.__refdict.iterkeys()
+        elif hasattr(y, '__iter__'):
+            keys = y
         else:
             keys = [y]
 
