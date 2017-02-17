@@ -63,7 +63,7 @@ class Compare():
 
         return tuple(output_dicts)
 
-    def __plot(self, y, kind):
+    def __plot(self, y, kind, **kwards):
         keys = self.__select_key(y)
 
         if kind == "rel":
@@ -74,7 +74,7 @@ class Compare():
             label = 'd1-d{0} adev.'
         elif kind == "normal":
             dicts = self._dicts
-            label = '{1}'
+            label = 'd{1}'
 
         color = plt.cm.rainbow(np.linspace(0,1,len(dicts)))
 
@@ -85,6 +85,10 @@ class Compare():
                     X, Y = adict[self._x], adict[akey]
                 else:
                     X, Y = adict[akey]
+
+                X = X + kwards['xsum']
+                Y = Y + kwards['ysum']
+
                 Y_pos = Y.copy()
                 Y_neg = Y.copy()
 
@@ -137,17 +141,18 @@ class Compare():
         self._dicts = args
         self.__check_x()
 
-    def plot_rdev(self, y='all'):
-        self.__plot(y, 'rel')
+    def plot_rdev(self, y='all', xsum=0, ysum=0):
+        self.__plot(y, 'rel', xsum=xsum, ysum=ysum)
         return True
 
-    def plot_adev(self, y='all'):
-        self.__plot(y, 'abs')
+    def plot_adev(self, y='all', xsum=0, ysum=0):
+        self.__plot(y, 'abs', xsum=xsum, ysum=ysum)
         return True
 
-    def plot(self, y='all'):
-        self.__plot(y, 'normal')
+    def plot(self, y='all', xsum=0, ysum=0):
+        self.__plot(y, 'normal', xsum=xsum, ysum=ysum)
         return True
+
 
 if __name__ == "__main__":
     pass
