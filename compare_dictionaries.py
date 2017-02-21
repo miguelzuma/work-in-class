@@ -156,7 +156,7 @@ class Compare():
         self.__check_x()
 
     def plot_rdev(self, y='all', xabs=False, yabs=False, xscale='linear',
-                  yscale='linear', xlabel='', ylabel='', title='',
+                  yscale='linear', xlabel='', ylabel='', title='Rel. dev. [%]',
                   xlim=[None, None], ylim=[None, None], xsum=0, ysum=0):
         dicts = self._rdev or self.relative_deviation()
         label = 'd1-d{0} rdev.'
@@ -164,7 +164,7 @@ class Compare():
         return True
 
     def plot_adev(self, y='all', xabs=False, yabs=False, xscale='linear',
-                  yscale='linear', xlabel='', ylabel='', title='',
+                  yscale='linear', xlabel='', ylabel='', title='Abs. dev',
                   xlim=[None, None], ylim=[None, None], xsum=0, ysum=0):
         dicts = self._adev or self.absolute_deviation()
         label = 'd1-d{0} adev.'
@@ -172,7 +172,7 @@ class Compare():
         return True
 
     def plot(self, y='all', xabs=False, yabs=False, xscale='linear',
-             yscale='linear', xlabel='', ylabel='', title='',
+             yscale='linear', xlabel='', ylabel='', title='Variables',
              xlim=[None, None], ylim=[None, None], xsum=0, ysum=0):
         kind = 'normal'
         dicts = self._dicts
