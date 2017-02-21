@@ -63,31 +63,26 @@ class Compare():
 
         return tuple(output_dicts)
 
-    def __plot(self, y, kind, **kwards):
+    def __plot(self, y, dicts, kind='', label='', xabs=False, yabs=False,
+               xscale='linear', yscale='linear', xlabel='', ylabel='',
+               title='', xlim=[None, None], ylim=[None, None], xsum=0, ysum=0):
+
         keys = self.__select_key(y)
 
-        if kind == "rel":
-            dicts = self._rdev or self.relative_deviation()
-            label = 'd1-d{0} rdev.'
-        elif kind == "abs":
-            dicts = self._adev or self.absolute_deviation()
-            label = 'd1-d{0} adev.'
-        elif kind == "normal":
-            dicts = self._dicts
-            label = 'd{1}'
-
-        color = plt.cm.rainbow(np.linspace(0,1,len(dicts)))
+        color = plt.cm.rainbow(np.linspace(0, 1, len(dicts)))
 
         for akey in keys:
             i = 0
+            f, ax = plt.subplots(1, 1)
+
             for adict in dicts:
                 if kind == "normal":
                     X, Y = adict[self._x], adict[akey]
                 else:
                     X, Y = adict[akey]
 
-                X = X + kwards['xsum']
-                Y = Y + kwards['ysum']
+                X = X + xsum
+                Y = Y + ysum
 
                 Y_pos = Y.copy()
                 Y_neg = Y.copy()
@@ -99,20 +94,28 @@ class Compare():
 
                 if np.any(np.isfinite(Y_pos)):
                     plt.plot(X, Y_pos, c=color[i], label=label.format(2+i, i))
-                    label2="" # This way second plt.plot won't produce label
+                    label2 = ""  # This way second plt.plot won't produce label
                 if np.any(np.isfinite(Y_neg)):
                     plt.plot(X, np.abs(Y_neg), '--', c=color[i], label=label2.format(2+i, i))
                 i += 1
 
-            plt.semilogx()
-            if np.any(np.abs(Y) > 0):
-                plt.semilogy()
-            plt.xlabel('z+1')
-            plt.ylabel(akey)
-            plt.title(kind)
+            ax.set_xscale(xscale)
+            ax.set_yscale(yscale)
+            ax.set_xlabel(xlabel)
+            ax.set_ylabel(ylabel or akey)
+            ax.set_xlim(xlim)
+            ax.set_ylim(ylim)
+
+            plt.title(title or kind)
             plt.legend(loc="best")
             plt.show()
             plt.close()
+
+    def __remove_self(self, local):
+        d = local.copy()
+        del d['self']
+
+        return d
 
     def __select_key(self, y):
         if y == 'all':
@@ -146,16 +149,29 @@ class Compare():
         self._dicts = args
         self.__check_x()
 
-    def plot_rdev(self, y='all', xsum=0, ysum=0):
-        self.__plot(y, 'rel', xsum=xsum, ysum=ysum)
+    def plot_rdev(self, y='all', xabs=False, yabs=False, xscale='linear',
+                  yscale='linear', xlabel='', ylabel='', title='',
+                  xlim=[None, None], ylim=[None, None], xsum=0, ysum=0):
+        dicts = self._rdev or self.relative_deviation()
+        label = 'd1-d{0} rdev.'
+        self.__plot(**self.__remove_self(locals()))
         return True
 
-    def plot_adev(self, y='all', xsum=0, ysum=0):
-        self.__plot(y, 'abs', xsum=xsum, ysum=ysum)
+    def plot_adev(self, y='all', xabs=False, yabs=False, xscale='linear',
+                  yscale='linear', xlabel='', ylabel='', title='',
+                  xlim=[None, None], ylim=[None, None], xsum=0, ysum=0):
+        dicts = self._adev or self.absolute_deviation()
+        label = 'd1-d{0} adev.'
+        self.__plot(**self.__remove_self(locals()))
         return True
 
-    def plot(self, y='all', xsum=0, ysum=0):
-        self.__plot(y, 'normal', xsum=xsum, ysum=ysum)
+    def plot(self, y='all', xabs=False, yabs=False, xscale='linear',
+             yscale='linear', xlabel='', ylabel='', title='',
+             xlim=[None, None], ylim=[None, None], xsum=0, ysum=0):
+        kind = 'normal'
+        dicts = self._dicts
+        label = 'd{1}'
+        self.__plot(**self.__remove_self(locals()))
         return True
 
 
