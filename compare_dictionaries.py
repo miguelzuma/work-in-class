@@ -100,9 +100,15 @@ class Compare():
                 i += 1
 
             ax.set_xscale(xscale)
-            ax.set_yscale(yscale)
-            ax.set_xlabel(xlabel)
-            ax.set_ylabel(ylabel or akey)
+            try:
+                ax.set_yscale(yscale)
+            except:
+                print "Error logging-scale. Using linear scale for y axis"
+                ax.set_yscale('linear')
+                pass
+
+            ax.set_xlabel(xlabel or str(self._x) + " + " + str(xsum))
+            ax.set_ylabel(ylabel or akey + " [Dev] + " + str(ysum))
             ax.set_xlim(xlim)
             ax.set_ylim(ylim)
 
