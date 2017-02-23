@@ -78,8 +78,10 @@ class Compare():
             for adict in dicts:
                 if kind == "normal":
                     X, Y = adict[self._x], adict[akey]
+                    ylabel = ylabel or akey + " + " + str(ysum)
                 else:
                     X, Y = adict[akey]
+                    ylabel = ylabel or akey + " [Dev] + " + str(ysum)
 
                 X = X + xsum
                 Y = Y + ysum
@@ -108,7 +110,7 @@ class Compare():
                 pass
 
             ax.set_xlabel(xlabel or str(self._x) + " + " + str(xsum))
-            ax.set_ylabel(ylabel or akey + " [Dev] + " + str(ysum))
+            ax.set_ylabel(ylabel)
             ax.set_xlim(xlim)
             ax.set_ylim(ylim)
 
