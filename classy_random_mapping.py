@@ -23,6 +23,7 @@ class Theory(object):
             'Omega_Lambda': 0,
             'Omega_fld': 0,
             'Omega_smg': -1}
+            # 'input_verbose': 10}
         self.parameters_smg = []
         self.parameters_2_smg = []
         self.parameters_2_smg_short = []
@@ -67,8 +68,9 @@ class Theory(object):
             except CosmoGuessingError, e:
                 print "CosmoGuessing!!!"
                 print e
-                self.data_guess_error.append(self.parameters_smg + [h, Omega_cdm]
-                                             + self.parameters_2_smg)
+                if "root must be bracketed in zriddr." in str(e):
+                    self.data_guess_error.append(self.parameters_smg + [h, Omega_cdm]
+                                                + self.parameters_2_smg)
                 cosmo.struct_cleanup()
                 cosmo.empty()
                 continue
@@ -109,17 +111,19 @@ class quintessence_monomial(Theory):
     def __init__(self):
         Theory.__init__(self)
         self.params['gravity_model'] = 'quintessence_monomial'
-        self.header_common = "h \in U(0.6, 0.8), Omega_cdm \in U(0.15, 0.35), N \in Uz(1,7), log_10(V0) \in (-1,1), phi_prime_ini = 1.e-100 and phi_ini \in U[0,4),\n"
+        #self.header_common = "h \in U(0.6, 0.8), Omega_cdm \in U(0.15, 0.35), N \in Uz(1,7), log_10(V0) \in (-1,1), phi_prime_ini = 1.e-100 and phi_ini \in U[0,4),\n"
+        self.header_common = "h \in U(0.6, 0.8), Omega_cdm \in U(0.15, 0.35), N \in U(1,7), log_10(V0) \in (-1,1), phi_prime_ini = 1.e-100 and phi_ini \in U[0,10),\n"
         self.header = "1:w0    2:wa    3:N    4:V0     5:phi_prime_ini    6:phi_ini  7:h    8:Omega_cdm"
         self.header_error = "1:N    2:V0    3:phi_prime_ini    4:phi_ini  5:h   6:Omega_cdm"
 
     def compute_parameters(self):
         # N = np.random.uniform(low=1, high=7)
         # phi_prime_ini = 10 ** np.random.uniform(low=0, high=2)
-        N = np.random.randint(low=1, high=7)
+        #N = np.random.randint(low=1, high=7)
+        N = np.random.uniform(low=1, high=7) #Not as in Marsh (randint)
         V0 = 10 ** np.random.uniform(low=-1, high=1)  # It will be overwritten by tunning_index unless
         phi_prime_ini = 1.e-100  # In Marsh et al. phi'=0, but hi_class find nan with it.
-        phi_ini = np.random.uniform(low=0, high=4)
+        phi_ini = np.random.uniform(low=0, high=10) #Not as in Marsh (high=4)
 
         self.parameters_smg = [N, V0, phi_prime_ini, phi_ini]
 
@@ -237,8 +241,8 @@ class alpha_attractor_canonical(Theory):
     def compute_parameters(self):
         phi_prime_ini = 1.e-100
         phi_ini = np.random.uniform(low=0, high=10)
-        alpha = 10 ** np.random.uniform(low=-2, high=2)
-        c = 10 ** np.random.uniform(low=-2, high=2)  # It will be overwritten by tunning_index unless
+        alpha = 10 ** np.random.uniform(low=-3, high=3)
+        c = 1 #10 ** np.random.uniform(low=-2, high=2)  # It will be overwritten by tunning_index unless
         p = np.random.uniform(0, 10)
         n = np.random.uniform(0, 10)
 
