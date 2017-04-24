@@ -50,7 +50,6 @@ class Theory(object):
 
         self.cosmo.compute()
 
-
     def model_clean(self):
         self.cosmo.struct_cleanup()
         self.cosmo.empty()
@@ -273,6 +272,25 @@ class alpha_attractor_canonical(Theory):
         n = np.random.uniform(0, 10)
 
         self.parameters_smg = [phi_prime_ini, phi_ini, alpha, c, p, n]
+
+        return [self.parameters_smg, self.parameters_2_smg]
+
+
+class galileon(Theory):
+    def __init__(self, n):
+        Theory.__init__(self)
+        self.params['gravity_model'] = 'galileon'
+        self.header_common = "h \in U(0.6, 0,8), Omega_cdm \in U(0.15, 0.35), xi = 1.e-100, c_1 \in U[0,10), c_2 \in U(-2, 2), (from the following 3 only varying c_{}) c_3 \in U(-2,2), c_4, c_5, phi_ini .\n".format(n)
+        self.header = "1:w0    2:wa      3:xi   4:c_1   5:c_2   6:c_3    7:c_4    8:c_5    9: phi_ini  10:h    11:Omega_cdm\n"
+        self.header_error = "1:xi   2:c_1   3:c_2   4:c_3    5:c_4    6:c_5    7: phi_ini  8:h    9:Omega_cdm\n"
+        self.n = n
+
+    def compute_parameters(self):
+        xi = np.random.uniform(low=-10, high=10)
+        c = [0, -1, 1e-3, 1e-3, 1e-3]
+        c[self.n - 1] = np.random.uniform(low=-5.5, high=5)
+        phi_ini = 0
+        self.parameters_smg = [xi] + c + [phi_ini]
 
         return [self.parameters_smg, self.parameters_2_smg]
 
