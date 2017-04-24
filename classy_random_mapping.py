@@ -27,9 +27,35 @@ class Theory(object):
         self.parameters_smg = []
         self.parameters_2_smg = []
         self.parameters_2_smg_short = []
+        self.cosmo = Class()
+
+    def compute_model(self, parameters, debug=False):
+
+        self.parameters_smg = parameters[:len(self.parameters_smg)]
+        self.params['parameters_smg'] = str(self.parameters_smg).strip('[]')
+        if self.parameters_2_smg:
+            self.parameters_2_smg = parameters[len(self.parameters_smg):-2]
+            self.params['parameters_2_smg'] = str(self.parameters_2_smg_short).strip('[]')
+        self.params['h'] = parameters[-2]
+        self.params['Omega_cdm'] = parameters[-1]
+
+        if debug:
+            del self.params['Omega_smg']
+            self.params['Omega_smg_debug'] = -1
+
+        self.cosmo.set(self.params)
+
+        if debug:
+            self.params['Omega_smg'] = -1
+
+        self.cosmo.compute()
+
+
+    def model_clean(self):
+        self.cosmo.struct_cleanup()
+        self.cosmo.empty()
 
     def compute_data(self, points):
-        cosmo = Class()
         while len(self.data) < points:
             print "######## Point: {} of {}".format(len(self.data) + 1, points)
 
@@ -47,9 +73,9 @@ class Theory(object):
             print self.parameters_smg + [h, Omega_cdm]
             print self.parameters_2_smg
 
-            cosmo.set(self.params)
+            self.cosmo.set(self.params)
             try:
-                cosmo.compute()
+                self.cosmo.compute()
 
             except CosmoSevereError, e:
                 print "CosmoSevere!!!"
@@ -61,8 +87,8 @@ class Theory(object):
                 print e
                 self.data_compu_error.append(self.parameters_smg + [h, Omega_cdm]
                                              + self.parameters_2_smg)
-                cosmo.struct_cleanup()
-                cosmo.empty()
+                self.cosmo.struct_cleanup()
+                self.cosmo.empty()
                 continue
 
             except CosmoGuessingError, e:
@@ -71,16 +97,16 @@ class Theory(object):
                 if "root must be bracketed in zriddr." in str(e):
                     self.data_guess_error.append(self.parameters_smg + [h, Omega_cdm]
                                                 + self.parameters_2_smg)
-                cosmo.struct_cleanup()
-                cosmo.empty()
+                self.cosmo.struct_cleanup()
+                self.cosmo.empty()
                 continue
 
-            self.data.append([cosmo.w0_smg(), cosmo.wa_smg()] +
+            self.data.append([self.cosmo.w0_smg(), self.cosmo.wa_smg()] +
                              self.parameters_smg + [h, Omega_cdm] +
                              self.parameters_2_smg)
 
-            cosmo.struct_cleanup()
-            cosmo.empty()
+            self.cosmo.struct_cleanup()
+            self.cosmo.empty()
 
     def savetxt(self):
         time = datetime.now().strftime("%Y%m%d%H%M")
