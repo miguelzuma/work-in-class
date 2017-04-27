@@ -309,9 +309,15 @@ def main():
          'quintessence_axion': quintessence_axion,
          'quintessence_eft': quintessence_eft,
          'quintessence_modulus': quintessence_modulus,
-         'alpha_attractor_canonical': alpha_attractor_canonical}
+         'alpha_attractor_canonical': alpha_attractor_canonical,
+         'gal3': galileon,
+         'gal4': galileon,
+         'gal5': galileon}
 
-    th = d[args.theory]()
+    if 'gal' in args.theory:
+        th = d[args.theory](int(args.theory[-1]))
+    else:
+        th = d[args.theory]()
     th.compute_data(args.points)
     th.savetxt()
 
