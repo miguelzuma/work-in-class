@@ -269,6 +269,9 @@ class Data():
 
         lkl = 0
         for experiment in experiments:
+            if experiment not in self.experiments:
+                print "Adding {} to list of initialised experiments".format(experiment)
+                self.add_experiments([experiment])
             lkl += self.lkl[experiment].loglkl(cosmo, self)
 
         return lkl
