@@ -125,15 +125,24 @@ class Data():
                         "The following key: '%s' was not found" % e)
 
     def add_experiments(self, experiments):
-        """Add a new experiment to the list of evaluated experiments. Input must
-        be a list."""
+        """Add a new experiment to the list of evaluated experiments and
+        initialise their likelihoods. Input must be a list."""
 
-        self.experiments + experiments
+        new = []
+        for experiment in experiments:
+            if not experiment in self.experiments:
+                new.append(experiments)
+
+        self.experiments += new
         self.__initialise_likelihoods(experiments)
 
     def remove_experiments(self, experiments):
-        """Add a new experiment to the list of evaluated experiments. Input must
-        be a list."""
+        """Remove experiments from the list of experiments. Input must be a
+        list.
+
+        Note: This will not unload the likelihoods modules nor remove them from
+        self.lkl dictionary
+        """
 
         for experiment in experiments:
             self.experiments.remove(experiment)
