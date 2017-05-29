@@ -33,7 +33,8 @@ class Data():
         self.path['root'] = os.path.abspath(path_MP)
         self.path['MontePython'] = self.path['root'] + '/montepython'
         self.path['data'] = os.path.join(self.path['root'], path_data)
-        self.log_flag = True # This makes Likelihood to not write a log file
+        self.log_flag = True # This makes Likelihood to write a log file (if
+                             # False it would try to read one)
         self.experiments = experiments
         self.cosmo_arguments = {}
         """
@@ -62,6 +63,7 @@ class Data():
         self.command_line = CommandLine('/tmp')
         self.__initialise_likelihoods(experiments)
         os.remove(os.path.join(self.command_line.folder, 'log.param'))
+        self.initialised = True
 
     def __initialise_likelihoods(self, experiments):
         """
@@ -71,24 +73,29 @@ class Data():
 
         """
 
-        if not hasattr(self, 'lkl'):
+        if not hasattr(self, 'initialised'):
             self.lkl = OrderedDict()
-        # adding the likelihood directory to the path, to import the module
-        # then, for each library, calling an instance of the likelihood.
-        # Beware, though, if you add new likelihoods, they should go to the
-        # folder likelihoods/yourlike/yourlike.py, and contain a yourlike.data,
-        # otherwise the following set of commands will not work anymore.
+            # adding the likelihood directory to the path, to import the module
+            # then, for each library, calling an instance of the likelihood.
+            # Beware, though, if you add new likelihoods, they should go to the
+            # folder likelihoods/yourlike/yourlike.py, and contain a
+            # yourlike.data, otherwise the following set of commands will not
+            # work anymore.
 
-        # For the logging if log_flag is True, each likelihood will log its
-        # parameters
+            # For the logging if log_flag is True, each likelihood will log its
+            # parameters
 
-        # Due to problems in relative import, this line must be there. Until a
-        # better solution is found. It adds the root folder of the MontePython
-        # used as the first element in the sys.path
-        sys.path.insert(0, self.path['root'])
-        sys.path.insert(1, self.path['MontePython'])
+            # Due to problems in relative import, this line must be there. Until
+            # a better solution is found. It adds the root folder of the
+            # MontePython used as the first element in the sys.path
 
-        for elem in self.experiments:
+            sys.path.insert(0, self.path['root'])
+            sys.path.insert(1, self.path['MontePython'])
+
+            self.__io_mp = __import__('io_mp')
+
+
+        for elem in experiments:
 
             folder = os.path.abspath(os.path.join(
                 self.path['MontePython'], "likelihoods", "%s" % elem))
@@ -98,7 +105,7 @@ class Data():
                 exec "from likelihoods.%s import %s" % (
                     elem, elem)
             except ImportError as message:
-                raise io_mp.ConfigurationError(
+                raise self.__io_mp.ConfigurationError(
                     "Trying to import the %s likelihood" % elem +
                     " as asked in the parameter file, and failed."
                     " Please make sure it is in the `montepython/"
@@ -117,35 +124,44 @@ class Data():
                     elem, elem, folder, elem)
             except KeyError as e:
                 if e.find('clik') != -1:
-                    raise io_mp.ConfigurationError(
+                    raise self.__io_mp.ConfigurationError(
                         "You should provide a 'clik' entry in the dictionary "
                         "path defined in the file default.conf")
                 else:
-                    raise io_mp.ConfigurationError(
+                    raise self.__io_mp.ConfigurationError(
                         "The following key: '%s' was not found" % e)
 
     def add_experiments(self, experiments):
         """Add a new experiment to the list of evaluated experiments and
-        initialise their likelihoods. Input must be a list."""
+        initialise their likelihoods. Input must be a list or a single
+        experiment name."""
+
+        if type(experiments) is str:
+            experiments = [experiments]
 
         new = []
-        for experiment in experiments:
-            if not experiment in self.experiments:
-                new.append(experiments)
+        for exp in experiments:
+            if not exp in self.experiments:
+                new.append(exp)
 
+        print new
+        self.__initialise_likelihoods(new)
         self.experiments += new
-        self.__initialise_likelihoods(experiments)
 
     def remove_experiments(self, experiments):
         """Remove experiments from the list of experiments. Input must be a
-        list.
+        list or a single experiment name.
 
         Note: This will not unload the likelihoods modules nor remove them from
         self.lkl dictionary
         """
 
-        for experiment in experiments:
-            self.experiments.remove(experiment)
+        if type(experiments) is str:
+            experiments = [experiments]
+
+        for exp in experiments:
+            if exp in self.experiments:
+                self.experiments.remove(experiment)
 
     def get_mcmc_parameters(self, table_of_strings):
         """
