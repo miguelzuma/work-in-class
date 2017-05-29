@@ -131,6 +131,13 @@ class Data():
         self.experiments + experiments
         self.__initialise_likelihoods(experiments)
 
+    def remove_experiments(self, experiments):
+        """Add a new experiment to the list of evaluated experiments. Input must
+        be a list."""
+
+        for experiment in experiments:
+            self.experiments.remove(experiment)
+
     def get_mcmc_parameters(self, table_of_strings):
         """
         Returns an ordered array of parameter names filtered by
