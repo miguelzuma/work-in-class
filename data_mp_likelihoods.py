@@ -23,6 +23,12 @@ class Data():
     self.lkl['Likelihood_name'].
     """
     def __init__(self, path_MP, experiments, path_data='data'):
+        """
+        path_MP: path to the MontePython root folder
+        experiments: List of experiments to compare with
+        data: relative path to montepython data folder (default is ${path_MP}/data)
+        """
+
         self.path = {}
         self.path['root'] = os.path.abspath(path_MP)
         self.path['MontePython'] = self.path['root'] + '/montepython'
@@ -54,18 +60,19 @@ class Data():
         """
         self.cosmological_module_name = 'CLASS'
         self.command_line = CommandLine('/tmp')
-        self.__initialise_likelihoods()
+        self.__initialise_likelihoods(experiments)
         os.remove(os.path.join(self.command_line.folder, 'log.param'))
 
-    def __initialise_likelihoods(self):
+    def __initialise_likelihoods(self, experiments):
         """
         Given an array of experiments, return an ordered dict of instances
 
-        Copied from montepython/data.py
+        Copied from montepython/data.py (Modified)
 
         """
 
-        self.lkl = OrderedDict()
+        if not hasattr(self, 'lkl'):
+            self.lkl = OrderedDict()
         # adding the likelihood directory to the path, to import the module
         # then, for each library, calling an instance of the likelihood.
         # Beware, though, if you add new likelihoods, they should go to the
@@ -116,6 +123,13 @@ class Data():
                 else:
                     raise io_mp.ConfigurationError(
                         "The following key: '%s' was not found" % e)
+
+    def add_experiments(self, experiments):
+        """Add a new experiment to the list of evaluated experiments. Input must
+        be a list."""
+
+        self.experiments + experiments
+        self.__initialise_likelihoods(experiments)
 
     def get_mcmc_parameters(self, table_of_strings):
         """
