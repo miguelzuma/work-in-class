@@ -197,15 +197,7 @@ class Data():
         if self.cosmo_arguments:
             self.cosmo_arguments.clear()
 
-        self.cosmo_arguments = params.copy()
-
-        if 'parameters_smg' in params:
-            parameters_smg = self.cosmo_arguments['parameters_smg'].split(',')
-
-            for i, value in enumerate(parameters_smg):
-                self.cosmo_arguments['parameters_smg__{}'.format(i+1)] = value
-
-            del self.cosmo_arguments['parameters_smg']
+        self.update_params(params)
 
     def set_nuisance(self, nuisance):
         """Set the nuisance parameters in the mcmc_parameters dictionary. Input a
@@ -215,10 +207,41 @@ class Data():
         if self.mcmc_parameters:
             self.mcmc_parameters.clear()
 
-        if type(nuisance) is dict:
-            nuisance = nuisance.iteritems()
+        self.update_nuisance(nuisance)
 
-        for key, value in nuisance:
-            self.mcmc_parameters[key] = {'current': value, 'scale': 1, 'role':
-                                         'nuisance'}
+    def clear(self, params):
+        if params == 'cosmo':
+            self.cosmo_arguments.clear()
+        elif params == 'nuisance':
+            self.mcmc_parameters.clear()
+        else:
+            self.cosmo_arguments.clear()
+            self.mcmc_parameters.clear()
+
+    def compute_lkl(self, cosmo, params, experiments = [], nuisance=[], overwrite=False):
+        """Compute the likelihood for the parms given. Params will update the
+        cosmo_arguments and nuisance_parameters unless overwrite is True.
+
+        For the time being, params must be given in classy form.
+        """
+
+        if overwrite:
+            self.clear()
+
+        self.update_params(params)
+        if nuisance:
+            self.update_nuisance(nuisance)
+
+        cosmo.set(params) # TODO: Modify to accetp params as in MP input
+
+        if not experiments:
+            experiments = self.experiments
+
+        lkl = 0
+        for experiment in experiments:
+            lkl += self.lkl[experiment].loglkl(cosmo, self)
+
+        return lkl
+
+
 
