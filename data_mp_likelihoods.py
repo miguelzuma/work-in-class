@@ -264,11 +264,14 @@ class Data():
             self.cosmo_arguments.clear()
             self.mcmc_parameters.clear()
 
-    def compute_lkl(self, cosmo, params, experiments = [], nuisance=[], overwrite=False):
+    def compute_lkl(self, cosmo, params, experiments = [], nuisance=[], overwrite=False, cosmo_struct_cleanup=False):
         """Compute the likelihood for the parms given. Params will update the
         cosmo_arguments and nuisance_parameters unless overwrite is True.
 
         For the time being, params must be given in classy form.
+
+        cosmo_struct_cleanup. If True, call cosmo.struct_cleanup() after
+        computing lkl
         """
 
         if overwrite:
@@ -279,6 +282,7 @@ class Data():
             self.update_nuisance(nuisance)
 
         cosmo.set(params) # TODO: Modify to accetp params as in MP input
+        cosmo.compute()
 
         if not experiments:
             experiments = self.experiments
@@ -289,6 +293,9 @@ class Data():
                 print "Adding {} to list of initialised experiments".format(experiment)
                 self.add_experiments([experiment])
             lkl += self.lkl[experiment].loglkl(cosmo, self)
+
+        if cosmo_struct_cleanup:
+            cosmo.cosmo_struct_cleanup()
 
         return lkl
 
