@@ -131,16 +131,23 @@ class Data():
                     raise self.__io_mp.ConfigurationError(
                         "The following key: '%s' was not found" % e)
 
+    def __name_str_to_list(self, names):
+        """
+        Given a string return a list with it, otherwise return the input.
+        Ex: 'name' ---> ['name']
+        """
+        if type(names) is str:
+            names = [names]
+
+        return names
+
     def add_experiments(self, experiments):
         """Add a new experiment to the list of evaluated experiments and
         initialise their likelihoods. Input must be a list or a single
         experiment name."""
 
-        if type(experiments) is str:
-            experiments = [experiments]
-
         new = []
-        for exp in experiments:
+        for exp in self.__name_str_to_list(experiments):
             if not exp in self.experiments:
                 new.append(exp)
 
@@ -156,10 +163,7 @@ class Data():
         self.lkl dictionary
         """
 
-        if type(experiments) is str:
-            experiments = [experiments]
-
-        for exp in experiments:
+        for exp in self.__name_str_to_list(experiments):
             if exp in self.experiments:
                 self.experiments.remove(experiment)
 
@@ -270,6 +274,9 @@ class Data():
 
         For the time being, params must be given in classy form.
 
+        experiments must be a list of experiment names. In case a single
+        experiment is required, it can be introduced as str.
+
         cosmo_struct_cleanup. If True, call cosmo.struct_cleanup() after
         computing lkl
         """
@@ -288,7 +295,7 @@ class Data():
             experiments = self.experiments
 
         lkl = 0
-        for experiment in experiments:
+        for experiment in self.__name_str_to_list(experiments):
             if experiment not in self.experiments:
                 print "Adding {} to list of initialised experiments".format(experiment)
                 self.add_experiments([experiment])
