@@ -288,7 +288,7 @@ class Data():
         if nuisance:
             self.update_nuisance(nuisance)
 
-        cosmo.set(params) # TODO: Modify to accetp params as in MP input
+        cosmo.set(params) # TODO: Modify to accept params as in MP input
         cosmo.compute()
 
         if not experiments:
@@ -302,7 +302,7 @@ class Data():
             lkl += self.lkl[experiment].loglkl(cosmo, self)
 
         if cosmo_struct_cleanup:
-            cosmo.cosmo_struct_cleanup()
+            cosmo.struct_cleanup()
 
         return lkl
 
