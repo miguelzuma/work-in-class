@@ -50,3 +50,8 @@ def absolute_deviation(x, y, cx, cy):
     X, abs_dev = __deviation(x, y, cx, cy, 'abs')
 
     return X, abs_dev
+
+
+def find_nearest(array,value):
+    idx = (np.abs(array-value)).argmin()
+    return idx
