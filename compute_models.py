@@ -94,14 +94,15 @@ class Model():
 
                 if (type(pert[0]) is not dict) and (pert[0] != 'all'):
                     d['pert'] = {}
-                    for item in pert:
-                        for subkey, lst in output.iteritems():
-                            d['pert'].update({subkey: []})
-                            for kdic in lst:  # Each item is for a k
+                    for subkey, lst in output.iteritems():
+                        d['pert'].update({subkey: []})
+                        for n, kdic in enumerate(lst):  # Each item is for a k
+                            d['pert'][subkey].append({})
+                            for item in pert:
                                 if type(item) is list:
-                                    d['pert'][subkey].append({item[0]: kdic[item[0]][item[1]]})
+                                    d['pert'][subkey][n].update({item[0]: kdic[item[0]][item[1]]})
                                 else:
-                                    d['pert'][subkey].append({item: kdic[item]})
+                                    d['pert'][subkey][n].update({item: kdic[item]})
 
             for i in extra:
                 exec('d[i] = self.cosmo.{}'.format(i))
