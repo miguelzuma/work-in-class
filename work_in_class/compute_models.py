@@ -74,7 +74,7 @@ class Model():
                         d[lst[1]] = {}
                         for item in back:
                             if type(item) is list:
-                                d[lst[1]].update({item[0]: output[item[0]][1]})
+                                d[lst[1]].update({item[0]: output[item[0]][item[1]]})
                             else:
                                 d[lst[1]].update({item: output[item]})
 
