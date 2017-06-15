@@ -7,6 +7,7 @@ from collections import OrderedDict as od
 from matplotlib import pyplot as plt
 import inifile_parser as inip
 import wicmath
+import numpy as np
 
 
 class Model():
@@ -118,12 +119,16 @@ class Model():
         the second column are a zoom of the ones in the first one.
 
         varied_name = varied variable's name
-        module = background, thermo, etc
         y1name = output class name of the variable for Y axis 1
         y2name = output class name of the variable for Y axis 2
+        labelvaried_name = label for varied_name
         y1label = label for Y1 axis
         y2label = label for Y2 axis
         z_s = greatest z to plot in zoomed figures
+        scale = list of lists of scale type for x and y axis e.g. ['linear',
+                'linear']. First item is for upper plots, and second for the
+                lowers
+        exclude = list of the varied variable values to exclude from plotting.
         """
         fig, ax = plt.subplots(2, 2, figsize=(15, 10))
         xlabel = 'z+1'
@@ -156,6 +161,44 @@ class Model():
             ax[1, 1].semilogx(x[z_i:], y2[z_i:], label=label_i)
             ax[1, 1].set_xlabel(r'${}$'.format(xlabel))
             ax[1, 1].set_yscale(scale[1][1])
+
+        plt.legend(loc=0)
+        plt.show()
+        plt.close()
+
+    def plot(self, varied_name, x, y, labelvaried_name, xlabel, ylabel,
+             scale=['linear', 'linear'], exclude=[]):
+        """
+        Plot a 2x2 figure, with two variables y1 and y2 vs z+1. The ones in
+        the second column are a zoom of the ones in the first one.
+
+        varied_name = varied variable's name
+        x = list with ['variable name', 'module'] with  module = back, thermo...
+            for X axis
+        y = list with ['variable name', 'module'] with  module = back, thermo...
+            for Y axis
+        ylabelvaried_name = label for varied_name
+        ylabel = label for Y1 axis
+        scale = list of scale type for x and y axis e.g. ['linear', 'linear'].
+        exclude = list of the varied variable values to exclude from plotting.
+        """
+        fig, ax = plt.subplots(figsize=(10, 7))
+
+        for i, ba in self.computed[varied_name].iteritems():
+            if i in exclude:
+                continue
+            x1 = ba[x[1]][x[0]]
+            y1 = ba[y[1]][y[0]]
+
+            label_i = r'${}={}$'.format(labelvaried_name, i)
+
+            ax.plot(x1, y1, label=label_i)
+
+            ax.set_xscale(scale[0])
+            ax.set_yscale(scale[1])
+
+            ax.set_ylabel(r'${}$'.format(ylabel))
+            ax.set_xlabel(r'${}$'.format(xlabel))
 
         plt.legend(loc=0)
         plt.show()
