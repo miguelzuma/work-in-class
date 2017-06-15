@@ -7,7 +7,6 @@ from collections import OrderedDict as od
 from matplotlib import pyplot as plt
 import inifile_parser as inip
 import wicmath
-import numpy as np
 
 
 class Model():
