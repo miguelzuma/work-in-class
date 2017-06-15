@@ -109,45 +109,51 @@ class Model():
 
             self.cosmo.struct_cleanup()
 
-    def plot_4(self, y1name, y2name, y1label, y2label, z_s=100,
-               scale=[['linear', 'linear'], ['linear', 'linear']],
-               exclude=[]):
+    def plot_4_vs_z(self, varied_name, y1name, y2name,
+                    labelvaried_name, y1label, y2label, z_s=100,
+                    scale=[['linear', 'linear'], ['linear', 'linear']],
+                    exclude=[]):
         """
         Plot a 2x2 figure, with two variables y1 and y2 vs z+1. The ones in
         the second column are a zoom of the ones in the first one.
 
+        varied_name = varied variable's name
+        module = background, thermo, etc
         y1name = output class name of the variable for Y axis 1
         y2name = output class name of the variable for Y axis 2
         y1label = label for Y1 axis
         y2label = label for Y2 axis
-        z_s = greates z to plot in zoomed figures
+        z_s = greatest z to plot in zoomed figures
         """
         fig, ax = plt.subplots(2, 2, figsize=(15, 10))
         xlabel = 'z+1'
 
-        for i, ba in self.computed.iteritems():
+        module = 'back'
+
+        for i, ba in self.computed[varied_name].iteritems():
             if i in exclude:
                 continue
-            ba = self.computed[i]
-            x = ba['z'] + 1
-            y1 = ba[y1name]
-            y2 = ba[y2name]
-            z_i = wicmath.find_nearest(ba['z'], z_s)
+            x = ba[module]['z'] + 1
+            y1 = ba[module][y1name]
+            y2 = ba[module][y2name]
+            z_i = wicmath.find_nearest(ba[module]['z'], z_s)
 
-            ax[0, 0].semilogx(x, y1, label=r'${}$'.format(i))
+            label_i = r'${}={}$'.format(labelvaried_name, i)
+
+            ax[0, 0].semilogx(x, y1, label=label_i)
 
             ax[0, 0].set_ylabel(r'${}$'.format(y1label))
             ax[0, 0].set_yscale(scale[0][0])
 
-            ax[1, 0].semilogx(x, y2, label=r'${}$'.format(i))
+            ax[1, 0].semilogx(x, y2, label=label_i)
             ax[1, 0].set_ylabel(r'${}$'.format(y2label))
             ax[1, 0].set_xlabel(r'${}$'.format(xlabel))
             ax[1, 0].set_yscale(scale[1][0])
 
-            ax[0, 1].semilogx(x[z_i:], y1[z_i:], label=r'${}$'.format(i))
+            ax[0, 1].semilogx(x[z_i:], y1[z_i:], label=label_i)
             ax[0, 1].set_yscale(scale[0][1])
 
-            ax[1, 1].semilogx(x[z_i:], y2[z_i:], label=r'${}$'.format(i))
+            ax[1, 1].semilogx(x[z_i:], y2[z_i:], label=label_i)
             ax[1, 1].set_xlabel(r'${}$'.format(xlabel))
             ax[1, 1].set_yscale(scale[1][1])
 
