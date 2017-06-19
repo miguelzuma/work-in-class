@@ -71,6 +71,7 @@ class Compare():
 
         color = plt.cm.rainbow(np.linspace(0, 1, len(dicts)))
 
+        ylabel_in = ylabel
         for akey in keys:
             i = 0
             f, ax = plt.subplots(1, 1)
@@ -78,10 +79,10 @@ class Compare():
             for adict in dicts:
                 if kind == "normal":
                     X, Y = adict[self._x], adict[akey]
-                    ylabel = ylabel or akey + " + " + str(ysum)
+                    ylabel = ylabel_in or akey + " + " + str(ysum)
                 else:
                     X, Y = adict[akey]
-                    ylabel = ylabel or akey + " [Dev] + " + str(ysum)
+                    ylabel = ylabel_in or akey + " [Dev] + " + str(ysum)
 
                 X = X + xsum
                 Y = Y + ysum
