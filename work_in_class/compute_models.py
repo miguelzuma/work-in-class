@@ -12,16 +12,18 @@ import numpy as np
 
 
 class Model():
-    def __init__(self, cosmo=Class()):
+    def __init__(self, cosmo=None):
         """
         Initialize the Model class. By default Model uses its own Class
         instance.
 
-        cosmo = external Class instance. Default is Class() i.e.  its own
-        instance
+        cosmo = external Class instance. Default is None
         """
 
-        self.cosmo = cosmo
+        if cosmo:
+            self.cosmo = cosmo
+        else:
+            self.cosmo = Class()
         self.computed = {}
 
     def compute_models(self, params, varied_name, index_variable, values,
