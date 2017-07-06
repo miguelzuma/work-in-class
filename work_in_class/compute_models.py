@@ -3,14 +3,24 @@
 """Module thought to be used when you want to obtain some quantities (e.g. the
 background structures) for a model varying one of the parameters"""
 
+from classy import Class
 from collections import OrderedDict as od
 from matplotlib import pyplot as plt
 import inifile_parser as inip
 import wicmath
+import numpy as np
 
 
 class Model():
-    def __init__(self, cosmo):
+    def __init__(self, cosmo=Class()):
+        """
+        Initialize the Model class. By default Model uses its own Class
+        instance.
+
+        cosmo = external Class instance. Default is Class() i.e.  its own
+        instance
+        """
+
         self.cosmo = cosmo
         self.computed = {}
 
@@ -135,7 +145,7 @@ class Model():
         module = 'back'
 
         for i, ba in self.computed[varied_name].iteritems():
-            if i in exclude:
+            if (i in exclude) or (not ba):
                 continue
             x = ba[module]['z'] + 1
             y1 = ba[module][y1name]
@@ -161,6 +171,42 @@ class Model():
             ax[1, 1].set_xlabel(r'${}$'.format(xlabel))
             ax[1, 1].set_yscale(scale[1][1])
 
+        plt.legend(loc=0)
+        plt.show()
+        plt.close()
+
+    def plot_density(self, varied_name, labelvaried_name, z_s=100, exclude=[]):
+        """
+        Plot Dark Energy fraction density. Second figure is plotted until
+        redshift z_s.
+
+        varied_name = varied variable's name
+        labelvaried_name = label for varied_name
+        z_s = greatest z to plot in zoomed figures
+        exclude = list of the varied variable values to exclude from plotting.
+        """
+        f, ax = plt.subplots(1, 2, figsize=(15,6))
+
+        for i, ba in self.computed[varied_name].iteritems():
+            if (i in exclude) or (not ba):
+                continue
+
+            z = ba['back']['z']
+            z_i = wicmath.find_nearest(ba['back']['z'], z_s)
+
+            OmegaDE = ba['back']['(.)rho_smg'] / ba['back']['(.)rho_crit']
+
+            ax[0].loglog(z+1, OmegaDE, label='$f_{ini}$' + '={}'.format(i))
+            ax[1].loglog(z[z_i:]+1, OmegaDE[z_i:], label='$f_{ini}$' + '={}'.format(i))
+
+        Omega0_Planck = np.ones(len(z)) * (1 - self.cosmo.Omega_m())
+        ax[0].semilogx(z + 1, Omega0_Planck, label=r'$\Omega_0^{Planck}$')
+        ax[1].semilogx(z[z_i:] + 1, Omega0_Planck[z_i:], label=r'$1 - \Omega_m$')
+
+        ax[0].set_xlabel('z+1')
+        ax[0].set_ylabel(r'$\Omega_{DE}$')
+        ax[1].set_xlabel('z+1')
+        ax[1].set_ylabel(r'$\Omega_{DE}$')
         plt.legend(loc=0)
         plt.show()
         plt.close()
