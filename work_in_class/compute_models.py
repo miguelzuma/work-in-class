@@ -154,23 +154,23 @@ class Model():
             y2 = ba[module][y2name]
             z_i = wicmath.find_nearest(ba[module]['z'], z_s)
 
-            label_i = r'${}={}$'.format(labelvaried_name, i)
+            label_i = labelvaried_name + '={}'.format(i)
 
             ax[0, 0].semilogx(x, y1, label=label_i)
 
-            ax[0, 0].set_ylabel(r'${}$'.format(y1label))
+            ax[0, 0].set_ylabel(y1label)
             ax[0, 0].set_yscale(scale[0][0])
 
             ax[1, 0].semilogx(x, y2, label=label_i)
-            ax[1, 0].set_ylabel(r'${}$'.format(y2label))
-            ax[1, 0].set_xlabel(r'${}$'.format(xlabel))
+            ax[1, 0].set_ylabel(y2label)
+            ax[1, 0].set_xlabel(xlabel)
             ax[1, 0].set_yscale(scale[1][0])
 
             ax[0, 1].semilogx(x[z_i:], y1[z_i:], label=label_i)
             ax[0, 1].set_yscale(scale[0][1])
 
             ax[1, 1].semilogx(x[z_i:], y2[z_i:], label=label_i)
-            ax[1, 1].set_xlabel(r'${}$'.format(xlabel))
+            ax[1, 1].set_xlabel(xlabel)
             ax[1, 1].set_yscale(scale[1][1])
 
         plt.legend(loc=0)
@@ -187,7 +187,7 @@ class Model():
         z_s = greatest z to plot in zoomed figures
         exclude = list of the varied variable values to exclude from plotting.
         """
-        f, ax = plt.subplots(1, 2, figsize=(15,6))
+        f, ax = plt.subplots(1, 2, figsize=(15, 6))
 
         for i, ba in self.computed[varied_name].iteritems():
             if (i in exclude) or (not ba):
@@ -198,8 +198,8 @@ class Model():
 
             OmegaDE = ba['back']['(.)rho_smg'] / ba['back']['(.)rho_crit']
 
-            ax[0].loglog(z+1, OmegaDE, label='$f_{ini}$' + '={}'.format(i))
-            ax[1].loglog(z[z_i:]+1, OmegaDE[z_i:], label='$f_{ini}$' + '={}'.format(i))
+            ax[0].loglog(z + 1, OmegaDE, label=labelvaried_name + '={}'.format(i))
+            ax[1].loglog(z[z_i:] + 1, OmegaDE[z_i:], label=labelvaried_name + '={}'.format(i))
 
         Omega0_Planck = np.ones(len(z)) * (1 - self.cosmo.Omega_m())
         ax[0].semilogx(z + 1, Omega0_Planck, label=r'$\Omega_0^{Planck}$')
@@ -237,7 +237,7 @@ class Model():
             x1 = ba[x[1]][x[0]]
             y1 = ba[y[1]][y[0]]
 
-            label_i = r'${}={}$'.format(labelvaried_name, i)
+            label_i = labelvaried_name + '={}'.format(i)
 
             ax.plot(x1, y1, label=label_i)
 
