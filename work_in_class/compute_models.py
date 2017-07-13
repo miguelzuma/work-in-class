@@ -28,7 +28,7 @@ class Model():
 
     def compute_models(self, params, varied_name, index_variable, values,
                        back=[], thermo=[], prim=[], pert=[], trans=[],
-                       extra=[]):
+                       extra=[], update=True):
         """
         Fill dic with the background structures for the model with given
         params, modifying the varied_name value with values.
@@ -57,7 +57,9 @@ class Model():
         """
 
         key = varied_name
-        self.computed[key] = od()
+
+        if (not update) or (key not in self.computed.keys()):
+            self.computed[key] = od()
 
         for val in values:
             # key = "{}={}".format(varied_name, val)
