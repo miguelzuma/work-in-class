@@ -19,12 +19,41 @@ class Model():
 
         cosmo = external Class instance. Default is None
         """
-
         if cosmo:
             self.cosmo = cosmo
         else:
             self.cosmo = Class()
         self.computed = {}
+
+    def __set_scale(self, axes, xscale, yscale):
+        """
+        Set scales for axes in axes array.
+
+        axes = axes array (e.g. f, ax = plt.subplots(2,2))
+        xscale = linear array of xscale.
+        yscale = linear array of yscale.
+
+        Scales are set once axes is flatten. Each plot is counted from left to
+        right an from top to bottom.
+        """
+        for i, ax in enumerate(axes.flat):
+            ax.set_xscale(xscale[i])
+            ax.set_yscale(yscale[i])
+
+    def __set_label(self, axes, xlabel, ylabel):
+        """
+        Set labels for axes in axes array.
+
+        axes = axes array (e.g. f, ax = plt.subplots(2,2))
+        xlabel = linear array of xlabels.
+        ylabel = linear array of ylabels.
+
+        Labels are set once axes is flatten. Each plot is counted from left to
+        right an from top to bottom.
+        """
+        for i, ax in enumerate(axes.flat):
+            ax.set_xlabel(xlabel[i])
+            ax.set_ylabel(ylabel[i])
 
     def compute_models(self, params, varied_name, index_variable, values,
                        back=[], thermo=[], prim=[], pert=[], trans=[],
@@ -125,7 +154,8 @@ class Model():
 
     def plot_4_vs_z(self, varied_name, y1name, y2name,
                     labelvaried_name, y1label, y2label, z_s=100,
-                    scale=[['linear', 'linear'], ['linear', 'linear']],
+                    yscale=['linear', 'linear', 'linear', 'linear'],
+                    xscale=['log', 'log', 'log', 'log'],
                     exclude=[]):
         """
         Plot a 2x2 figure, with two variables y1 and y2 vs z+1. The ones in
@@ -138,9 +168,8 @@ class Model():
         y1label = label for Y1 axis
         y2label = label for Y2 axis
         z_s = greatest z to plot in zoomed figures
-        scale = list of lists of scale type for x and y axis e.g. ['linear',
-                'linear']. First item is for upper plots, and second for the
-                lowers
+        xscale = list of scales for the x axis
+        yscale = list of scales for the y axis
         exclude = list of the varied variable values to exclude from plotting.
         """
         fig, ax = plt.subplots(2, 2, figsize=(15, 10))
@@ -158,37 +187,36 @@ class Model():
 
             label_i = labelvaried_name + '={}'.format(i)
 
-            ax[0, 0].semilogx(x, y1, label=label_i)
+            ax[0, 0].plot(x, y1, label=label_i)
+            ax[1, 0].plot(x, y2, label=label_i)
+            ax[0, 1].plot(x[z_i:], y1[z_i:], label=label_i)
+            ax[1, 1].plot(x[z_i:], y2[z_i:], label=label_i)
 
-            ax[0, 0].set_ylabel(y1label)
-            ax[0, 0].set_yscale(scale[0][0])
-
-            ax[1, 0].semilogx(x, y2, label=label_i)
-            ax[1, 0].set_ylabel(y2label)
-            ax[1, 0].set_xlabel(xlabel)
-            ax[1, 0].set_yscale(scale[1][0])
-
-            ax[0, 1].semilogx(x[z_i:], y1[z_i:], label=label_i)
-            ax[0, 1].set_yscale(scale[0][1])
-
-            ax[1, 1].semilogx(x[z_i:], y2[z_i:], label=label_i)
-            ax[1, 1].set_xlabel(xlabel)
-            ax[1, 1].set_yscale(scale[1][1])
-
+        self.__set_scale(ax, xscale, yscale)
+        self.__set_label(ax, ['', '', xlabel, xlabel], [y1label, '',
+                                                              y2label, ''])
         plt.legend(loc=0)
         plt.show()
         plt.close()
 
-    def plot_density(self, varied_name, labelvaried_name, z_s=100, exclude=[]):
+    def plot_fraction_density(self, varied_name, labelvaried_name, z_s=100,
+                              yscale=['log', 'log'],
+                              xscale=['log', 'log'], exclude=[], species=[]):
         """
-        Plot Dark Energy fraction density. Second figure is plotted until
+        Plot Dark Energy fraction density. Second figure is plotted up to
         redshift z_s.
 
         varied_name = varied variable's name
         labelvaried_name = label for varied_name
         z_s = greatest z to plot in zoomed figures
+        xscale = list of scales for the x axis
+        yscale = list of scales for the y axis
         exclude = list of the varied variable values to exclude from plotting.
+        species = list of extra species to plot, called as in hi_class tables.
         """
+        xlabel = 'z+1'
+        ylabel = r'$\Omega_{DE}$'
+
         f, ax = plt.subplots(1, 2, figsize=(15, 6))
 
         for i, ba in self.computed[varied_name].iteritems():
@@ -200,17 +228,85 @@ class Model():
 
             OmegaDE = ba['back']['(.)rho_smg'] / ba['back']['(.)rho_crit']
 
-            ax[0].loglog(z + 1, OmegaDE, label=labelvaried_name + '={}'.format(i))
-            ax[1].loglog(z[z_i:] + 1, OmegaDE[z_i:], label=labelvaried_name + '={}'.format(i))
+            ax[0].plot(z + 1, OmegaDE, label=labelvaried_name + '={}'.format(i))
+            ax[1].plot(z[z_i:] + 1, OmegaDE[z_i:], label=labelvaried_name + '={}'.format(i))
+
+        for s in species:
+            subindex_s = s.split('_')[-1]
+            Omega_s = ba['back'][s] / ba['back']['(.)rho_crit']
+            ax[0].plot(z + 1, Omega_s)
+            ax[1].plot(z[z_i:] + 1, Omega_s[z_i:], label=r'$\Omega_{}$'.format(subindex_s))
 
         Omega0_Planck = np.ones(len(z)) * (1 - self.cosmo.Omega_m())
-        ax[0].semilogx(z + 1, Omega0_Planck, label=r'$\Omega_0^{Planck}$')
-        ax[1].semilogx(z[z_i:] + 1, Omega0_Planck[z_i:], label=r'$1 - \Omega_m$')
+        ax[0].plot(z + 1, Omega0_Planck)
+        ax[1].plot(z[z_i:] + 1, Omega0_Planck[z_i:], label=r'$1 - \Omega_{m,0}}$')
 
-        ax[0].set_xlabel('z+1')
-        ax[0].set_ylabel(r'$\Omega_{DE}$')
-        ax[1].set_xlabel('z+1')
-        ax[1].set_ylabel(r'$\Omega_{DE}$')
+        self.__set_scale(ax, xscale, yscale)
+        self.__set_label(ax, [xlabel, xlabel], [ylabel, ''])
+
+        plt.legend(loc=0)
+        plt.show()
+        plt.close()
+
+    def plot_density(self, varied_name, labelvaried_name, z_s=100,
+                     yscale=['log', 'log', 'log', 'log'],
+                     xscale=['log', 'log', 'log', 'log'],
+                     exclude=[], species=[]):
+        """
+        Plot Dark Energy and critical density. Second figure is plotted until
+        redshift z_s.
+
+        varied_name = varied variable's name
+        labelvaried_name = label for varied_name
+        z_s = greatest z to plot in zoomed figures
+        xscale = list of scales for the x axis
+        yscale = list of scales for the y axis
+        exclude = list of the varied variable values to exclude from plotting.
+        species = list of extra species to plot, called as in hi_class tables.
+        """
+        xlabel = 'z+1'
+        y1label = r'$\rho_c$'
+        y2label = r'$\rho_{DE}$'
+
+        f, ax = plt.subplots(2, 2, figsize=(15, 10))
+
+        for i, ba in self.computed[varied_name].iteritems():
+            if (i in exclude) or (not ba):
+                continue
+
+            z = ba['back']['z']
+            z_i = wicmath.find_nearest(ba['back']['z'], z_s)
+
+            rho = ba['back']['(.)rho_smg']
+            rho_c = ba['back']['(.)rho_crit']
+
+            ax[0, 0].plot(z + 1, rho_c, label=labelvaried_name + '={}'.format(i))
+            ax[0, 1].plot(z[z_i:] + 1, rho_c[z_i:], label=labelvaried_name + '={}'.format(i))
+            ax[1, 0].plot(z + 1, rho, label=labelvaried_name + '={}'.format(i))
+            ax[1, 1].plot(z[z_i:] + 1, rho[z_i:], label=labelvaried_name + '={}'.format(i))
+
+        rho0_Planck = np.ones(len(z)) * (1 - self.cosmo.Omega_m()) * rho_c[-1]
+        ax[0, 0].plot(z + 1, rho0_Planck)
+        ax[0, 1].plot(z[z_i:] + 1, rho0_Planck[z_i:])
+        ax[1, 0].plot(z + 1, rho0_Planck)
+        ax[1, 1].plot(z[z_i:] + 1, rho0_Planck[z_i:], label=r'$\rho_{DE}^{expected}$')
+
+        for s in species:
+            subindex_s = s.split('_')[-1]
+            rho_s = ba['back'][s]
+            ax[1, 0].plot(z + 1, rho_s)
+            ax[1, 1].plot(z[z_i:] + 1, rho_s[z_i:], label=r'$\rho_{}$'.format(subindex_s))
+
+        self.__set_scale(ax, xscale, yscale)
+        self.__set_label(ax, ['', '', xlabel, xlabel], [y1label, '', y2label,
+                                                        ''])
+
+        ax[1, 0].set_xlabel('z+1')
+        ax[1, 1].set_xlabel('z+1')
+        ax[1, 0].set_ylabel(r'$\rho_{DE}$')
+        ax[1, 1].set_ylabel(r'$\rho_{DE}$')
+        ax[0, 0].set_ylabel(r'$\rho_c$')
+        ax[0, 1].set_ylabel(r'$\rho_c$')
         plt.legend(loc=0)
         plt.show()
         plt.close()
