@@ -52,6 +52,24 @@ def absolute_deviation(x, y, cx, cy):
     return X, abs_dev
 
 
-def find_nearest(array,value):
-    idx = (np.abs(array-value)).argmin()
+def find_nearest(array, value):
+    """
+    Return index of the array element closest to value.
+    """
+    idx = (np.abs(array - value)).argmin()
+
     return idx
+
+
+def diff(x, y):
+    """
+    Output X, dy/dx, where X are the intermediate values of the x array points.
+
+    x = array of values which y change respect to.
+    y = array of values to differentiate with respect to x.
+    """
+    dx = np.diff(x)
+    dydx = np.diff(y) / dx
+    X = x[:-1] + dx / 2.
+
+    return X, dydx
