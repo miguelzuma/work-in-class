@@ -73,3 +73,13 @@ def diff(x, y):
     X = x[:-1] + dx / 2.
 
     return X, dydx
+
+
+def intermediate(array):
+    """
+    Return an array with the intermediate values of array
+    """
+    if type(array) is not np.ndarray:
+        array = np.array(array)
+
+    return array[:-1] + np.diff(array) / 2.
