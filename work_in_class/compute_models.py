@@ -156,7 +156,7 @@ class Model():
                     labelvaried_name, y1label, y2label, z_s=100,
                     yscale=['linear', 'linear', 'linear', 'linear'],
                     xscale=['log', 'log', 'log', 'log'],
-                    exclude=[]):
+                    exclude=[], scatter=False):
         """
         Plot a 2x2 figure, with two variables y1 and y2 vs z+1. The ones in
         the second column are a zoom of the ones in the first one.
@@ -177,6 +177,17 @@ class Model():
 
         module = 'back'
 
+        if scatter:
+            ax00plot = ax[0, 0].scatter
+            ax10plot = ax[1, 0].scatter
+            ax01plot = ax[0, 1].scatter
+            ax11plot = ax[1, 1].scatter
+        else:
+            ax00plot = ax[0, 0].plot
+            ax10plot = ax[1, 0].plot
+            ax01plot = ax[0, 1].plot
+            ax11plot = ax[1, 1].plot
+
         for i, ba in self.computed[varied_name].iteritems():
             if (i in exclude) or (not ba):
                 continue
@@ -187,14 +198,14 @@ class Model():
 
             label_i = labelvaried_name + '={}'.format(i)
 
-            ax[0, 0].plot(x, y1, label=label_i)
-            ax[1, 0].plot(x, y2, label=label_i)
-            ax[0, 1].plot(x[z_i:], y1[z_i:], label=label_i)
-            ax[1, 1].plot(x[z_i:], y2[z_i:], label=label_i)
+            ax00plot(x, y1, label=label_i)
+            ax10plot(x, y2, label=label_i)
+            ax01plot(x[z_i:], y1[z_i:], label=label_i)
+            ax11plot(x[z_i:], y2[z_i:], label=label_i)
 
         self.__set_scale(ax, xscale, yscale)
-        self.__set_label(ax, ['', '', xlabel, xlabel], [y1label, '',
-                                                              y2label, ''])
+        self.__set_label(ax, ['', '', xlabel, xlabel], [y1label, '', y2label,
+                                                        ''])
         plt.legend(loc=0)
         plt.show()
         plt.close()
@@ -312,7 +323,7 @@ class Model():
         plt.close()
 
     def plot(self, varied_name, x, y, labelvaried_name, xlabel, ylabel,
-             scale=['linear', 'linear'], exclude=[]):
+             scale=['linear', 'linear'], exclude=[], scatter=False):
         """
         Plot a 2x2 figure, with two variables y1 and y2 vs z+1. The ones in
         the second column are a zoom of the ones in the first one.
@@ -329,6 +340,11 @@ class Model():
         """
         fig, ax = plt.subplots(figsize=(10, 7))
 
+        if scatter:
+            axPlot = ax.scatter
+        else:
+            axPlot = ax.plot
+
         for i, ba in self.computed[varied_name].iteritems():
             if i in exclude:
                 continue
@@ -337,7 +353,7 @@ class Model():
 
             label_i = labelvaried_name + '={}'.format(i)
 
-            ax.plot(x1, y1, label=label_i)
+            axPlot(x1, y1, label=label_i)
 
             ax.set_xscale(scale[0])
             ax.set_yscale(scale[1])
