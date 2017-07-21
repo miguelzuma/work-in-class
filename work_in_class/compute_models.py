@@ -57,7 +57,7 @@ class Model():
 
     def compute_models(self, params, varied_name, index_variable, values,
                        back=[], thermo=[], prim=[], pert=[], trans=[],
-                       extra=[], update=True):
+                       extra=[], update=True, cosmo_msg=False):
         """
         Fill dic with the background structures for the model with given
         params, modifying the varied_name value with values.
@@ -100,8 +100,11 @@ class Model():
 
             try:
                 self.cosmo.compute()
-            except:
+            except Exception, e:
                 print "Error: skipping {}={}".format(key, val)
+                if cosmo_msg:
+                    print e
+
                 continue
 
             d['tunned'] = self.cosmo.get_current_derived_parameters(['tuning_parameter'])['tuning_parameter']
