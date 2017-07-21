@@ -96,6 +96,7 @@ class Model():
 
             d = self.computed[key][val] = {}
 
+            self.cosmo.empty()
             self.cosmo.set(params)
 
             try:
