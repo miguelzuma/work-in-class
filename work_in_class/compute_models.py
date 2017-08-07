@@ -327,10 +327,9 @@ class Model():
         plt.close()
 
     def plot(self, varied_name, x, y, labelvaried_name, xlabel, ylabel,
-             scale=['linear', 'linear'], exclude=[], scatter=False):
+             scale=['linear', 'linear'], exclude=[], add=[0, 0], x_s=False, scatter=False):
         """
-        Plot a 2x2 figure, with two variables y1 and y2 vs z+1. The ones in
-        the second column are a zoom of the ones in the first one.
+        Plot y vs x for all varied_names values.
 
         varied_name = varied variable's name
         x = list with ['variable name', 'module'] with  module = back, thermo...
@@ -340,6 +339,8 @@ class Model():
         ylabelvaried_name = label for varied_name
         ylabel = label for Y1 axis
         scale = list of scale type for x and y axis e.g. ['linear', 'linear'].
+        add = 2-item list with values to sum to x and y arrays respectively.
+        x_s = greatest x to plot.
         exclude = list of the varied variable values to exclude from plotting.
         """
         fig, ax = plt.subplots(figsize=(10, 7))
@@ -352,12 +353,18 @@ class Model():
         for i, ba in self.computed[varied_name].iteritems():
             if i in exclude:
                 continue
-            x1 = ba[x[1]][x[0]]
-            y1 = ba[y[1]][y[0]]
+            x1 = ba[x[1]][x[0]] + add[0]
+            y1 = ba[y[1]][y[0]] + add[1]
+
+            if x_s:
+                x_i = wicmath.find_nearest(ba['back']['z'], x_s)
 
             label_i = labelvaried_name + '={}'.format(i)
 
-            axPlot(x1, y1, label=label_i)
+            if x1[x_i] < x1[x_i + 1]:
+                axPlot(x1[:x_i + 1], y1[:x_i + 1], label=label_i)
+            else:
+                axPlot(x1[x_i:], y1[x_i:], label=label_i)
 
             ax.set_xscale(scale[0])
             ax.set_yscale(scale[1])
