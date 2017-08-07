@@ -214,56 +214,7 @@ class Model():
         plt.show()
         plt.close()
 
-    def plot_fraction_density(self, varied_name, labelvaried_name, z_s=100,
-                              yscale=['log', 'log'],
-                              xscale=['log', 'log'], exclude=[], species=[]):
-        """
-        Plot Dark Energy fraction density. Second figure is plotted up to
-        redshift z_s.
-
-        varied_name = varied variable's name
-        labelvaried_name = label for varied_name
-        z_s = greatest z to plot in zoomed figures
-        xscale = list of scales for the x axis
-        yscale = list of scales for the y axis
-        exclude = list of the varied variable values to exclude from plotting.
-        species = list of extra species to plot, called as in hi_class tables.
-        """
-        xlabel = 'z+1'
-        ylabel = r'$\Omega_{DE}$'
-
-        f, ax = plt.subplots(1, 2, figsize=(15, 6))
-
-        for i, ba in self.computed[varied_name].iteritems():
-            if (i in exclude) or (not ba):
-                continue
-
-            z = ba['back']['z']
-            z_i = wicmath.find_nearest(ba['back']['z'], z_s)
-
-            OmegaDE = ba['back']['(.)rho_smg'] / ba['back']['(.)rho_crit']
-
-            ax[0].plot(z + 1, OmegaDE, label=labelvaried_name + '={}'.format(i))
-            ax[1].plot(z[z_i:] + 1, OmegaDE[z_i:], label=labelvaried_name + '={}'.format(i))
-
-        for s in species:
-            subindex_s = s.split('_')[-1]
-            Omega_s = ba['back'][s] / ba['back']['(.)rho_crit']
-            ax[0].plot(z + 1, Omega_s)
-            ax[1].plot(z[z_i:] + 1, Omega_s[z_i:], label=r'$\Omega_{}$'.format(subindex_s))
-
-        Omega0_Planck = np.ones(len(z)) * (1 - self.cosmo.Omega_m())
-        ax[0].plot(z + 1, Omega0_Planck)
-        ax[1].plot(z[z_i:] + 1, Omega0_Planck[z_i:], label=r'$1 - \Omega_{m,0}}$')
-
-        self.__set_scale(ax, xscale, yscale)
-        self.__set_label(ax, [xlabel, xlabel], [ylabel, ''])
-
-        plt.legend(loc=0)
-        plt.show()
-        plt.close()
-
-    def plot_density(self, varied_name, labelvaried_name, z_s=100,
+    def plot_4_density(self, varied_name, labelvaried_name, z_s=100,
                      yscale=['log', 'log', 'log', 'log'],
                      xscale=['log', 'log', 'log', 'log'],
                      exclude=[], species=[]):
@@ -322,6 +273,106 @@ class Model():
         ax[1, 1].set_ylabel(r'$\rho_{DE}$')
         ax[0, 0].set_ylabel(r'$\rho_c$')
         ax[0, 1].set_ylabel(r'$\rho_c$')
+        plt.legend(loc=0)
+        plt.show()
+        plt.close()
+
+    def plot_fraction_density(self, varied_name, labelvaried_name, z_s=100,
+                              yscale=['log', 'log'],
+                              xscale=['log', 'log'], exclude=[], species=[]):
+        """
+        Plot Dark Energy fraction density. Second figure is plotted up to
+        redshift z_s.
+
+        varied_name = varied variable's name
+        labelvaried_name = label for varied_name
+        z_s = greatest z to plot in zoomed figures
+        xscale = list of scales for the x axis
+        yscale = list of scales for the y axis
+        exclude = list of the varied variable values to exclude from plotting.
+        species = list of extra species to plot, called as in hi_class tables.
+        """
+        xlabel = 'z+1'
+        ylabel = r'$\Omega_{DE}$'
+
+        f, ax = plt.subplots(1, 2, figsize=(15, 6))
+
+        for i, ba in self.computed[varied_name].iteritems():
+            if (i in exclude) or (not ba):
+                continue
+
+            z = ba['back']['z']
+            z_i = wicmath.find_nearest(ba['back']['z'], z_s)
+
+            OmegaDE = ba['back']['(.)rho_smg'] / ba['back']['(.)rho_crit']
+
+            ax[0].plot(z + 1, OmegaDE, label=labelvaried_name + '={}'.format(i))
+            ax[1].plot(z[z_i:] + 1, OmegaDE[z_i:], label=labelvaried_name + '={}'.format(i))
+
+        for s in species:
+            subindex_s = s.split('_')[-1]
+            Omega_s = ba['back'][s] / ba['back']['(.)rho_crit']
+            ax[0].plot(z + 1, Omega_s)
+            ax[1].plot(z[z_i:] + 1, Omega_s[z_i:], label=r'$\Omega_{}$'.format(subindex_s))
+
+        Omega0_Planck = np.ones(len(z)) * (1 - self.cosmo.Omega_m())
+        ax[0].plot(z + 1, Omega0_Planck)
+        ax[1].plot(z[z_i:] + 1, Omega0_Planck[z_i:], label=r'$1 - \Omega_{m,0}}$')
+
+        self.__set_scale(ax, xscale, yscale)
+        self.__set_label(ax, [xlabel, xlabel], [ylabel, ''])
+
+        plt.legend(loc=0)
+        plt.show()
+        plt.close()
+
+    def plot_density(self, varied_name, labelvaried_name, z_s=100,
+                     yscale=['log', 'log'], xscale=['log', 'log'], exclude=[],
+                     species=[]):
+        """
+        Plot Dark Energy fraction density. Second figure is plotted up to
+        redshift z_s.
+
+        varied_name = varied variable's name
+        labelvaried_name = label for varied_name
+        z_s = greatest z to plot in zoomed figures
+        xscale = list of scales for the x axis
+        yscale = list of scales for the y axis
+        exclude = list of the varied variable values to exclude from plotting.
+        species = list of extra species to plot, called as in hi_class tables.
+        """
+        xlabel = 'z+1'
+        ylabel = r'$\rho_{DE}$'
+
+        f, ax = plt.subplots(1, 2, figsize=(15, 6))
+
+        for i, ba in self.computed[varied_name].iteritems():
+            if (i in exclude) or (not ba):
+                continue
+
+            z = ba['back']['z']
+            z_i = wicmath.find_nearest(ba['back']['z'], z_s)
+
+            rho = ba['back']['(.)rho_smg']
+            rho_c = ba['back']['(.)rho_crit']
+
+            ax[0].plot(z + 1, rho, label=labelvaried_name + '={}'.format(i))
+            ax[1].plot(z[z_i:] + 1, rho[z_i:], label=labelvaried_name + '={}'.format(i))
+
+        for s in species:
+            subindex_s = s.split('_')[-1]
+            rho_s = ba['back'][s]
+            ax[0].plot(z + 1, rho_s)
+            ax[1].plot(z[z_i:] + 1, rho_s[z_i:], label=r'$\rho_{}$'.format(subindex_s))
+
+        rho0_Planck = np.ones(len(z)) * (1 - self.cosmo.Omega_m()) * rho_c[-1]
+        ax[0].plot(z + 1, rho0_Planck)
+        ax[1].plot(z[z_i:] + 1, rho0_Planck[z_i:])
+
+
+        self.__set_scale(ax, xscale, yscale)
+        self.__set_label(ax, [xlabel, xlabel], [ylabel, ''])
+
         plt.legend(loc=0)
         plt.show()
         plt.close()
