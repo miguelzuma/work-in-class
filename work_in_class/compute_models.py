@@ -55,6 +55,15 @@ class Model():
             ax.set_xlabel(xlabel[i])
             ax.set_ylabel(ylabel[i])
 
+    def __remove_null_l_in_cl(self, cl_dic):
+        """Remove the first two null items from cl dictionaries (e.g. raw_cl())
+        list values."""
+
+        for cl, list_val in cl_dic.iteritems():
+            cl_dic[cl] = list_val[2:]
+
+        return cl_dic
+
     def compute_models(self, params, varied_name, index_variable, values,
                        back=[], thermo=[], prim=[], pert=[], trans=[],
                        pk=[0.0001, 0.1, 100], extra=[], update=True,
@@ -166,19 +175,23 @@ class Model():
                 exec('d[i] = self.cosmo.{}'.format(i))
 
             try:
-                d['cl'] = self.cosmo.raw_cl()
+                d['cl'] = self.__remove_null_l_in_cl(self.cosmo.raw_cl())
+            except Exception as e:
+                print e
+                pass
+
+            try:
+                d['lcl'] = self.__remove_null_l_in_cl(self.cosmo.lensed_cl())
+                self.remove_null_l_in_cl(d['lcl'])
             except:
                 pass
 
             try:
-                d['lcl'] = self.cosmo.lensed_cl()
+                d['dcl'] = self.__remove_null_l_in_cl(self.cosmo.density_cl())
+                self.remove_null_l_in_cl(d['dcl'])
             except:
                 pass
 
-            try:
-                d['dcl'] = self.cosmo.density_cl()
-            except:
-                pass
 
             if ("output" in self.cosmo.pars) and ('mPk' in self.cosmo.pars['output']):
                 k_array = np.linspace(*pk)
@@ -448,21 +461,22 @@ class Model():
             x1 = ba[x[1]][x[0]] + add[0]
             y1 = ba[y[1]][y[0]] + add[1]
 
-            if x_s:
-                x_i = wicmath.find_nearest(ba['back']['z'], x_s)
-
             label_i = labelvaried_name + '={}'.format(i)
 
-            if x1[x_i] < x1[x_i + 1]:
-                axPlot(x1[:x_i + 1], y1[:x_i + 1], label=label_i)
+            if x_s is not False:
+                x_i = wicmath.find_nearest(x1, x_s)
+                if x1[x_i] < x1[x_i + 1]:
+                    axPlot(x1[:x_i + 1], y1[:x_i + 1], label=label_i)
+                else:
+                    axPlot(x1[x_i:], y1[x_i:], label=label_i)
             else:
-                axPlot(x1[x_i:], y1[x_i:], label=label_i)
+                    axPlot(x1, y1, label=label_i)
 
             ax.set_xscale(scale[0])
             ax.set_yscale(scale[1])
 
-            ax.set_ylabel(r'${}$'.format(ylabel))
-            ax.set_xlabel(r'${}$'.format(xlabel))
+            ax.set_ylabel(ylabel)
+            ax.set_xlabel(xlabel)
 
         plt.legend(loc=0)
         plt.show()
