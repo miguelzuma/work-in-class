@@ -57,9 +57,10 @@ class Model():
 
     def compute_models(self, params, varied_name, index_variable, values,
                        back=[], thermo=[], prim=[], pert=[], trans=[],
-                       extra=[], update=True, cosmo_msg=False):
+                       pk=[0.0001, 0.1, 100], extra=[], update=True,
+                       cosmo_msg=False):
         """
-        Fill dic with the background structures for the model with given
+        Fill dic with the hi_class output structures for the model with given
         params, modifying the varied_name value with values.
 
         params = parameters to be set in Class. They must be in agreement with
@@ -81,8 +82,11 @@ class Model():
                 arguments: z=0 and output_format='class' (avaible options are
                 'class' or 'camb'). If different values are desired, first
                 item of trans must be {'z': value, 'output_format': value}.
-        *args = any of the method or objects defined in cosmo, e.g. w0_smg().
-                It will store {arg: cosmo.w0_smg()}
+        pk = list with the minimum and maximum k values to store the present
+             matter power spectrum and the number of points [k_min, k_max,
+             number_points]. Default [10^-4, 10^1, 100].
+        extra = list of any of the method or objects defined in cosmo, e.g.
+                w0_smg().  It will store {'method': cosmo.w0_smg()}
         """
 
         key = varied_name
@@ -94,6 +98,10 @@ class Model():
             # key = "{}={}".format(varied_name, val)
             params["parameters_smg"] = inip.vary_params(params["parameters_smg"], [[index_variable, val]])
 
+            # It might be after the try to not store empty dictionaries.
+            # Nevertheless, I find more useful having them to keep track of
+            # those failed and, perhaps, to implement a method to obtain them
+            # with Omega_smg_debug.
             d = self.computed[key][val] = {}
 
             self.cosmo.empty()
@@ -153,6 +161,30 @@ class Model():
 
             for i in extra:
                 exec('d[i] = self.cosmo.{}'.format(i))
+
+            try:
+                d['cl'] = self.cosmo.raw_cl()
+            except:
+                pass
+
+            try:
+                d['lcl'] = self.cosmo.lensed_cl()
+            except Exception as e:
+                pass
+
+            try:
+                d['dcl'] = self.cosmo.density_cl()
+            except Exception as e:
+                print e
+                pass
+
+            if ("output" in self.cosmo.pars) and ('mPk' in self.cosmo.pars['output']):
+                k_array = np.linspace(*pk)
+                pk_array = []
+                for scale in k_array:
+                    pk_array.append(self.cosmo.pk(scale, 0))
+
+                d['pk'] = {'k': k_array, 'pk': np.array(pk_array)}
 
             self.cosmo.struct_cleanup()
 
@@ -251,15 +283,18 @@ class Model():
             ax[1, 0].plot(z + 1, rho, label=labelvaried_name + '={}'.format(i))
             ax[1, 1].plot(z[z_i:] + 1, rho[z_i:], label=labelvaried_name + '={}'.format(i))
 
+            ba_s = ba
+
         rho0_Planck = np.ones(len(z)) * (1 - self.cosmo.Omega_m()) * rho_c[-1]
         ax[0, 0].plot(z + 1, rho0_Planck)
         ax[0, 1].plot(z[z_i:] + 1, rho0_Planck[z_i:])
         ax[1, 0].plot(z + 1, rho0_Planck)
         ax[1, 1].plot(z[z_i:] + 1, rho0_Planck[z_i:], label=r'$\rho_{DE}^{expected}$')
 
+
         for s in species:
             subindex_s = s.split('_')[-1]
-            rho_s = ba['back'][s]
+            rho_s = ba_s['back'][s]
             ax[1, 0].plot(z + 1, rho_s)
             ax[1, 1].plot(z[z_i:] + 1, rho_s[z_i:], label=r'$\rho_{}$'.format(subindex_s))
 
@@ -309,9 +344,11 @@ class Model():
             ax[0].plot(z + 1, OmegaDE, label=labelvaried_name + '={}'.format(i))
             ax[1].plot(z[z_i:] + 1, OmegaDE[z_i:], label=labelvaried_name + '={}'.format(i))
 
+            ba_s = ba
+
         for s in species:
             subindex_s = s.split('_')[-1]
-            Omega_s = ba['back'][s] / ba['back']['(.)rho_crit']
+            Omega_s = ba_s['back'][s] / ba_s['back']['(.)rho_crit']
             ax[0].plot(z + 1, Omega_s)
             ax[1].plot(z[z_i:] + 1, Omega_s[z_i:], label=r'$\Omega_{}$'.format(subindex_s))
 
@@ -359,9 +396,11 @@ class Model():
             ax[0].plot(z + 1, rho, label=labelvaried_name + '={}'.format(i))
             ax[1].plot(z[z_i:] + 1, rho[z_i:], label=labelvaried_name + '={}'.format(i))
 
+            ba_s = ba
+
         for s in species:
             subindex_s = s.split('_')[-1]
-            rho_s = ba['back'][s]
+            rho_s = ba_s['back'][s]
             ax[0].plot(z + 1, rho_s)
             ax[1].plot(z[z_i:] + 1, rho_s[z_i:], label=r'$\rho_{}$'.format(subindex_s))
 
