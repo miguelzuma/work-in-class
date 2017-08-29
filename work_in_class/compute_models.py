@@ -87,6 +87,9 @@ class Model():
              number_points]. Default [10^-4, 10^1, 100].
         extra = list of any of the method or objects defined in cosmo, e.g.
                 w0_smg().  It will store {'method': cosmo.w0_smg()}
+        update = if True update old computed[key] dictionary elsewise create a
+                 new one.  Default: True.
+        cosmo_msg = if True, print cosmo.compute() messages. Default: False.
         """
 
         key = varied_name
