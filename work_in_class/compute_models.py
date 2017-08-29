@@ -169,13 +169,12 @@ class Model():
 
             try:
                 d['lcl'] = self.cosmo.lensed_cl()
-            except Exception as e:
+            except:
                 pass
 
             try:
                 d['dcl'] = self.cosmo.density_cl()
-            except Exception as e:
-                print e
+            except:
                 pass
 
             if ("output" in self.cosmo.pars) and ('mPk' in self.cosmo.pars['output']):
