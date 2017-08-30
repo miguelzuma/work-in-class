@@ -331,7 +331,7 @@ class Model():
         plt.show()
         plt.close()
 
-    def plot_cl(self, varied_name, labelvaried_name, cl=['tt', 'cl'], exclude=[], scale=['linear', 'log']):
+    def plot_cl(self, varied_name, labelvaried_name, cl=['tt', 'cl'], exclude=[], scale=['log', 'linear'], xlim=[]):
         """
         Plot angular power spectra: CMB raw or lensed power spectra.
 
@@ -341,14 +341,15 @@ class Model():
              'ee'...) and whose second is 'cl' or 'lcl' for raw or lensed
              cl's. Default ['tt', 'cl'].
         exclude = list of the varied variable values to exclude from plotting.
-        scale = list with scale for x and y axis. Default is ['linear', 'log']
+        scale = list with scale for x and y axis. Default is ['log', 'linear']
+        xlim = x limits to plot [x_min, x_max]. Default []
         """
 
         cl_label = r'$ [l (l+1) / 2\pi] C_l^{{{}}}$'.format(cl[0].upper())
 
-        self.plot(varied_name, ['ell', 'cl'], cl, labelvaried_name, 'l', cl_label, exclude=exclude, scale=scale)
+        self.plot(varied_name, ['ell', 'cl'], cl, labelvaried_name, 'l', cl_label, exclude=exclude, scale=scale, xlim=xlim)
 
-    def plot_pk(self, varied_name, labelvaried_name, exclude=[], scale=['log', 'log']):
+    def plot_pk(self, varied_name, labelvaried_name, exclude=[], scale=['log', 'log'], xlim=[]):
         """
         Plot present matter power spectrum.
 
@@ -356,9 +357,10 @@ class Model():
         labelvaried_name = label for varied_name
         exclude = list of the varied variable values to exclude from plotting.
         scale = list with scale for x and y axis. Default is ['log', 'log']
+        xlim = x limits to plot [x_min, x_max]. Default []
         """
 
-        self.plot(varied_name, ['k', 'pk'], ['pk', 'pk'], labelvaried_name, 'k', r'$P(k, z=0)$', exclude=exclude, scale=scale)
+        self.plot(varied_name, ['k', 'pk'], ['pk', 'pk'], labelvaried_name, 'k', r'$P(k, z=0)$', exclude=exclude, scale=scale, xlim=xlim)
 
     def plot_fraction_density(self, varied_name, labelvaried_name, z_s=100,
                               yscale=['log', 'log'],
@@ -465,7 +467,9 @@ class Model():
         plt.close()
 
     def plot(self, varied_name, x, y, labelvaried_name, xlabel, ylabel,
-             scale=['linear', 'linear'], exclude=[], add=[0, 0], x_s=False, scatter=False):
+             scale=['linear', 'linear'], exclude=[], add=[0, 0], xlim=[],
+             scatter=False):
+
         """
         Plot y vs x for all varied_names values.
 
@@ -479,7 +483,7 @@ class Model():
         ylabel = label for y axis
         scale = list of scale type for x and y axis e.g. ['linear', 'linear'].
         add = 2-item list with values to sum to x and y arrays respectively.
-        x_s = greatest x to plot.
+        xlim = x limits to plot [x_min, x_max]. Default []
         exclude = list of the varied variable values to exclude from plotting.
         scatter = If True, plot scatter points.
         """
@@ -496,16 +500,18 @@ class Model():
             x1 = ba[x[1]][x[0]] + add[0]
             y1 = ba[y[1]][y[0]] + add[1]
 
+            if xlim:
+                indexes = []
+                for index, x1_elem in enumerate(x1):
+                    if (x1_elem > xlim[1]) or (x1_elem < xlim[0]):
+                        indexes.append(index)
+
+                x1 = np.delete(x1, indexes)
+                y1 = np.delete(y1, indexes)
+
             label_i = labelvaried_name + '={}'.format(i)
 
-            if x_s is not False:
-                x_i = wicmath.find_nearest(x1, x_s)
-                if x1[x_i] < x1[x_i + 1]:
-                    axPlot(x1[:x_i + 1], y1[:x_i + 1], label=label_i)
-                else:
-                    axPlot(x1[x_i:], y1[x_i:], label=label_i)
-            else:
-                    axPlot(x1, y1, label=label_i)
+            axPlot(x1, y1, label=label_i)
 
             ax.set_xscale(scale[0])
             ax.set_yscale(scale[1])
