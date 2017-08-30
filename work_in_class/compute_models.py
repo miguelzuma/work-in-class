@@ -55,14 +55,23 @@ class Model():
             ax.set_xlabel(xlabel[i])
             ax.set_ylabel(ylabel[i])
 
-    def __remove_null_l_in_cl(self, cl_dic):
-        """Remove the first two null items from cl dictionaries (e.g. raw_cl())
-        list values."""
+    def __store_cl(self, cl_dic):
+        """
+        Store cl's as (l*(l+1)/2pi)*cl, which is much more useful.
+        """
+
+        ell = cl_dic['ell'][2:]
 
         for cl, list_val in cl_dic.iteritems():
-            cl_dic[cl] = list_val[2:]
+            list_val = list_val[2:]
+            if (list_val == ell).all():
+                cl_dic[cl] = list_val
+                continue
+            list_val = (ell * (ell + 1) / (2 * np.pi)) * list_val
+            cl_dic[cl] = list_val  # Remove first two null items (l=0,1)
 
         return cl_dic
+
 
     def compute_models(self, params, varied_name, index_variable, values,
                        back=[], thermo=[], prim=[], pert=[], trans=[],
@@ -175,20 +184,18 @@ class Model():
                 exec('d[i] = self.cosmo.{}'.format(i))
 
             try:
-                d['cl'] = self.__remove_null_l_in_cl(self.cosmo.raw_cl())
+                d['cl'] = self.__store_cl(self.cosmo.raw_cl())
             except Exception as e:
                 print e
                 pass
 
             try:
-                d['lcl'] = self.__remove_null_l_in_cl(self.cosmo.lensed_cl())
-                self.remove_null_l_in_cl(d['lcl'])
+                d['lcl'] = self.__store_cl(self.cosmo.lensed_cl())
             except:
                 pass
 
             try:
-                d['dcl'] = self.__remove_null_l_in_cl(self.cosmo.density_cl())
-                self.remove_null_l_in_cl(d['dcl'])
+                d['dcl'] = self.__store_cl(self.cosmo.density_cl())
             except:
                 pass
 
@@ -340,7 +347,9 @@ class Model():
         scale = list with scale for x and y axis. Default is ['log', 'log']
         """
 
-        self.plot(varied_name, ['ell', 'cl'], cl, labelvaried_name, 'l', r'$c_l$', exclude=exclude, scale=scale)
+        cl_label = r'$c_l^{}$'.format(cl[0].upper())
+
+        self.plot(varied_name, ['ell', 'cl'], cl, labelvaried_name, 'l', cl_label, exclude=exclude, scale=scale)
 
     def plot_pk(self, varied_name, labelvaried_name, exclude=[], scale=['log', 'log']):
         """
