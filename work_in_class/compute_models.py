@@ -3,7 +3,7 @@
 """Module thought to be used when you want to obtain some quantities (e.g. the
 background structures) for a model varying one of the parameters"""
 
-from classy import Class
+from classy import Class, CosmoSevereError
 from collections import OrderedDict as od
 from matplotlib import pyplot as plt
 import inifile_parser as inip
@@ -71,7 +71,6 @@ class Model():
             cl_dic[cl] = list_val  # Remove first two null items (l=0,1)
 
         return cl_dic
-
 
     def compute_models(self, params, varied_name, index_variable, values,
                        back=[], thermo=[], prim=[], pert=[], trans=[],
@@ -185,18 +184,17 @@ class Model():
 
             try:
                 d['cl'] = self.__store_cl(self.cosmo.raw_cl())
-            except Exception as e:
-                print e
+            except CosmoSevereError:
                 pass
 
             try:
                 d['lcl'] = self.__store_cl(self.cosmo.lensed_cl())
-            except:
+            except CosmoSevereError:
                 pass
 
             try:
-                d['dcl'] = self.__store_cl(self.cosmo.density_cl())
-            except:
+                d['dcl'] = self.cosmo.density_cl()
+            except CosmoSevereError:
                 pass
 
 
@@ -333,21 +331,20 @@ class Model():
         plt.show()
         plt.close()
 
-    def plot_cl(self, varied_name, labelvaried_name, cl=['tt', 'cl'], exclude=[], scale=['log', 'log']):
+    def plot_cl(self, varied_name, labelvaried_name, cl=['tt', 'cl'], exclude=[], scale=['linear', 'log']):
         """
-        Plot angular power spectra: CMB raw or lensed power spectra or density
-        power spectra.
+        Plot angular power spectra: CMB raw or lensed power spectra.
 
         varied_name = varied variable's name
         labelvaried_name = label for varied_name
         cl = 2-item list whose first item is the desired spectra (e.g. 'tt',
-             'ee'...) and whose second is 'cl', 'lcl' or 'dcl' for raw, lensed
-             or density cl's. Default ['tt', 'cl'].
+             'ee'...) and whose second is 'cl' or 'lcl' for raw or lensed
+             cl's. Default ['tt', 'cl'].
         exclude = list of the varied variable values to exclude from plotting.
-        scale = list with scale for x and y axis. Default is ['log', 'log']
+        scale = list with scale for x and y axis. Default is ['linear', 'log']
         """
 
-        cl_label = r'$c_l^{}$'.format(cl[0].upper())
+        cl_label = r'$ [l (l+1) / 2\pi] C_l^{{{}}}$'.format(cl[0].upper())
 
         self.plot(varied_name, ['ell', 'cl'], cl, labelvaried_name, 'l', cl_label, exclude=exclude, scale=scale)
 
