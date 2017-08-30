@@ -306,7 +306,6 @@ class Model():
         ax[1, 0].plot(z + 1, rho0_Planck)
         ax[1, 1].plot(z[z_i:] + 1, rho0_Planck[z_i:], label=r'$\rho_{DE}^{expected}$')
 
-
         for s in species:
             subindex_s = s.split('_')[-1]
             rho_s = ba_s['back'][s]
@@ -326,6 +325,34 @@ class Model():
         plt.legend(loc=0)
         plt.show()
         plt.close()
+
+    def plot_cl(self, varied_name, labelvaried_name, cl=['tt', 'cl'], exclude=[], scale=['log', 'log']):
+        """
+        Plot angular power spectra: CMB raw or lensed power spectra or density
+        power spectra.
+
+        varied_name = varied variable's name
+        labelvaried_name = label for varied_name
+        cl = 2-item list whose first item is the desired spectra (e.g. 'tt',
+             'ee'...) and whose second is 'cl', 'lcl' or 'dcl' for raw, lensed
+             or density cl's. Default ['tt', 'cl'].
+        exclude = list of the varied variable values to exclude from plotting.
+        scale = list with scale for x and y axis. Default is ['log', 'log']
+        """
+
+        self.plot(varied_name, ['ell', 'cl'], cl, labelvaried_name, 'l', r'$c_l$', exclude=exclude, scale=scale)
+
+    def plot_pk(self, varied_name, labelvaried_name, exclude=[], scale=['log', 'log']):
+        """
+        Plot present matter power spectrum.
+
+        varied_name = varied variable's name
+        labelvaried_name = label for varied_name
+        exclude = list of the varied variable values to exclude from plotting.
+        scale = list with scale for x and y axis. Default is ['log', 'log']
+        """
+
+        self.plot(varied_name, ['k', 'pk'], ['pk', 'pk'], labelvaried_name, 'k', r'$P(k, z=0)$', exclude=exclude, scale=scale)
 
     def plot_fraction_density(self, varied_name, labelvaried_name, z_s=100,
                               yscale=['log', 'log'],
@@ -441,12 +468,14 @@ class Model():
             for X axis
         y = list with ['variable name', 'module'] with  module = back, thermo...
             for Y axis
-        ylabelvaried_name = label for varied_name
-        ylabel = label for Y1 axis
+        labelvaried_name = label for varied_name
+        xlabel = label for x axis
+        ylabel = label for y axis
         scale = list of scale type for x and y axis e.g. ['linear', 'linear'].
         add = 2-item list with values to sum to x and y arrays respectively.
         x_s = greatest x to plot.
         exclude = list of the varied variable values to exclude from plotting.
+        scatter = If True, plot scatter points.
         """
         fig, ax = plt.subplots(figsize=(10, 7))
 
