@@ -142,6 +142,29 @@ class Data():
 
         return names
 
+    def __params_to_cosmo_classy(self):
+        """
+        Return cosmo_arguments parameters in classy format.
+        """
+
+        parameters_smg = {}
+        params = self.cosmo_arguments.copy()
+        params['parameters_smg'] = ""
+
+        for key, value in self.cosmo_arguments.iteritems():
+            lkey = key.split('parameters_smg__')
+            if len(lkey) == 2:
+                parameters_smg[int(lkey[1])-1] = value
+                del(params[key])
+
+        for i in range(len(parameters_smg)):
+            params['parameters_smg'] += parameters_smg[i] + ","
+
+        # Remove the last ","
+        params['parameters_smg'] = params['parameters_smg'][:-1]
+
+        return params
+
     def add_experiments(self, experiments, nuisance=[]):
         """Add a new experiment to the list of evaluated experiments and
         initialise their likelihoods. Input must be a list or a single
@@ -304,7 +327,7 @@ class Data():
         # some mandatory parameters (e.g. {'output': 'mPk'}).
 
         self.update_params(params)
-        cosmo.set(self.cosmo_arguments) # TODO: Modify to accept params as in MP input
+        cosmo.set(self.__params_to_cosmo_classy()) # TODO: Modify to accept params as in MP input
         cosmo.compute()
 
         for experiment in self.experiments:
