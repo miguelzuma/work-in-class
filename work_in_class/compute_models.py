@@ -72,6 +72,25 @@ class Model():
 
         return cl_dic
 
+    def add_derived(self, varied_name, keys, value):
+        """
+        Add a derived parameter for varied_name dictionary.
+
+        varied_name = varied variable's name.
+        keys = list of keys in descending level.
+        value = value to store for new dictionary key.
+        """
+
+        dic = self.computed[varied_name]
+
+        for key in keys:
+            if key not in dic:
+                dic[key] = {}
+
+            dic = dic[key]
+
+        dic.update(value)
+
     def compute_models(self, params, varied_name, index_variable, values,
                        back=[], thermo=[], prim=[], pert=[], trans=[],
                        pk=[0.0001, 0.1, 100], extra=[], update=True,
