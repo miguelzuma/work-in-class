@@ -541,3 +541,71 @@ class Model():
         plt.legend(loc=0)
         plt.show()
         plt.close()
+    def plot_pert(self, varied_name, x, y, k, labelvaried_name, xlabel, ylabel,
+             scale=['linear', 'linear'], exclude=[], add=[0, 0], xlim=[],
+             scatter=False):
+
+        """
+        Plot y vs x for all varied_names values.
+
+        varied_name = varied variable's name
+        x = list with ['variable name', 'pert_type'] with  pert_type = scalar, vector...
+            for X axis
+        y = list with ['variable name', 'pert_type'] with  pert_type = scalar, vector...
+            for Y axis
+        labelvaried_name = label for varied_name
+        xlabel = label for x axis
+        ylabel = label for y axis
+        scale = list of scale type for x and y axis e.g. ['linear', 'linear'].
+        add = 2-item list with values to sum to x and y arrays respectively.
+        xlim = x limits to plot [x_min, x_max]. Default []
+        exclude = list of the varied variable values to exclude from plotting.
+        scatter = If True, plot scatter points.
+        """
+        fig, ax = plt.subplots(figsize=(10, 7))
+
+        k_output = [float(i) for i in self.cosmo.pars['k_output_values'].split(',')]
+
+        k_index = k_output.index(k)
+
+        if scatter:
+            axPlot = ax.scatter
+        else:
+            axPlot = ax.plot
+
+        for i, ba in self.computed[varied_name].iteritems():
+            if i in exclude:
+                continue
+
+            pdic = ba['pert']
+
+            if (x[0] == 'z') and 'z' not in pdic[x[1]][k_index]:
+                pdic[x[1]][k_index]['z'] = 1/pdic[x[1]][k_index]['a'] - 1
+            elif (y[0] == 'z') and 'z' not in pdic[y[1]][k_index]:
+                pdic[y[1]][k_index]['z'] = 1/pdic[y[1]][k_index]['a'] - 1
+
+            x1 = pdic[x[1]][k_index][x[0]] + add[0]
+            y1 = pdic[y[1]][k_index][y[0]] + add[1]
+
+            if xlim:
+                indexes = []
+                for index, x1_elem in enumerate(x1):
+                    if (x1_elem > xlim[1]) or (x1_elem < xlim[0]):
+                        indexes.append(index)
+
+                x1 = np.delete(x1, indexes)
+                y1 = np.delete(y1, indexes)
+
+            label_i = labelvaried_name + '={}'.format(i)
+
+            axPlot(x1, y1, label=label_i)
+
+            ax.set_xscale(scale[0])
+            ax.set_yscale(scale[1])
+
+            ax.set_ylabel(ylabel)
+            ax.set_xlabel(xlabel)
+
+        plt.legend(loc=0)
+        plt.show()
+        plt.close()
