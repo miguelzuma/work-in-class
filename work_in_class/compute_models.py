@@ -546,7 +546,7 @@ class Model():
              scatter=False):
 
         """
-        Plot y vs x for all varied_names values.
+        Plot y vs x perturbation variables for all varied_names values.
 
         varied_name = varied variable's name
         x = list with ['variable name', 'pert_type'] with  pert_type = scalar, vector...
