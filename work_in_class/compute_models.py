@@ -24,6 +24,7 @@ class Model():
         else:
             self.cosmo = Class()
         self.computed = {}
+        self.texnames = {}
 
     def __set_scale(self, axes, xscale, yscale):
         """
@@ -94,7 +95,7 @@ class Model():
     def compute_models(self, params, varied_name, index_variable, values,
                        back=[], thermo=[], prim=[], pert=[], trans=[],
                        pk=[0.0001, 0.1, 100], extra=[], update=True,
-                       cosmo_msg=False):
+                       cosmo_msg=False, texname=""):
         """
         Fill dic with the hi_class output structures for the model with given
         params, modifying the varied_name value with values.
@@ -129,6 +130,11 @@ class Model():
         """
 
         key = varied_name
+
+        if texname:
+            self.set_texnames({varied_name: texname})
+        elif key not in self.texnames:  # texname will not be set at this stage. No check required
+            self.set_texnames({varied_name: varied_name})
 
         if (not update) or (key not in self.computed.keys()):
             self.computed[key] = od()
@@ -227,8 +233,16 @@ class Model():
 
             self.cosmo.struct_cleanup()
 
+    def set_texnames(self, names):
+        """
+        Set the latex_names for the varied_names.
+
+        names = {varied_name: tex_name}
+        """
+        self.texnames.update(names)
+
     def plot_4_vs_z(self, varied_name, y1name, y2name,
-                    labelvaried_name, y1label, y2label, z_s=100,
+                    y1label, y2label, z_s=100,
                     yscale=['linear', 'linear', 'linear', 'linear'],
                     xscale=['log', 'log', 'log', 'log'],
                     exclude=[], scatter=False):
@@ -239,7 +253,6 @@ class Model():
         varied_name = varied variable's name
         y1name = output class name of the variable for Y axis 1
         y2name = output class name of the variable for Y axis 2
-        labelvaried_name = label for varied_name
         y1label = label for Y1 axis
         y2label = label for Y2 axis
         z_s = greatest z to plot in zoomed figures
@@ -271,7 +284,7 @@ class Model():
             y2 = ba[module][y2name]
             z_i = wicmath.find_nearest(ba[module]['z'], z_s)
 
-            label_i = labelvaried_name + '={}'.format(i)
+            label_i = self.texnames[varied_name] + '={}'.format(i)
 
             ax00plot(x, y1, label=label_i)
             ax10plot(x, y2, label=label_i)
@@ -285,16 +298,15 @@ class Model():
         plt.show()
         plt.close()
 
-    def plot_4_density(self, varied_name, labelvaried_name, z_s=100,
-                     yscale=['log', 'log', 'log', 'log'],
-                     xscale=['log', 'log', 'log', 'log'],
-                     exclude=[], species=[]):
+    def plot_4_density(self, varied_name, z_s=100, yscale=['log', 'log', 'log',
+                                                           'log'],
+                     xscale=['log', 'log', 'log', 'log'], exclude=[],
+                       species=[]):
         """
         Plot Dark Energy and critical density. Second figure is plotted until
         redshift z_s.
 
         varied_name = varied variable's name
-        labelvaried_name = label for varied_name
         z_s = greatest z to plot in zoomed figures
         xscale = list of scales for the x axis
         yscale = list of scales for the y axis
@@ -317,10 +329,10 @@ class Model():
             rho = ba['back']['(.)rho_smg']
             rho_c = ba['back']['(.)rho_crit']
 
-            ax[0, 0].plot(z + 1, rho_c, label=labelvaried_name + '={}'.format(i))
-            ax[0, 1].plot(z[z_i:] + 1, rho_c[z_i:], label=labelvaried_name + '={}'.format(i))
-            ax[1, 0].plot(z + 1, rho, label=labelvaried_name + '={}'.format(i))
-            ax[1, 1].plot(z[z_i:] + 1, rho[z_i:], label=labelvaried_name + '={}'.format(i))
+            ax[0, 0].plot(z + 1, rho_c, label=self.texnames[varied_name] + '={}'.format(i))
+            ax[0, 1].plot(z[z_i:] + 1, rho_c[z_i:], label=self.texnames[varied_name] + '={}'.format(i))
+            ax[1, 0].plot(z + 1, rho, label=self.texnames[varied_name] + '={}'.format(i))
+            ax[1, 1].plot(z[z_i:] + 1, rho[z_i:], label=self.texnames[varied_name] + '={}'.format(i))
 
             ba_s = ba
 
@@ -350,12 +362,11 @@ class Model():
         plt.show()
         plt.close()
 
-    def plot_cl(self, varied_name, labelvaried_name, cl=['tt', 'cl'], exclude=[], scale=['log', 'linear'], xlim=[]):
+    def plot_cl(self, varied_name, cl=['tt', 'cl'], exclude=[], scale=['log', 'linear'], xlim=[]):
         """
         Plot angular power spectra: CMB raw or lensed power spectra.
 
         varied_name = varied variable's name
-        labelvaried_name = label for varied_name
         cl = 2-item list whose first item is the desired spectra (e.g. 'tt',
              'ee'...) and whose second is 'cl' or 'lcl' for raw or lensed
              cl's. Default ['tt', 'cl'].
@@ -366,30 +377,27 @@ class Model():
 
         cl_label = r'$ [l (l+1) / 2\pi] C_l^{{{}}}$'.format(cl[0].upper())
 
-        self.plot(varied_name, ['ell', 'cl'], cl, labelvaried_name, 'l', cl_label, exclude=exclude, scale=scale, xlim=xlim)
+        self.plot(varied_name, ['ell', 'cl'], cl, 'l', cl_label, exclude=exclude, scale=scale, xlim=xlim)
 
-    def plot_pk(self, varied_name, labelvaried_name, exclude=[], scale=['log', 'log'], xlim=[]):
+    def plot_pk(self, varied_name, exclude=[], scale=['log', 'log'], xlim=[]):
         """
         Plot present matter power spectrum.
 
         varied_name = varied variable's name
-        labelvaried_name = label for varied_name
         exclude = list of the varied variable values to exclude from plotting.
         scale = list with scale for x and y axis. Default is ['log', 'log']
         xlim = x limits to plot [x_min, x_max]. Default []
         """
 
-        self.plot(varied_name, ['k', 'pk'], ['pk', 'pk'], labelvaried_name, 'k', r'$P(k, z=0)$', exclude=exclude, scale=scale, xlim=xlim)
+        self.plot(varied_name, ['k', 'pk'], ['pk', 'pk'], 'k', r'$P(k, z=0)$', exclude=exclude, scale=scale, xlim=xlim)
 
-    def plot_fraction_density(self, varied_name, labelvaried_name, z_s=100,
-                              yscale=['log', 'log'],
+    def plot_fraction_density(self, varied_name, z_s=100, yscale=['log', 'log'],
                               xscale=['log', 'log'], exclude=[], species=[]):
         """
         Plot Dark Energy fraction density. Second figure is plotted up to
         redshift z_s.
 
         varied_name = varied variable's name
-        labelvaried_name = label for varied_name
         z_s = greatest z to plot in zoomed figures
         xscale = list of scales for the x axis
         yscale = list of scales for the y axis
@@ -410,8 +418,8 @@ class Model():
 
             OmegaDE = ba['back']['(.)rho_smg'] / ba['back']['(.)rho_crit']
 
-            ax[0].plot(z + 1, OmegaDE, label=labelvaried_name + '={}'.format(i))
-            ax[1].plot(z[z_i:] + 1, OmegaDE[z_i:], label=labelvaried_name + '={}'.format(i))
+            ax[0].plot(z + 1, OmegaDE, label=self.texnames[varied_name] + '={}'.format(i))
+            ax[1].plot(z[z_i:] + 1, OmegaDE[z_i:], label=self.texnames[varied_name] + '={}'.format(i))
 
             ba_s = ba
 
@@ -432,15 +440,13 @@ class Model():
         plt.show()
         plt.close()
 
-    def plot_density(self, varied_name, labelvaried_name, z_s=100,
-                     yscale=['log', 'log'], xscale=['log', 'log'], exclude=[],
-                     species=[]):
+    def plot_density(self, varied_name, z_s=100, yscale=['log', 'log'],
+                     xscale=['log', 'log'], exclude=[], species=[]):
         """
         Plot Dark Energy fraction density. Second figure is plotted up to
         redshift z_s.
 
         varied_name = varied variable's name
-        labelvaried_name = label for varied_name
         z_s = greatest z to plot in zoomed figures
         xscale = list of scales for the x axis
         yscale = list of scales for the y axis
@@ -462,8 +468,8 @@ class Model():
             rho = ba['back']['(.)rho_smg']
             rho_c = ba['back']['(.)rho_crit']
 
-            ax[0].plot(z + 1, rho, label=labelvaried_name + '={}'.format(i))
-            ax[1].plot(z[z_i:] + 1, rho[z_i:], label=labelvaried_name + '={}'.format(i))
+            ax[0].plot(z + 1, rho, label=self.texnames[varied_name] + '={}'.format(i))
+            ax[1].plot(z[z_i:] + 1, rho[z_i:], label=self.texnames[varied_name] + '={}'.format(i))
 
             ba_s = ba
 
@@ -485,9 +491,9 @@ class Model():
         plt.show()
         plt.close()
 
-    def plot(self, varied_name, x, y, labelvaried_name, xlabel, ylabel,
-             scale=['linear', 'linear'], exclude=[], add=[0, 0], xlim=[],
-             scatter=False):
+    def plot(self, varied_name, x, y, xlabel, ylabel, scale=['linear',
+                                                             'linear'],
+             exclude=[], add=[0, 0], xlim=[], scatter=False):
 
         """
         Plot y vs x for all varied_names values.
@@ -497,7 +503,6 @@ class Model():
             for X axis
         y = list with ['variable name', 'module'] with  module = back, thermo...
             for Y axis
-        labelvaried_name = label for varied_name
         xlabel = label for x axis
         ylabel = label for y axis
         scale = list of scale type for x and y axis e.g. ['linear', 'linear'].
@@ -528,7 +533,7 @@ class Model():
                 x1 = np.delete(x1, indexes)
                 y1 = np.delete(y1, indexes)
 
-            label_i = labelvaried_name + '={}'.format(i)
+            label_i = self.texnames[varied_name] + '={}'.format(i)
 
             axPlot(x1, y1, label=label_i)
 
@@ -541,9 +546,10 @@ class Model():
         plt.legend(loc=0)
         plt.show()
         plt.close()
-    def plot_pert(self, varied_name, x, y, k, labelvaried_name, xlabel, ylabel,
-             scale=['linear', 'linear'], exclude=[], add=[0, 0], xlim=[],
-             scatter=False):
+
+    def plot_pert(self, varied_name, x, y, k, xlabel, ylabel, scale=['linear',
+                                                                     'linear'],
+                  exclude=[], add=[0, 0], xlim=[], scatter=False):
 
         """
         Plot y vs x perturbation variables for all varied_names values.
@@ -553,7 +559,6 @@ class Model():
             for X axis
         y = list with ['variable name', 'pert_type'] with  pert_type = scalar, vector...
             for Y axis
-        labelvaried_name = label for varied_name
         xlabel = label for x axis
         ylabel = label for y axis
         scale = list of scale type for x and y axis e.g. ['linear', 'linear'].
@@ -596,7 +601,7 @@ class Model():
                 x1 = np.delete(x1, indexes)
                 y1 = np.delete(y1, indexes)
 
-            label_i = labelvaried_name + '={}'.format(i)
+            label_i = self.texnames[varied_name] + '={}'.format(i)
 
             axPlot(x1, y1, label=label_i)
 
@@ -609,17 +614,16 @@ class Model():
         plt.legend(loc=0)
         plt.show()
         plt.close()
-    def plot_phi_psi(self, varied_name, pert_type, k, labelvaried_name, xlabel='z',
-                     ylabel=r'rel. dev. ($\Phi - \Psi$) [%]', scale=['linear',
-                     'linear'], exclude=[], add=[0, 0], xlim=[],
-    scatter=False):
+
+    def plot_phi_psi(self, varied_name, pert_type, k, xlabel='z', ylabel=r"rel.\
+                     dev. ($\Phi - \Psi$) [%]", scale=['linear', 'linear'],
+                     exclude=[], add=[0, 0], xlim=[], scatter=False):
 
         """
         Plot y vs x perturbation variables for all varied_names values.
 
         varied_name = varied variable's name
         pert_type = scalar, vector...
-        labelvaried_name = label for varied_name
         xlabel = label for x axis
         ylabel = label for y axis
         scale = list of scale type for x and y axis e.g. ['linear', 'linear'].
@@ -662,7 +666,7 @@ class Model():
                 y1 = np.delete(y1, indexes)
                 y2 = np.delete(y2, indexes)
 
-            label_i = labelvaried_name + '={}'.format(i)
+            label_i = self.texnames[varied_name] + '={}'.format(i)
 
             X, Y = wicmath.relative_deviation(x1, y1, x1, y2)
 
