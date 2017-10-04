@@ -423,7 +423,7 @@ class Model():
 
         Omega0_Planck = np.ones(len(z)) * (1 - self.cosmo.Omega_m())
         ax[0].plot(z + 1, Omega0_Planck)
-        ax[1].plot(z[z_i:] + 1, Omega0_Planck[z_i:], label=r'$1 - \Omega_{m,0}}$')
+        ax[1].plot(z[z_i:] + 1, Omega0_Planck[z_i:], label=r'$1 - \Omega_{m,0}$')
 
         self.__set_scale(ax, xscale, yscale)
         self.__set_label(ax, [xlabel, xlabel], [ylabel, ''])
@@ -475,7 +475,7 @@ class Model():
 
         rho0_Planck = np.ones(len(z)) * (1 - self.cosmo.Omega_m()) * rho_c[-1]
         ax[0].plot(z + 1, rho0_Planck)
-        ax[1].plot(z[z_i:] + 1, rho0_Planck[z_i:])
+        ax[1].plot(z[z_i:] + 1, rho0_Planck[z_i:], label=r'$(1 - \Omega_{m,0}) * \rho_c$')
 
 
         self.__set_scale(ax, xscale, yscale)
