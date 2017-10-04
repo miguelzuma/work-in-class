@@ -425,7 +425,7 @@ class Model():
             subindex_s = s.split('_')[-1]
             Omega_s = ba_s['back'][s] / ba_s['back']['(.)rho_crit']
             ax[0].plot(z + 1, Omega_s)
-            ax[1].plot(z[z_i:] + 1, Omega_s[z_i:], label=r'$\Omega_{}$'.format(subindex_s))
+            ax[1].plot(z[z_i:] + 1, Omega_s[z_i:], label=r'$\Omega_{{{}}}$'.format(subindex_s))
 
         Omega0_Planck = np.ones(len(z)) * (1 - self.cosmo.Omega_m())
         ax[0].plot(z + 1, Omega0_Planck)
@@ -475,7 +475,7 @@ class Model():
             subindex_s = s.split('_')[-1]
             rho_s = ba_s['back'][s]
             ax[0].plot(z + 1, rho_s)
-            ax[1].plot(z[z_i:] + 1, rho_s[z_i:], label=r'$\rho_{}$'.format(subindex_s))
+            ax[1].plot(z[z_i:] + 1, rho_s[z_i:], label=r'$\rho_{{{}}}$'.format(subindex_s))
 
         rho0_Planck = np.ones(len(z)) * (1 - self.cosmo.Omega_m()) * rho_c[-1]
         ax[0].plot(z + 1, rho0_Planck)
