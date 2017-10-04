@@ -225,11 +225,9 @@ class Model():
 
             if ("output" in self.cosmo.pars) and ('mPk' in self.cosmo.pars['output']):
                 k_array = np.linspace(*pk)
-                pk_array = []
-                for scale in k_array:
-                    pk_array.append(self.cosmo.pk(scale, 0))
+                pk_array = np.array([self.cosmo.pk(k, 0) for k in k_array])
 
-                d['pk'] = {'k': k_array, 'pk': np.array(pk_array)}
+                d['pk'] = {'k': k_array, 'pk': pk_array}
 
             self.cosmo.struct_cleanup()
 
