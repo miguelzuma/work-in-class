@@ -519,7 +519,7 @@ class Model():
             axPlot = ax.plot
 
         for i, ba in self.computed[varied_name].iteritems():
-            if i in exclude:
+            if i in exclude or (not ba):
                 continue
             x1 = ba[x[1]][x[0]] + add[0]
             y1 = ba[y[1]][y[0]] + add[1]
@@ -579,7 +579,7 @@ class Model():
             axPlot = ax.plot
 
         for i, ba in self.computed[varied_name].iteritems():
-            if i in exclude:
+            if i in exclude or (not ba):
                 continue
 
             pdic = ba['pert']
@@ -644,7 +644,7 @@ class Model():
             axPlot = ax.plot
 
         for i, ba in self.computed[varied_name].iteritems():
-            if i in exclude:
+            if i in exclude or (not ba):
                 continue
 
             pdic = ba['pert']
