@@ -149,7 +149,6 @@ class Data():
 
         parameters_smg = {}
         params = self.cosmo_arguments.copy()
-        params['parameters_smg'] = ""
 
         for key, value in self.cosmo_arguments.iteritems():
             lkey = key.split('parameters_smg__')
@@ -157,11 +156,14 @@ class Data():
                 parameters_smg[int(lkey[1])-1] = value
                 del(params[key])
 
-        for i in range(len(parameters_smg)):
-            params['parameters_smg'] += parameters_smg[i] + ","
+        if parameters_smg:
+            params['parameters_smg'] = ""
 
-        # Remove the last ","
-        params['parameters_smg'] = params['parameters_smg'][:-1]
+            for i in range(len(parameters_smg)):
+                params['parameters_smg'] += parameters_smg[i] + ","
+
+            # Remove the last ","
+            params['parameters_smg'] = params['parameters_smg'][:-1]
 
         return params
 
