@@ -9,10 +9,11 @@ import sys
 import os
 from collections import OrderedDict
 
+
 class CommandLine():
     """CommandLine class needed at likelihood initialization."""
     def __init__(self, folder):
-       self.folder = folder
+        self.folder = folder
 
 
 class Data():
@@ -22,7 +23,7 @@ class Data():
     Once Data is initialized, likelihoods classes are accesible by
     self.lkl['Likelihood_name'].
     """
-    def __init__(self, path_MP, experiments, path_data='data'):
+    def __init__(self, path_MP, path_data='data'):
         """
         path_MP: path to the MontePython root folder
         experiments: List of experiments to compare with
@@ -35,7 +36,7 @@ class Data():
         self.path['data'] = os.path.join(self.path['root'], path_data)
         self.log_flag = True # This makes Likelihood to write a log file (if
                              # False it would try to read one)
-        self.experiments = experiments
+        self.experiments = []
         self.cosmo_arguments = {}
         """
         Simple dictionary that will serve as a communication interface with the
@@ -61,9 +62,9 @@ class Data():
         """
         self.cosmological_module_name = 'CLASS'
         self.command_line = CommandLine('/tmp')
-        self.__initialise_likelihoods(experiments)
-        os.remove(os.path.join(self.command_line.folder, 'log.param'))
-        self.initialised = True
+        #self.__initialise_likelihoods(experiments)
+        #os.remove(os.path.join(self.command_line.folder, 'log.param'))
+        #self.initialised = True
 
     def __initialise_likelihoods(self, experiments):
         """
@@ -93,7 +94,7 @@ class Data():
             sys.path.insert(1, self.path['MontePython'])
 
             self.__io_mp = __import__('io_mp')
-
+            self.initialised = True
 
         for elem in experiments:
 
@@ -141,7 +142,32 @@ class Data():
 
         return names
 
-    def add_experiments(self, experiments):
+    def __params_to_cosmo_classy(self):
+        """
+        Return cosmo_arguments parameters in classy format.
+        """
+
+        parameters_smg = {}
+        params = self.cosmo_arguments.copy()
+
+        for key, value in self.cosmo_arguments.iteritems():
+            lkey = key.split('parameters_smg__')
+            if len(lkey) == 2:
+                parameters_smg[int(lkey[1])-1] = value
+                del(params[key])
+
+        if parameters_smg:
+            params['parameters_smg'] = ""
+
+            for i in range(len(parameters_smg)):
+                params['parameters_smg'] += parameters_smg[i] + ","
+
+            # Remove the last ","
+            params['parameters_smg'] = params['parameters_smg'][:-1]
+
+        return params
+
+    def add_experiments(self, experiments, nuisance=[]):
         """Add a new experiment to the list of evaluated experiments and
         initialise their likelihoods. Input must be a list or a single
         experiment name."""
@@ -152,7 +178,10 @@ class Data():
                 new.append(exp)
 
         print new
+
+        self.update_nuisance(nuisance)
         self.__initialise_likelihoods(new)
+        os.remove(os.path.join(self.command_line.folder, 'log.param'))
         self.experiments += new
 
     def remove_experiments(self, experiments):
@@ -259,7 +288,7 @@ class Data():
 
         self.update_nuisance(nuisance)
 
-    def clear(self, params):
+    def clear(self, params=''):
         if params == 'cosmo':
             self.cosmo_arguments.clear()
         elif params == 'nuisance':
@@ -268,7 +297,7 @@ class Data():
             self.cosmo_arguments.clear()
             self.mcmc_parameters.clear()
 
-    def compute_lkl(self, cosmo, params, experiments = [], nuisance=[], overwrite=False, cosmo_struct_cleanup=False):
+    def compute_lkl(self, cosmo, params, experiments=[], nuisance=[], overwrite=False, cosmo_struct_cleanup=False):
         """Compute the likelihood for the parms given. Params will update the
         cosmo_arguments and nuisance_parameters unless overwrite is True.
 
@@ -282,14 +311,10 @@ class Data():
         """
 
         if overwrite:
+            print "Warning: you are removing all previous parameters. Some of \
+                    them could have been set by the experiments so that \
+                    their removal will likely cause an error."
             self.clear()
-
-        self.update_params(params)
-        if nuisance:
-            self.update_nuisance(nuisance)
-
-        cosmo.set(params) # TODO: Modify to accept params as in MP input
-        cosmo.compute()
 
         if not experiments:
             experiments = self.experiments
@@ -298,13 +323,19 @@ class Data():
         for experiment in self.__name_str_to_list(experiments):
             if experiment not in self.experiments:
                 print "Adding {} to list of initialised experiments".format(experiment)
-                self.add_experiments([experiment])
+                self.add_experiments([experiment], nuisance)
+
+        # set and compute must be called after initializing the lkl's. Some of them add
+        # some mandatory parameters (e.g. {'output': 'mPk'}).
+
+        self.update_params(params)
+        cosmo.set(self.__params_to_cosmo_classy()) # TODO: Modify to accept params as in MP input
+        cosmo.compute()
+
+        for experiment in self.experiments:
             lkl += self.lkl[experiment].loglkl(cosmo, self)
 
         if cosmo_struct_cleanup:
             cosmo.struct_cleanup()
 
         return lkl
-
-
-
