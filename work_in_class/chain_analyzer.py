@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import numpy as np
+from matplotlib import pyplot as plt
 
 
 class Chain():
@@ -50,7 +51,20 @@ class Chain():
         """
         Append chain to self.chains object
         """
-        self.chains.append(np.loadtxt(filepath))
+
+        chain = []
+
+        with open(filepath) as f:
+            for line in f:
+                columns = [float(x) for x in line.split()]
+                for n in range(int(columns[0])):
+                    chain.append(columns[2:])
+
+        self.chains.append(chain)
+
+        # TODO: Think about removing first two columns or adding them to CH
+        # (more problematic? Think if this program is going to be only for test
+        # convergence so lkl is not necessarily required)
 
     def autocorrelation(self, T, paramIndex):
         """
@@ -78,3 +92,77 @@ class Chain():
         chainForward = np.array(chain[T:])
 
         return np.sum((chaint - mean)*(chainForward - mean))/(n-T)
+
+    def autocorrelationGoodmanWeare(self, T, paramIndex):
+        """
+        Compute the autocorrelation as Goodman and Weare (2010).
+
+        It cannot be used if some step has been removed.
+        """
+
+        n = len(self.chains[0])
+
+        Ft = [self._ensembleAveragePerIteration(iteration, paramIndex)
+              for iteration in range(n-T)]
+
+        Fforward = [self._ensembleAveragePerIteration(iteration, paramIndex)
+                    for iteration in range(T, n)]
+
+        Fmean = np.mean(np.concatenate((Ft, Fforward)))
+
+        return np.sum((Ft - Fmean)*(Fforward - Fmean))/(n-T)
+
+    def _ensembleAveragePerIteration(self, iteration, paramIndex):
+        """
+        Return the ensemble average per iteration
+        """
+
+        value = 0
+
+        for walker in self.chains:
+            value += walker[iteration][paramIndex]
+
+        return value / len(self.chains)
+
+    def plotAutocorrelation(self, paramIndex, GoodmanWeare=False):
+        """
+        Plot the autocorrelation function. It fails if some chains are removed.
+        """
+        n = len(self.chains[0])
+        if type(paramIndex) is not list:
+            paramIndex = [paramIndex]
+
+        for index in paramIndex:
+            if not GoodmanWeare:
+                autocorrelation = [self.autocorrelation(T, index) for T in range(n)]
+            else:
+                autocorrelation = [self.autocorrelationGoodmanWeare(T, index) for T in range(n)]
+
+            plt.plot(range(n), autocorrelation, label=index)
+        plt.xlabel('Lag')
+        plt.ylabel('Autocorrelation')
+        plt.legend()
+        plt.show()
+        plt.close()
+
+    def getGelmanRubin(self):
+        """
+        Return an array with the R-1 (original Gelman-Rubin criterion) for each
+        parameter
+
+        From Brooks & Gelman (2017)
+        """
+        varOfWalker, meanOfWalker = [], []
+
+        for walker in self.chains:
+            varOfWalker.append(np.var(walker, axis=0, ddof=1))
+            meanOfWalker.append(np.mean(walker, axis=0))
+
+        W = np.mean(varOfWalker, axis=0)
+        b = np.var(meanOfWalker, axis=0, ddof=1)  # b = B/n
+        n = len(self.chains[0])
+        m = len(self.chains)
+
+        Var = W - W/n + b * (1 + 1. / m)
+
+        return np.sqrt(Var/W) - 1
