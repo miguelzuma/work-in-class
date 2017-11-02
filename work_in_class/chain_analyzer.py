@@ -172,3 +172,51 @@ class Chain():
         Var = W - W/n + b * (1 + 1. / m)
 
         return np.sqrt(Var/W) - 1
+
+    def getIntegratedAutocorrelationTime(self, paramIndex):
+        """
+        Return the integrated autocorrelation time.
+
+        tau = 1/2 + sum C(T)/C(0)
+        """
+
+        C0 = self.autocorrelationGoodmanWeare(0, paramIndex)
+
+        tau_sum_array = np.array([self.autocorrelationGoodmanWeare(T, paramIndex)
+                                  for T in range(len(self.chains[0]))])/C0
+
+        return 0.5 + tau_sum_array.sum()
+
+    def getIntegratedAutocorrelationTime_acor(self, paramIndex):
+        """
+        Return the walkers average integrated autocorrelation time.
+        It uses acor.
+        """
+        import acor
+
+        tauMean = 0
+
+        for walker in self.chains:
+            paramChain = [row[paramIndex] for row in walker]
+            tau, mean, sigma = acor.acor(paramChain)
+            tauMean += tau
+
+        return tauMean/len(self.chains)
+
+    def getMaxIntegratedAutocorrelationTime(self, params=None, acor=False):
+        """
+        Return the greates integrated autocorrelation time
+        """
+
+        if params is None:
+            params = len(self.chains[0][0])
+
+        if acor:
+            callAutocorrelationTime = self.getIntegratedAutocorrelationTime_acor
+        else:
+            callAutocorrelationTime = self.getIntegratedAutocorrelationTime
+
+        tau = [callAutocorrelationTime(paramIndex) for paramIndex in
+               range(params)]
+
+        return max(tau)
