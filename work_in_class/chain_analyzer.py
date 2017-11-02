@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import numpy as np
+from scipy.optimize import curve_fit
 from matplotlib import pyplot as plt
 
 
@@ -220,3 +221,33 @@ class Chain():
                range(params)]
 
         return max(tau)
+
+    def getExponentialAutocorrelationTime(self, paramIndex, tauGuess=1, GoodmanWeare=False):
+        """
+        Return the exponential autocorrelation time for the given paramIndex and
+        its error.
+
+        It is obtained fitting exp(-T/tau) to data up to C(T) < e^-1.
+        """
+
+        if GoodmanWeare:
+            callAutocorrelation = self.autocorrelationGoodmanWeare
+        else:
+            callAutocorrelation = self.autocorrelation
+
+        T = [0]
+        C = [callAutocorrelation(0, paramIndex)]
+
+        for t in range(1, len(self.chains[0])):
+            c = callAutocorrelation(t, paramIndex)
+            if c/C[0] > np.exp(-1):
+                C.append(c)
+                T.append(t)
+            else:
+                break
+
+        tau, cov = curve_fit(lambda t, tau: np.exp(-t/tau), T, np.array(C)/C[0],
+                             p0=(tauGuess))
+
+        # tau, cov are np.arrays, let's return just the value
+        return tau[0], np.sqrt(cov[0][0])
