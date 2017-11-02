@@ -47,18 +47,24 @@ class Chain():
                         continue
                     self.chains[walker].append(np.array([float(x) for x in line]))
 
-    def readChain(self, filepath):
+    def readChain(self, filepath, removeFirstCols=True):
         """
         Append chain to self.chains object
         """
 
         chain = []
+        firstColumnToStore = 2
+
+        if not removeFirstCols:
+            firstColumnToStore = 0
 
         with open(filepath) as f:
             for line in f:
                 columns = [float(x) for x in line.split()]
-                for n in range(int(columns[0])):
-                    chain.append(columns[2:])
+                multiplicity = columns[0] = 0
+                columns[0] = 1  # Set multiplicity to 1 as they will be repeated
+                for n in range(multiplicity):
+                    chain.append(columns[firstColumnToStore:])
 
         self.chains.append(chain)
 
