@@ -3,6 +3,7 @@
 import numpy as np
 from scipy.optimize import curve_fit
 from matplotlib import pyplot as plt
+import sys
 
 
 class Chain():
@@ -43,13 +44,20 @@ class Chain():
             self.chains = [[] for i in range(walkers)]
 
             for iteration in range(self.CosmoHammerArguments[iterKey]):
-                for walker in range(walkers):
-                    line = f.next().split()
-                    if ('nan' in line) and removeError:
-                        print "Removing point with lkl=-np.inf. Be aware it can " +\
-                               "make the rest of operations meaningless."
-                        continue
-                    self.chains[walker].append(np.array([float(x) for x in line]))
+                try:
+                    for walker in range(walkers):
+                        line = f.next().split()
+                        if ('nan' in line) and removeError:
+                            print "Removing point with lkl=-np.inf. Be aware it can " +\
+                                "make the rest of operations meaningless."
+                            continue
+                        self.chains[walker].append(np.array([float(x) for x in line]))
+                except StopIteration:
+                    print("Stop Iteration error found.")
+                    print("Cleaning chains")
+                    self.empty()
+                    sys.exit("Check the number of free parameters given")
+
 
     def readChain(self, filepath, removeFirstCols=True):
         """
