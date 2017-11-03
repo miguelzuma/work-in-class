@@ -131,7 +131,7 @@ class Chain():
 
         return value / len(self.chains)
 
-    def plotAutocorrelation(self, paramIndex, GoodmanWeare=False):
+    def plotAutocorrelation(self, paramIndex, GoodmanWeare=False, withExponential=False, **kwards):
         """
         Plot the autocorrelation function. It fails if some chains are removed.
         """
@@ -146,6 +146,15 @@ class Chain():
                 autocorrelation = [self.autocorrelationGoodmanWeare(T, index) for T in range(n)]
 
             plt.plot(range(n), autocorrelation, label=index)
+
+            if withExponential:
+                # It returns a list: [(tau, sigma)]
+                tau = self.getExponentialAutocorrelationTime(index,
+                                                             GoodmanWeare=GoodmanWeare,
+                                                             **kwards)[0][0]
+                plt.plot(range(n), autocorrelation[0] * np.exp(-np.arange(n)/tau),
+                         '--', label='Fit {}'.format(index))
+
         plt.xlabel('Lag')
         plt.ylabel('Autocorrelation')
         plt.legend()
@@ -229,7 +238,7 @@ class Chain():
 
         return max(tau)
 
-    def getExponentialAutocorrelationTime(self, paramIndex, tauGuess=1, GoodmanWeare=False):
+    def _getExponentialAutocorrelationTime(self, paramIndex, tauGuess=1, GoodmanWeare=False):
         """
         Return the exponential autocorrelation time for the given paramIndex and
         its error.
@@ -257,4 +266,24 @@ class Chain():
                              p0=(tauGuess))
 
         # tau, cov are np.arrays, let's return just the value
-        return tau[0], np.sqrt(cov[0][0])
+        return (T, C), (tau[0], np.sqrt(cov[0][0]))
+
+    def getExponentialAutocorrelationTime(self, paramIndex, tauGuess=1,
+                                          GoodmanWeare=False):
+        """
+        Return the exponential autocorrelation time for the given paramIndexes
+        and its error.
+
+        It is obtained fitting exp(-T/tau) to data up to C(T) < e^-1.
+        """
+
+        if type(paramIndex) is not list:
+            paramIndex = [paramIndex]
+
+        tau = []
+
+        for index in paramIndex:
+            tau.append(self._getExponentialAutocorrelationTime(index, tauGuess,
+                                                               GoodmanWeare)[1])
+
+        return tau
