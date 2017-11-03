@@ -152,12 +152,16 @@ class Chain():
         plt.show()
         plt.close()
 
-    def getGelmanRubin(self):
+    def getGelmanRubin(self, MontePython=False):
         """
-        Return an array with the R-1 (original Gelman-Rubin criterion) for each
-        parameter
+        Return an array with the R-1 (Gelman-Rubin criterion without the
+        t-Student dimensional estimator correction) for each parameter as in
+        MontePython.
 
-        From Brooks & Gelman (2017)
+        MontePython = Bool. If true, return R - 1 computed (almost) as in
+        MontePython, i.e. R = Between / Within variances; except for the
+        weighting for the chain length.
+
         """
         varOfWalker, meanOfWalker = [], []
 
@@ -167,12 +171,15 @@ class Chain():
 
         W = np.mean(varOfWalker, axis=0)
         b = np.var(meanOfWalker, axis=0, ddof=1)  # b = B/n
-        n = len(self.chains[0])
-        m = len(self.chains)
+        n = float(len(self.chains[0]))
+        m = float(len(self.chains))
 
-        Var = W - W/n + b * (1 + 1. / m)
+        V = W - W/n + b * (1 + 1. / m)
 
-        return np.sqrt(Var/W) - 1
+        if MontePython:
+            return V/W - 1
+
+        return np.sqrt(V / W) - 1
 
     def getIntegratedAutocorrelationTime(self, paramIndex):
         """
