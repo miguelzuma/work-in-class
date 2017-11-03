@@ -55,7 +55,6 @@ class Chain():
         """
         Append chain to self.chains object
         """
-
         chain = []
         firstColumnToStore = 2
 
@@ -134,7 +133,7 @@ class Chain():
 
         return value / len(self.chains)
 
-    def plotAutocorrelation(self, paramIndex, GoodmanWeare=False, withExponential=False, **kwards):
+    def plotAutocorrelation(self, paramIndex, normalized=False, GoodmanWeare=False, withExponential=False, **kwards):
         """
         Plot the autocorrelation function. It fails if some chains are removed.
         """
@@ -147,6 +146,9 @@ class Chain():
                 autocorrelation = [self.autocorrelation(T, index) for T in range(n)]
             else:
                 autocorrelation = [self.autocorrelationGoodmanWeare(T, index) for T in range(n)]
+
+            if normalized:
+                autocorrelation = np.array(autocorrelation) / autocorrelation[0]
 
             plt.plot(range(n), autocorrelation, label=index)
 
