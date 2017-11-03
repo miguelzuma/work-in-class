@@ -13,6 +13,9 @@ class Chain():
         self.chains = []
         self.CosmoHammerArguments = {}
 
+    def empty(self):
+        self.chains = []
+
     def _readCosmoHammerOptions(self, fileArguments):
         """
         Fill CosmoHammerArguments with walkersRatio, burninIterations and
