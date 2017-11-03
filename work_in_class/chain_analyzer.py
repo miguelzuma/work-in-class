@@ -62,7 +62,7 @@ class Chain():
         with open(filepath) as f:
             for line in f:
                 columns = [float(x) for x in line.split()]
-                multiplicity = columns[0] = 0
+                multiplicity = int(columns[0])
                 columns[0] = 1  # Set multiplicity to 1 as they will be repeated
                 for n in range(multiplicity):
                     chain.append(columns[firstColumnToStore:])
