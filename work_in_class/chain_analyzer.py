@@ -27,37 +27,38 @@ class Chain():
                 argument, value = line.split('=')
                 self.CosmoHammerArguments[argument.strip()] = int(value)
 
-    def readCosmoHammerChain(self, filepath, fileArguments, numberFreeParam, removeError=False):
+    def readCosmoHammerChain(self, outPath, burninPath, fileArguments, numberFreeParam, removeError=False):
         """
         Append individual walkers chains in self.chains array
         """
         self._readCosmoHammerOptions(fileArguments)
 
-        if 'burn' in filepath:
-            iterKey = 'burninIterations'
-        else:
-            iterKey = 'sampleIterations'
+        walkers = self.CosmoHammerArguments['walkersRatio'] * numberFreeParam
 
-        with open(filepath) as f:
-            walkers = self.CosmoHammerArguments['walkersRatio'] * numberFreeParam
+        self.chains = [[] for i in range(walkers)]
 
-            self.chains = [[] for i in range(walkers)]
+        for filePath in [burninPath, outPath]:
 
-            for iteration in range(self.CosmoHammerArguments[iterKey]):
-                try:
-                    for walker in range(walkers):
-                        line = f.next().split()
-                        if ('nan' in line) and removeError:
-                            print "Removing point with lkl=-np.inf. Be aware it can " +\
-                                "make the rest of operations meaningless."
-                            continue
-                        self.chains[walker].append(np.array([float(x) for x in line]))
-                except StopIteration:
-                    print("Stop Iteration error found.")
-                    print("Cleaning chains")
-                    self.empty()
-                    sys.exit("Check the number of free parameters given")
+            if 'burn' in filePath:
+                iterKey = 'burninIterations'
+            else:
+                iterKey = 'sampleIterations'
 
+            with open(filePath) as f:
+                for iteration in range(self.CosmoHammerArguments[iterKey]):
+                    try:
+                        for walker in range(walkers):
+                            line = f.next().split()
+                            if ('nan' in line) and removeError:
+                                print "Removing point with lkl=-np.inf. Be aware it can " +\
+                                    "make the rest of operations meaningless."
+                                continue
+                            self.chains[walker].append(np.array([float(x) for x in line]))
+                    except StopIteration:
+                        print("Stop Iteration error found.")
+                        print("Cleaning chains")
+                        self.empty()
+                        sys.exit("Check the number of free parameters given")
 
     def readChain(self, filepath, removeFirstCols=True):
         """
@@ -187,9 +188,14 @@ class Chain():
         """
         varOfWalker, meanOfWalker = [], []
 
+        if self.CosmoHammerArguments:
+            startingIteration = self.CosmoHammerArguments['burninIterations']
+        else:
+            startingIteration = 0
+
         for walker in self.chains:
-            varOfWalker.append(np.var(walker, axis=0, ddof=1))
-            meanOfWalker.append(np.mean(walker, axis=0))
+            varOfWalker.append(np.var(walker[startingIteration:], axis=0, ddof=1))
+            meanOfWalker.append(np.mean(walker[startingIteration:], axis=0))
 
         W = np.mean(varOfWalker, axis=0)
         b = np.var(meanOfWalker, axis=0, ddof=1)  # b = B/n
