@@ -222,9 +222,8 @@ class Model():
             except CosmoSevereError:
                 pass
 
-
             if ("output" in self.cosmo.pars) and ('mPk' in self.cosmo.pars['output']):
-                k_array = np.linspace(*pk)
+                k_array = np.logspace(*pk)
                 pk_array = np.array([self.cosmo.pk(k, 0) for k in k_array])
 
                 d['pk'] = {'k': k_array, 'pk': pk_array}
