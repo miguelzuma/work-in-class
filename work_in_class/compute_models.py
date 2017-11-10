@@ -94,7 +94,7 @@ class Model():
 
     def compute_models(self, params, varied_name, index_variable, values,
                        back=[], thermo=[], prim=[], pert=[], trans=[],
-                       pk=[0.0001, 0.1, 100], extra=[], update=True,
+                       pk=[-4, -1, 100], extra=[], update=True,
                        cosmo_msg=False, texname=""):
         """
         Fill dic with the hi_class output structures for the model with given
