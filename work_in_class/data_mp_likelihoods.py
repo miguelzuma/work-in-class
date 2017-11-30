@@ -194,7 +194,7 @@ class Data():
 
         for exp in self.__name_str_to_list(experiments):
             if exp in self.experiments:
-                self.experiments.remove(experiment)
+                self.experiments.remove(exp)
 
     def get_mcmc_parameters(self, table_of_strings):
         """
@@ -298,8 +298,9 @@ class Data():
             self.mcmc_parameters.clear()
 
     def compute_lkl(self, cosmo, params, experiments=[], nuisance=[], overwrite=False, cosmo_struct_cleanup=False):
-        """Compute the likelihood for the parms given. Params will update the
-        cosmo_arguments and nuisance_parameters unless overwrite is True.
+        """Compute the likelihood for the parms and experiments given. Params
+        will update the cosmo_arguments and nuisance_parameters unless overwrite
+        is True. If no experment is passed, it will used the initialised ones.
 
         For the time being, params must be given in classy form.
 
@@ -315,24 +316,27 @@ class Data():
                     them could have been set by the experiments so that \
                     their removal will likely cause an error."
             self.clear()
+        else:
+            self.clear("cosmo")
 
         if not experiments:
             experiments = self.experiments
-
-        lkl = 0
-        for experiment in self.__name_str_to_list(experiments):
-            if experiment not in self.experiments:
-                print "Adding {} to list of initialised experiments".format(experiment)
-                self.add_experiments([experiment], nuisance)
+        else:
+            for experiment in self.__name_str_to_list(experiments):
+                if experiment not in self.experiments:
+                    print "Adding {} to list of initialised experiments".format(experiment)
+                    self.add_experiments([experiment], nuisance)
 
         # set and compute must be called after initializing the lkl's. Some of them add
         # some mandatory parameters (e.g. {'output': 'mPk'}).
 
         self.update_params(params)
+        cosmo.empty()
         cosmo.set(self.__params_to_cosmo_classy()) # TODO: Modify to accept params as in MP input
         cosmo.compute()
 
-        for experiment in self.experiments:
+        lkl = 0
+        for experiment in experiments:
             lkl += self.lkl[experiment].loglkl(cosmo, self)
 
         if cosmo_struct_cleanup:
