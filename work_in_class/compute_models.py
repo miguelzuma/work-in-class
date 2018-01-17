@@ -157,7 +157,7 @@ class Model():
             except Exception, e:
                 print "Error: skipping {}={}".format(key, val)
                 if cosmo_msg:
-                    print e
+                    print str(e) + '\n'
 
                 continue
 
