@@ -80,7 +80,7 @@ class Binning():
         """
         Compute the w_i bins for the models given in path.
         """
-        if self.computed is True:
+        if self._computed is True:
             print "Bins already computed. Use reset if you want to compute it again"
             return
 
