@@ -40,11 +40,10 @@ class Binning():
         self._zbins = zbins
         self._abins = abins
 
-    def _read_from_file(self):
+    def _read_from_file(self, path):
         """
         Return params for class from files used in quintessence Marsh.
         """
-        path = self.path
         with open(path) as f:
             f.readline()
             header = f.readline()[3:].split()  # Remove '#', 'w0', and 'wa'
