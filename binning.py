@@ -4,6 +4,7 @@ import numpy as np
 import os
 from classy import Class
 
+
 class Binning():
     def __init__(self, zbins=[], abins=[]):
         self._cosmo = Class()
@@ -26,8 +27,8 @@ class Binning():
                         "Omega_fld": 0,
                         "Omega_smg": -1}
 
-        self.wzbins = self.ones(len(self._zbins))
-        self.wabins = self.ones(len(self._abins))
+        self.wzbins = np.ones(len(self._zbins))
+        self.wabins = np.ones(len(self._abins))
 
         self._computed = False
         self._path = []
