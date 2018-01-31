@@ -3,16 +3,17 @@
 import numpy as np
 import os
 from classy import Class
+import sys
 
 
 class Binning():
-    def __init__(self, zbins, abins, fname):
+    def __init__(self, zbins, abins, fname, outdir='./'):
         self._cosmo = Class()
         self._zbins = zbins
         self._abins = abins
-        self._fwzname = fname+'-wz-bins.txt'
-        self._fwaname = fname+'-wa-bins.txt'
-        self._fparamsname = fname+'-params.txt'
+        self._fwzname = os.path.join(outdir, fname+'-wz-bins.txt')
+        self._fwaname = os.path.join(outdir, fname+'-wa-bins.txt')
+        self._fparamsname = os.path.join(outdir, fname+'-params.txt')
         self._set_default_values()
 
     def _set_empty_wbins(self):
@@ -110,7 +111,7 @@ class Binning():
         failed_indexes = []
 
         for row in range(numbers_of_rows):
-            print "{}/{}".format(row+1, numbers_of_rows)
+            sys.stdout.write("{}/{}\n".format(row+1, numbers_of_rows))
             self._set_params(row)
             index_row = row % 5
             try:
@@ -123,13 +124,14 @@ class Binning():
             except Exception as e:
                 failed_indexes.append(index_row)
                 self._cosmo.struct_cleanup()
-                print self._params
-                print e
-                print "\n"
+                self._cosmo.empty()
+                sys.stderr.write("self._params" + '\n')
+                sys.stderr.write(str(e))
+                sys.stderr.write('\n')
                 continue
 
-            self._cosmo.empty()
             self._cosmo.struct_cleanup()
+            self._cosmo.empty()
 
             if row and (not index_row):
                 self._save_computed(params,
