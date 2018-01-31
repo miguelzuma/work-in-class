@@ -187,6 +187,6 @@ class Binning():
         """
         Reset class
         """
-        self._cosmo.empty()
         self._cosmo.struct_cleanup()
+        self._cosmo.empty()
         self._set_default_values()
