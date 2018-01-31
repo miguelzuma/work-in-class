@@ -125,7 +125,7 @@ class Binning():
                 failed_indexes.append(index_row)
                 self._cosmo.struct_cleanup()
                 self._cosmo.empty()
-                sys.stderr.write("self._params" + '\n')
+                sys.stderr.write(str(self._params) + '\n')
                 sys.stderr.write(str(e))
                 sys.stderr.write('\n')
                 continue
@@ -145,8 +145,9 @@ class Binning():
 
         wzbins[:index_row]  # Remove the unset rows
         wabins[:index_row]
-        self._save_computed()
-        self._set_empty_wbins()
+        self._save_computed(params,
+                            np.delete(wzbins, failed_indexes, axis=0),
+                            np.delete(wabins, failed_indexes, axis=0))
 
     def _create_output_files(self):
         """
