@@ -71,11 +71,12 @@ class Binning():
 
         self.gravity_model = os.path.basename(path).split('-')[0]
 
-    def _set_params(self, row):
+    def _params_from_row(self, row):
         """
         Set parameters.
         """
-        self._params.update({
+        params = self._params
+        params.update({
             'parameters_smg': str(self.params_smg[row]).strip('[()]'),
             'h': self.h[row],
             'Omega_cdm': self.Omega_cdm[row],
@@ -83,13 +84,72 @@ class Binning():
         })
 
         if len(self.params_2_smg):
-            self._params.update({
+            params.update({
                 'parameters_2_smg': str(self.params_2_smg[row]).strip('[()]')
             })
 
-        self._cosmo.set(self._params)
+        return params
 
-    def compute_bins(self, path):
+    def compute_bins(self, params):
+        """
+        Compute the w_i bins for the model with params.
+        """
+        wzbins = np.empty(len(self._zbins))
+        wabins = np.empty(len(self._abins))
+        self._params = params
+        self._cosmo.set(params)
+        try:
+            self._cosmo.compute()
+            for n, z in enumerate(self._zbins):
+                wzbins[n] = self._cosmo.w_smg(z)
+            for n, a in enumerate(self._abins):
+                wabins[n] = self._cosmo.w_smg(1./a-1.)
+        except Exception as e:
+            self._cosmo.struct_cleanup()
+            self._cosmo.empty()
+            sys.stderr.write(str(self._params) + '\n')
+            sys.stderr.write(str(e))
+            sys.stderr.write('\n')
+            raise Exception
+
+        self._cosmo.struct_cleanup()
+        self._cosmo.empty()
+
+        return wzbins, wabins
+
+    def compute_bins_from_params(self, params_func, number_of_rows):
+        """
+        Compute the w_i bins for the models given by the function
+        params_func iterated #iterations.
+        """
+        self._create_output_files()
+
+        wzbins = []
+        wabins = []
+        params = []
+
+        for row in range(number_of_rows):
+            sys.stdout.write("{}/{}\n".format(row+1, number_of_rows))
+            params_tmp = params_func()
+
+            try:
+                wzbins_tmp, wabins_tmp = self.compute_bins(params_tmp)
+                wzbins.append(wzbins_tmp)
+                wabins.append(wabins_tmp)
+                params.append(params_tmp)
+            except Exception:
+                continue
+
+            if len(wzbins) == 5:
+                self._save_computed(params, wzbins, wabins)
+
+                params = []
+                wzbins = []
+                wabins = []
+
+        self._save_computed(params, wzbins, wabins)
+
+    def compute_bins_from_file(self, path):
         """
         Compute the w_i bins for the models given in path.
         """
@@ -101,53 +161,16 @@ class Binning():
 
         self._read_from_file(path)
 
-        self._create_output_files()
+        def params_gen(length):
+            row = 0
+            while row < length:
+                yield self._params_from_row(row)
+                row += 1
 
-        numbers_of_rows = len(self.params_smg)
+        params = params_gen(len(self.params_smg))
 
-        wzbins = np.empty((5, len(self._zbins)))
-        wabins = np.empty((5, len(self._abins)))
-        params = []
-        failed_indexes = []
-
-        for row in range(numbers_of_rows):
-            sys.stdout.write("{}/{}\n".format(row+1, numbers_of_rows))
-            self._set_params(row)
-            index_row = row % 5
-            try:
-                self._cosmo.compute()
-                for n, z in enumerate(self._zbins):
-                    wzbins[index_row][n] = self._cosmo.w_smg(z)
-                for n, a in enumerate(self._abins):
-                    wabins[index_row][n] = self._cosmo.w_smg(1./a-1.)
-                params.append(self._params)
-            except Exception as e:
-                failed_indexes.append(index_row)
-                self._cosmo.struct_cleanup()
-                self._cosmo.empty()
-                sys.stderr.write(str(self._params) + '\n')
-                sys.stderr.write(str(e))
-                sys.stderr.write('\n')
-                continue
-
-            self._cosmo.struct_cleanup()
-            self._cosmo.empty()
-
-            if row and (not index_row):
-                self._save_computed(params,
-                                    np.delete(wzbins, failed_indexes, axis=0),
-                                    np.delete(wabins, failed_indexes, axis=0))
-
-                params = []
-                failed_indexes = []
-                wzbins = np.empty((5, len(self._zbins)))
-                wabins = np.empty((5, len(self._abins)))
-
-        wzbins[:index_row]  # Remove the unset rows
-        wabins[:index_row]
-        self._save_computed(params,
-                            np.delete(wzbins, failed_indexes, axis=0),
-                            np.delete(wabins, failed_indexes, axis=0))
+        self.compute_bins_from_params(params.next,
+                                      len(self.params_smg))
 
     def _create_output_files(self):
         """
