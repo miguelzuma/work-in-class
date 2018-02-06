@@ -11,17 +11,28 @@ class Binning():
         self._cosmo = Class()
         self._zbins = zbins
         self._abins = abins
-        self._fwzname = os.path.join(outdir, fname+'-wz-bins.txt')
-        self._fwaname = os.path.join(outdir, fname+'-wa-bins.txt')
-        self._fparamsname = os.path.join(outdir, fname+'-params.txt')
+        self._set_file_names(fname, outdir)
         self._set_default_values()
 
-    def _set_empty_wbins(self):
+    def _set_file_names(self, fname, outdir):
         """
-        Initialize wzbins and wabins arrays to ones
+        Set the file names and add a number if exists
         """
-        self.wzbins = np.ones((5, len(self._zbins)))  # Each 5 rows it is saved on disk
-        self.wabins = np.ones((5, len(self._abins)))
+
+        fwzname = os.path.join(outdir, fname+'-wz-bins')
+        fwaname = os.path.join(outdir, fname+'-wa-bins')
+        fparamsname = os.path.join(outdir, fname+'-params')
+
+        i = 0
+
+        while (os.path.exists(fwzname + '-%s.txt' % i) or
+              os.path.exists(fwaname + '-%s.txt' % i) or
+              os.path.exists(fparamsname + '-%s.txt' % i)):
+            i += 1
+
+        self._fwzname = fwzname + '-%s.txt' % i
+        self._fwaname = fwaname + '-%s.txt' % i
+        self._fparamsname = fparamsname + '-%s.txt' % i
 
     def _set_default_values(self):
         """
@@ -192,10 +203,6 @@ class Binning():
         """
         Save stored iterations in file.
         """
-        if self._computed is True:
-            print "Bins not yet computed. Compute them first"
-            return
-
         with open(self._fparamsname, 'a') as f:
             for i in params:
                 f.write(str(i)+'\n')
