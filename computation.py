@@ -5,7 +5,7 @@ import numpy as np
 import sys
 
 zbins = np.arange(0, 3.001, 0.01)
-abins = np.linspace(1, 0.01, 300)
+abins = np.arange(0.01, 1.001, 5e-3)
 
 params = {
     'Omega_Lambda': 0,
@@ -23,7 +23,7 @@ if sys.argv[1] == '1':  # Quintessence monomial
         parameters_smg = [
             np.random.uniform(1, 7),  # "N"
             1., #10**np.random.uniform(-1, 1),  # "V0" tunned
-            0,  # phi_prime_ini,
+            1e-100,  # phi_prime_ini,
             np.random.uniform(1, 7)  # "phi_ini"
         ]
 
@@ -66,7 +66,7 @@ elif sys.argv[1] == '3':
         E_F = 10 ** np.random.uniform(low=-3, high=-1)  # E_F
 
         parameters_smg = [
-            0.,  # phi_prime_ini
+            1e-100,  # phi_prime_ini
             np.random.uniform(low=-np.pi/E_F, high=np.pi/E_F),  # phi_ini
             1.,  # 10 ** np.random.uniform(low=-1, high=1),  # V0, tunned
             E_F,  # E_F
@@ -93,7 +93,7 @@ elif sys.argv[1] == '4':
         E_F = 10 ** np.random.uniform(low=-3, high=-1)
 
         parameters_smg = [
-            0.,  # phi_prime_ini
+            1e-100,  # phi_prime_ini
             np.random.uniform(low=-1/E_F, high=1/E_F),  # phi_ini
             1.,  # 10 ** np.random.uniform(low=-1, high=1),  # V0, tunned
             E_F,
@@ -112,4 +112,4 @@ elif sys.argv[1] == '4':
     binning = Binning(zbins, abins, gravity_model, sys.argv[2])
     #binning.compute_bins('./quintessence_eft-w0_wa-201702081639.dat')
 
-binning.compute_bins_from_params(params_func, 10)  # 20000)
+binning.compute_bins_from_params(params_func, int(sys.argv[3]))
