@@ -92,7 +92,7 @@ class Histograms():
         Compute all correlations between variables.
         """
         # TODO: Use symmetry to speed up the calc.
-        for i in self.bins:
+        for i in range(len(self.bins)):
             self.compute_correlation_bin(i)
 
     def compute_correlation_bin(self, zbin):
