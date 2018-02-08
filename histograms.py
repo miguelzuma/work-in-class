@@ -15,6 +15,7 @@ class Histograms():
         self.means = []
         self.sigmas = []
         self.correlations = []
+        self.covariance = []
 
     def read_file(self, fname, header=True):
         """
@@ -92,24 +93,34 @@ class Histograms():
         Compute all correlations between variables.
         """
         # TODO: Use symmetry to speed up the calc.
-        for i in range(len(self.bins)):
-            self.compute_correlation_bin(i)
 
-    def compute_correlation_bin(self, zbin):
+        if (self.covariance == []) or (np.nan in self.covariance):
+            self.compute_covariance_matrix()
+
+        c = np.diag(self.covariance)
+
+        self.correlations = self.covariance / np.sqrt(c * c[:, None])
+
+    def compute_covariance_matrix(self):
+        """
+        Compute the covariance matrix
+        """
+        self.covariance = np.cov(self.data)
+
+    def compute_covariance_bin(self, zbin):
         """
         Compute <w(zbin)w_i> correlation values.
         """
         if self.means == []:
             self.compute_means()
 
-        if self.correlations == []:
-            self.correlations = [np.nan] * len(self.bins)
+        if self.covariance == []:
+            self.covariance = [np.nan] * len(self.bins)
 
         wzbin_half = self.data[zbin] - self.means[zbin]
 
-        self.correlations[zbin] = np.mean([wzbin_half*(w - w_mean) for w, w_mean
-                                           in zip(self.data, self.means)],
-                                          axis=1)
+        self.covariance[zbin] = np.mean([wzbin_half*(w - w_mean) for w, w_mean
+                                         in zip(self.data, self.means)], axis=1)
 
     def compute(self, bins='auto'):
         """
@@ -131,16 +142,18 @@ class Histograms():
         plt.bar(bins, density, width=np.diff(histogram[1]), color='b')
         plt.plot(bins, density, c='r')
 
-        if self.means:
+        if self.means != []:
             mean = self.means[index]
             plt.axvline(mean, c='black', label='mean')
-            if self.sigmas:
+            if self.sigmas != []:
                 sigma = self.sigmas[index]
                 plt.axvspan(mean - sigma[0], mean + sigma[1], alpha=0.5, color='grey', label='68% data')
 
+            plt.legend(loc=0)
+
         plt.xlim(xlim)
         plt.xlabel(xlabel)
-        plt.legend(loc=0)
+        plt.ylabel('Normalized frequency')
         plt.title('{} = {}'.format(variable_binned, self.bins[index]))
         plt.show()
         plt.close()
@@ -164,6 +177,24 @@ class Histograms():
         plt.xlabel(xlabel)
         plt.xscale(scale[0])
         plt.yscale(scale[1])
+        plt.show()
+        plt.close()
+
+    def plot_correlation_matrix(self, xlabel='x_i', ylabel='y_i', clabel='Correlation'):
+        """
+        Plot the correlation matrix.
+        """
+        plt.imshow(self.correlations)
+        cbar = plt.colorbar()
+
+        plt.xticks(range(len(self.bins))[::50], self.bins[::50])
+        plt.yticks(range(len(self.bins))[::50], self.bins[::50])
+
+        cbar.set_label(clabel)
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.title('Correlation matrix')
+
         plt.show()
         plt.close()
 
