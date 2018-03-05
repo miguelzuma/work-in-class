@@ -4,6 +4,7 @@ import numpy as np
 import sys
 from matplotlib import pyplot as plt
 from matplotlib import cm
+from matplotlib import colors
 
 
 class Histograms():
@@ -11,6 +12,7 @@ class Histograms():
         self.fname = ''
         self.data = []
         self.histograms = []
+        self.histograms_rf = []
         self.bins = []
         self.means = []
         self.sigmas = []
@@ -46,6 +48,28 @@ class Histograms():
             histograms[i] = np.histogram(data, bins=bins)  # histogram[i] = [hist, bin_edges]
 
         self.histograms = histograms
+
+    def _reflect_histogram(self, histogram):
+        """
+        Reflex the histogram by its lowest X value.
+        """
+
+        x = histogram[1][:-1]  # Remove the border bin
+        y = histogram[0]
+
+        xmin = min(x)
+        xmax = max(x)
+
+        diff = x - xmax
+
+        x2 = xmin + diff
+        y2 = list(y)
+        y2.reverse()
+
+        X = np.concatenate([x2, x])
+        Y = np.concatenate([y2, y])
+
+        return Y, X
 
     def compute_means(self):
         """
@@ -128,6 +152,14 @@ class Histograms():
         """
         self._compute_histograms(bins)
 
+    def reflect_histograms(self):
+        """
+        Reflex the stored histograms
+        """
+
+        for histogram in self.histograms:
+            self.histograms_rf.append(self._reflect_histogram(histogram))
+
     def plot_histogram(self, index, variable_binned='bin_i', xlabel='x', xlim=[None, None]):
         """
         Plot histogram for bin with index, index
@@ -169,7 +201,8 @@ class Histograms():
         x = np.concatenate(np.array([self.bins[i]*np.ones(len(row)) for i, row in enumerate(y)]))
         y = np.concatenate(y)
 
-        cax = plt.scatter(x, y, c=prob, s=2, cmap=cm.hot)
+        # TODO: Interpolate 0-prob values? Log scale removes them.
+        cax = plt.scatter(x, y, c=prob, s=2, cmap=cm.hot_r, norm=colors.LogNorm())
 
         cb = plt.colorbar(cax)
         cb.set_label('% data')
