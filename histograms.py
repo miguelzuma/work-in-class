@@ -13,6 +13,7 @@ class Histograms():
         self.data = []
         self.histograms = []
         self.histograms_rf = []
+        self.histograms_rf_rb = []
         self.bins = []
         self.means = []
         self.sigmas = []
@@ -70,6 +71,12 @@ class Histograms():
         Y = np.concatenate([y2, y])
 
         return Y, X
+
+    def _rebin_unit_variance(self, histogram_rf):
+        """
+        Rebin histogram so that variance is unit. It should be reflexed!
+        """
+        return histogram_rf[0], histogram_rf[1]/np.sqrt(np.var(histogram_rf[1]))  # Y, X
 
     def compute_means(self):
         """
@@ -156,9 +163,15 @@ class Histograms():
         """
         Reflex the stored histograms
         """
-
         for histogram in self.histograms:
             self.histograms_rf.append(self._reflect_histogram(histogram))
+
+    def rebin_histograms_unit_variance(self):
+        """
+        Rebin histograms so that they have unit variance
+        """
+        for histogram_rf in self.histograms_rf:
+            self.histograms_rf_rb.append(self._rebin_unit_variance(histogram_rf))
 
     def plot_histogram(self, index, variable_binned='bin_i', xlabel='x', xlim=[None, None]):
         """
