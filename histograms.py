@@ -50,7 +50,7 @@ class Histograms():
 
         self.histograms = histograms
 
-    def _reflect_histogram(self, histogram):
+    def _reflect_histogram(self, histogram, center=True):
         """
         Reflex the histogram by its lowest X value.
         """
@@ -70,13 +70,18 @@ class Histograms():
         X = np.concatenate([x2, x])
         Y = np.concatenate([y2, y])
 
-        return Y, X
+        if center is True:
+            X += xmin
+        elif center:
+            X -= center
+
+        return [Y, X]
 
     def _rebin_unit_variance(self, histogram_rf):
         """
         Rebin histogram so that variance is unit. It should be reflexed!
         """
-        return histogram_rf[0], histogram_rf[1]/np.sqrt(np.var(histogram_rf[1]))  # Y, X
+        return [histogram_rf[0], histogram_rf[1]/np.sqrt(np.var(histogram_rf[1]))]  # Y, X
 
     def compute_means(self):
         """
@@ -159,12 +164,15 @@ class Histograms():
         """
         self._compute_histograms(bins)
 
-    def reflect_histograms(self):
+    def reflect_histograms(self, center=True):
         """
         Reflex the stored histograms
+
+        center = If True, center around min(xbin). If a number, center around
+        that number.
         """
         for histogram in self.histograms:
-            self.histograms_rf.append(self._reflect_histogram(histogram))
+            self.histograms_rf.append(self._reflect_histogram(histogram, center))
 
     def rebin_histograms_unit_variance(self):
         """
