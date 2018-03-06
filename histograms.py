@@ -50,38 +50,39 @@ class Histograms():
 
         self.histograms = histograms
 
-    def _reflect_histogram(self, histogram, center=True):
+    def _reflect_histogram(self, histogram, center=0):
         """
         Reflex the histogram by its lowest X value.
         """
 
-        x = histogram[1][:-1]  # Remove the border bin
+        x = histogram[1]
         y = histogram[0]
 
-        xmin = min(x)
-        xmax = max(x)
+        x0 = min(x)
 
-        diff = x - xmax
+        x_rf = np.flip(2 * x0 - x[1:], axis=0)  # = x0 - (x - x0), x excluding x0
 
-        x2 = xmin + diff
-        y2 = list(y)
-        y2.reverse()
+        y_rf = np.flip(y, axis=0)
 
-        X = np.concatenate([x2, x])
-        Y = np.concatenate([y2, y])
+        X = np.concatenate([x_rf, x])
+        Y = np.concatenate([y_rf, y])
 
-        if center is True:
-            X += xmin
+        if center == 0:
+            X -= x0
         elif center:
-            X -= center
+            X += center - x0
 
         return [Y, X]
 
     def _rebin_unit_variance(self, histogram_rf):
         """
-        Rebin histogram so that variance is unit. It should be reflexed!
+        Rebin histogram so that variance is unit. Uses binned data, no raw. It
+        should be reflexed!
         """
-        return [histogram_rf[0], histogram_rf[1]/np.sqrt(np.var(histogram_rf[1]))]  # Y, X
+
+        # TODO: Weight each bin.
+
+        return [histogram_rf[0], histogram_rf[1]/np.sqrt(np.var(histogram_rf[1], ))]  # Y, X
 
     def compute_means(self):
         """
@@ -164,7 +165,7 @@ class Histograms():
         """
         self._compute_histograms(bins)
 
-    def reflect_histograms(self, center=True):
+    def reflect_histograms(self, center=0):
         """
         Reflex the stored histograms
 
@@ -192,8 +193,8 @@ class Histograms():
         bins = histogram[1][:-1]
         density = histogram[0]/histogram[0].sum(dtype=float)
 
-        plt.bar(bins, density, width=np.diff(histogram[1]), color='b')
-        plt.plot(bins, density, c='r')
+        plt.bar(bins, density, width=np.diff(histogram[1]), color='b', align='edge')
+        plt.plot(bins + 0.5 * np.diff(histogram[1]), density, c='r')
 
         if self.means != []:
             mean = self.means[index]
