@@ -13,7 +13,6 @@ class Histograms():
         self.data = []
         self.histograms = []
         self.histograms_rf = []
-        self.histograms_rf_rb = []
         self.bins = []
         self.means = []
         self.sigmas = []
@@ -73,16 +72,6 @@ class Histograms():
             X += center - x0
 
         return [Y, X]
-
-    def _rebin_unit_variance(self, histogram_rf):
-        """
-        Rebin histogram so that variance is unit. Uses binned data, no raw. It
-        should be reflexed!
-        """
-
-        # TODO: Weight each bin.
-
-        return [histogram_rf[0], histogram_rf[1]/np.sqrt(np.var(histogram_rf[1], ))]  # Y, X
 
     def compute_means(self):
         """
