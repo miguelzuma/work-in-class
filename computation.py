@@ -4,8 +4,10 @@ from binning import Binning
 import numpy as np
 import sys
 
-zbins = np.arange(0, 3.001, 0.01)
-abins = np.arange(0.01, 1.001, 5e-3)
+#zbins = np.arange(0, 3.001, 0.01)
+#abins = np.arange(0.01, 1.001, 5e-3)
+zbins = np.arange(0, 3.001, 1)
+abins = np.array([])
 
 params = {
     'Omega_Lambda': 0,
@@ -18,7 +20,7 @@ def common_params():
                    'Omega_cdm': np.random.uniform(0.15, 0.35)
                   })
 
-if sys.argv[1] == '1':  # Quintessence monomial
+if sys.argv[1] == '1':  # Quintessence monomial. Exponential in reals
     def params_func():
         parameters_smg = [
             np.random.uniform(1, 7),  # "N"
@@ -32,7 +34,61 @@ if sys.argv[1] == '1':  # Quintessence monomial
         common_params()
         return params
 
-    binning = Binning(zbins, abins, 'quintessence_monomial-prueba', sys.argv[2])
+    binning = Binning(zbins, abins, 'quintessence_monomial-reals', sys.argv[2])
+    #binning.compute_bins('./quintessence_monomial-w0_wa-201702071315.dat')
+
+if sys.argv[1] == '1i':  # Quintessence monomial. Exponential in integers
+    def params_func():
+        parameters_smg = [
+            #np.random.uniform(1, 7),  # "N"
+            np.random.randint(1, 7),  # "N"
+            1., #10**np.random.uniform(-1, 1),  # "V0" tunned
+            1e-100,  # phi_prime_ini,
+            np.random.uniform(1, 7)  # "phi_ini"
+        ]
+
+        params.update({"parameters_smg": str(parameters_smg).strip('[]'),
+                       "gravity_model": "quintessence_monomial"})
+        common_params()
+        return params
+
+    binning = Binning(zbins, abins, 'quintessence_monomial-ints', sys.argv[2])
+    #binning.compute_bins('./quintessence_monomial-w0_wa-201702071315.dat')
+
+if sys.argv[1] == '1o':  # Quintessence monomial. Exponential in odds
+    def params_func():
+        parameters_smg = [
+            #np.random.uniform(1, 7),  # "N"
+            np.random.randint(0, 3)*2 + 1,  # "N"
+            1., #10**np.random.uniform(-1, 1),  # "V0" tunned
+            1e-100,  # phi_prime_ini,
+            np.random.uniform(1, 7)  # "phi_ini"
+        ]
+
+        params.update({"parameters_smg": str(parameters_smg).strip('[]'),
+                       "gravity_model": "quintessence_monomial"})
+        common_params()
+        return params
+
+    binning = Binning(zbins, abins, 'quintessence_monomial-ints-odd', sys.argv[2])
+    #binning.compute_bins('./quintessence_monomial-w0_wa-201702071315.dat')
+
+if sys.argv[1] == '1e':  # Quintessence monomial. Exponential in evens
+    def params_func():
+        parameters_smg = [
+            #np.random.uniform(1, 7),  # "N"
+            np.random.randint(1, 3)*2,  # "N"
+            1., #10**np.random.uniform(-1, 1),  # "V0" tunned
+            1e-100,  # phi_prime_ini,
+            np.random.uniform(1, 7)  # "phi_ini"
+        ]
+
+        params.update({"parameters_smg": str(parameters_smg).strip('[]'),
+                       "gravity_model": "quintessence_monomial"})
+        common_params()
+        return params
+
+    binning = Binning(zbins, abins, 'quintessence_monomial-ints-even', sys.argv[2])
     #binning.compute_bins('./quintessence_monomial-w0_wa-201702071315.dat')
 
 elif sys.argv[1] == '2':
