@@ -141,7 +141,7 @@ class Binning():
 
         for row in range(number_of_rows):
             sys.stdout.write("{}/{}\n".format(row+1, number_of_rows))
-            params_tmp = params_func()
+            params_tmp = params_func().copy()
 
             try:
                 wzbins_tmp, wabins_tmp = self.compute_bins(params_tmp)
