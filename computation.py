@@ -94,7 +94,7 @@ if sys.argv[1] == '1e':  # Quintessence monomial. Exponential in evens
     def params_func():
         parameters_smg = [
             #np.random.uniform(1, 7),  # "N"
-            np.random.randint(1, 3)*2,  # "N"
+            np.random.randint(1, 4)*2,  # "N"
             1., #10**np.random.uniform(-1, 1),  # "V0" tunned
             1e-100,  # phi_prime_ini,
             np.random.uniform(1, 7)  # "phi_ini"
@@ -105,7 +105,7 @@ if sys.argv[1] == '1e':  # Quintessence monomial. Exponential in evens
         common_params()
         return params
 
-    binning = Binning(zbins, abins, 'quintessence_monomial-ints-even', sys.argv[2])
+    binning = Binning(zbins, abins, 'quintessence_monomial-ints-even-correct', sys.argv[2])
     #binning.compute_bins('./quintessence_monomial-w0_wa-201702071315.dat')
 
 elif sys.argv[1] == '2':
@@ -172,9 +172,10 @@ elif sys.argv[1] == '4':
             E_F,
             np.random.randint(low=5, high=11),  # n_min, The highest number is 10.
             np.random.randint(low=5, high=11),  # n_Q, The highest number is 10.
+            np.random.standard_normal()  # zeta_Lambda, CC term
         ]
 
-        parameters_2_smg = list(np.random.standard_normal(2 + parameters_smg[-1]))
+        parameters_2_smg = list(np.random.standard_normal(2 + parameters_smg[-2]))
 
         params.update({"parameters_smg": str(parameters_smg).strip('[]'),
                        "parameters_2_smg": str(parameters_2_smg).strip('[]'),
