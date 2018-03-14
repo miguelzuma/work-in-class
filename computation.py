@@ -37,6 +37,23 @@ if sys.argv[1] == '1':  # Quintessence monomial. Exponential in reals
     binning = Binning(zbins, abins, 'quintessence_monomial-reals', sys.argv[2])
     #binning.compute_bins('./quintessence_monomial-w0_wa-201702071315.dat')
 
+if sys.argv[1] == '1log':  # Quintessence monomial. phi_ini \in [0.1, 70] in log scale
+    def params_func():
+        parameters_smg = [
+            np.random.uniform(1, 7),  # "N"
+            1., #10**np.random.uniform(-1, 1),  # "V0" tunned
+            1e-100,  # phi_prime_ini,
+            10**np.random.uniform(-1, np.log10(70))  # "phi_ini"
+        ]
+
+        params.update({"parameters_smg": str(parameters_smg).strip('[]'),
+                       "gravity_model": "quintessence_monomial"})
+        common_params()
+        return params
+
+    binning = Binning(zbins, abins, 'quintessence_monomial-log-phii', sys.argv[2])
+    #binning.compute_bins('./quintessence_monomial-w0_wa-201702071315.dat')
+
 if sys.argv[1] == '1i':  # Quintessence monomial. Exponential in integers
     def params_func():
         parameters_smg = [
