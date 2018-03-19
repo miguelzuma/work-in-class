@@ -22,17 +22,20 @@ class Binning():
         fwzname = os.path.join(outdir, fname+'-wz-bins')
         fwaname = os.path.join(outdir, fname+'-wa-bins')
         fparamsname = os.path.join(outdir, fname+'-params')
+        fshootname= os.path.join(outdir, fname+'-shooting')
 
         i = 0
 
         while (os.path.exists(fwzname + '-%s.txt' % i) or
               os.path.exists(fwaname + '-%s.txt' % i) or
-              os.path.exists(fparamsname + '-%s.txt' % i)):
+              os.path.exists(fparamsname + '-%s.txt' % i) or
+              os.path.exists(fshootname + '-%s.txt' % i)):
             i += 1
 
         self._fwzname = fwzname + '-%s.txt' % i
         self._fwaname = fwaname + '-%s.txt' % i
         self._fparamsname = fparamsname + '-%s.txt' % i
+        self._fshootname= fshootname + '-%s.txt' % i
 
     def _set_default_values(self):
         """
@@ -138,6 +141,7 @@ class Binning():
         wzbins = []
         wabins = []
         params = []
+        shoot = []
 
         for row in range(number_of_rows):
             sys.stdout.write("{}/{}\n".format(row+1, number_of_rows))
@@ -148,17 +152,21 @@ class Binning():
                 wzbins.append(wzbins_tmp)
                 wabins.append(wabins_tmp)
                 params.append(params_tmp)
+                shoot.append(self._cosmo.get_current_derived_parameters(['tuning_parameter'])['tuning_parameter'])
+                # Easily generalizable. It could be inputted a list with the
+                # desired derived parameters and store the whole dictionary.
             except Exception:
                 continue
 
             if len(wzbins) == 5:
-                self._save_computed(params, wzbins, wabins)
+                self._save_computed(params, shoot, wzbins, wabins)
 
                 params = []
                 wzbins = []
                 wabins = []
+                shoot = []
 
-        self._save_computed(params, wzbins, wabins)
+        self._save_computed(params, shoot, wzbins, wabins)
 
     def compute_bins_from_file(self, path):
         """
@@ -191,6 +199,9 @@ class Binning():
         with open(self._fparamsname, 'a') as f:
             f.write('# ' + "Dictionary of params to use with cosmo.set()" + '\n')
 
+        with open(self._fshootname, 'a') as f:
+            f.write('# ' + "Shooting variable value" + '\n')
+
         with open(self._fwzname, 'a') as f:
             f.write('# ' + "Bins on redshift" + '\n')
             f.write('# ' + str(self._zbins).strip('[]').replace('\n', '') + '\n')
@@ -199,13 +210,16 @@ class Binning():
             f.write('# ' + "Bins on scale factor" + '\n')
             f.write('# ' + str(self._abins).strip('[]').replace('\n', '') + '\n')
 
-    def _save_computed(self, params, wzbins, wabins):
+    def _save_computed(self, params, shoot, wzbins, wabins):
         """
         Save stored iterations in file.
         """
         with open(self._fparamsname, 'a') as f:
             for i in params:
                 f.write(str(i)+'\n')
+
+        with open(self._fshootname, 'a') as f:
+            np.savetxt(f, shoot)
 
         with open(self._fwzname, 'a') as f:
             np.savetxt(f, wzbins)
