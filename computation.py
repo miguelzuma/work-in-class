@@ -4,10 +4,10 @@ from binning import Binning
 import numpy as np
 import sys
 
-#zbins = np.arange(0, 3.001, 0.01)
-#abins = np.arange(0.01, 1.001, 5e-3)
-zbins = np.arange(0, 3.001, 1)
-abins = np.array([])
+zbins = np.arange(0, 3.001, 0.01)
+abins = np.arange(0.01, 1.001, 5e-3)
+# zbins = np.arange(0, 3.001, 1)
+# abins = np.array([])
 
 params = {
     'Omega_Lambda': 0,
@@ -70,6 +70,23 @@ if sys.argv[1] == '1i':  # Quintessence monomial. Exponential in integers
         return params
 
     binning = Binning(zbins, abins, 'quintessence_monomial-ints', sys.argv[2])
+    #binning.compute_bins('./quintessence_monomial-w0_wa-201702071315.dat')
+
+if sys.argv[1] == '1iInverse':  # Quintessence monomial. Exponential in integers
+    def params_func():
+        parameters_smg = [
+            -np.random.randint(1, 7),  # "N"
+            1., #10**np.random.uniform(-1, 1),  # "V0" tunned
+            1e-100,  # phi_prime_ini,
+            np.random.uniform(1, 7)  # "phi_ini"
+        ]
+
+        params.update({"parameters_smg": str(parameters_smg).strip('[]'),
+                       "gravity_model": "quintessence_monomial"})
+        common_params()
+        return params
+
+    binning = Binning(zbins, abins, 'quintessence_monomial-Inverse-ints', sys.argv[2])
     #binning.compute_bins('./quintessence_monomial-w0_wa-201702071315.dat')
 
 if sys.argv[1] == '1o':  # Quintessence monomial. Exponential in odds
@@ -163,7 +180,8 @@ elif sys.argv[1] == '4':
     gravity_model = 'quintessence_eft'
 
     def params_func():
-        E_F = 10 ** np.random.uniform(low=-3, high=-1)
+        #E_F = 10 ** np.random.uniform(low=-3, high=-1)
+        E_F = 10 ** np.random.uniform(low=-1, high=0)
 
         parameters_smg = [
             1e-100,  # phi_prime_ini
@@ -172,7 +190,7 @@ elif sys.argv[1] == '4':
             E_F,
             np.random.randint(low=5, high=11),  # n_min, The highest number is 10.
             np.random.randint(low=5, high=11),  # n_Q, The highest number is 10.
-            np.random.standard_normal()  # zeta_Lambda, CC term
+            1. #np.random.standard_normal()  # zeta_Lambda, CC term
         ]
 
         parameters_2_smg = list(np.random.standard_normal(2 + parameters_smg[-2]))
@@ -183,7 +201,7 @@ elif sys.argv[1] == '4':
         common_params()
         return params
 
-    binning = Binning(zbins, abins, gravity_model, sys.argv[2])
+    binning = Binning(zbins, abins, gravity_model+'-lambda1-largeEF', sys.argv[2])
     #binning.compute_bins('./quintessence_eft-w0_wa-201702081639.dat')
 
 binning.compute_bins_from_params(params_func, int(sys.argv[3]))
