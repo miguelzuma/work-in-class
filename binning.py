@@ -136,18 +136,22 @@ class Binning():
         Returns the Pade coefficients for w computed from params and the maximum
         and minimum residual in absolute value.
         """
-        def w_par_pade(a, w0, wa, wb, wc, wd, we, wf, wg, wh, wi, wj):
-            num = [w0, wa, wb, wc, wd]
-            den = [we, wf, wg, wh, wi, wj]
-            N = D = 0
 
-            for n, wi in enumerate(num):
-                N += wi*(1-a)**n
+        def w_par_pade(a, w0,w1,w2,w3,w4,w5,w6,w7,w8): #,w10,w11,w12,w13,w14,w15,w16,w17,w18,w19,w20):
+            """
+            Dina's!
+            """
+            ww = [w0,w1,w2,w3,w4,w5,w6,w7,w8] #,w10,w11,w12,w13,w14,w15,w16,w17,w18,w19,w20]
+            Np = 4
+            Mp = 4
+            num = w0
+            den = 1
+            for n in range(1, Np + 1):
+                num = num + ww[n]*(a)**n
 
-            for m, wi in enumerate(den):
-                D += wi*(1-a)**m
-
-            return N/D
+            for m in range(1, Mp + 1):
+                den = den + ww[n+m]*(a)**m
+            return num/den
 
         self._params = params
         self._cosmo.set(params)
@@ -293,7 +297,7 @@ class Binning():
                 f.write('# ' + str(self._abins).strip('[]').replace('\n', '') + '\n')
         else:
             with open(self._fPadename, 'a') as f:
-                f.write('# ' + "Pade coefficients up to 4th order (num) | 6th order (den) | min(residual) | max(residual)" + '\n')
+                f.write('# ' + "Pade coefficients up to 4th order (num) | 4th order (den) | min(residual) | max(residual)" + '\n')
 
 
     def _save_computed(self, params, shoot, wbins, Pade=False):
