@@ -124,10 +124,7 @@ class Binning():
         except Exception as e:
             self._cosmo.struct_cleanup()
             self._cosmo.empty()
-            sys.stderr.write(str(self._params) + '\n')
-            sys.stderr.write(str(e))
-            sys.stderr.write('\n')
-            raise Exception
+            raise e
 
         self._cosmo.struct_cleanup()
         self._cosmo.empty()
@@ -161,10 +158,7 @@ class Binning():
         except Exception as e:
             self._cosmo.struct_cleanup()
             self._cosmo.empty()
-            sys.stderr.write(str(self._params) + '\n')
-            sys.stderr.write(str(e))
-            sys.stderr.write('\n')
-            raise Exception
+            raise e
 
         self._cosmo.struct_cleanup()
         self._cosmo.empty()
@@ -172,13 +166,7 @@ class Binning():
         abins = 1./(b['z']+1)
         w = b['w_smg']
 
-        try:
-            padeCoefficients = curve_fit(w_par_pade, abins, w)[0]
-        except Exception as e:
-            sys.stderr.write(str(self._params) + '\n')
-            sys.stderr.write(str(e))
-            sys.stderr.write('\n')
-            raise Exception
+        padeCoefficients = curve_fit(w_par_pade, abins, w)[0]
 
         r = np.abs(w_par_pade(abins, *padeCoefficients)/w - 1.)
 
@@ -209,6 +197,9 @@ class Binning():
                 # Easily generalizable. It could be inputted a list with the
                 # desired derived parameters and store the whole dictionary.
             except Exception:
+                sys.stderr.write(str(self._params) + '\n')
+                sys.stderr.write(str(e))
+                sys.stderr.write('\n')
                 continue
 
             if len(wzbins) == 5:
@@ -243,10 +234,11 @@ class Binning():
                 shoot.append(self._cosmo.get_current_derived_parameters(['tuning_parameter'])['tuning_parameter'])
                 # Easily generalizable. It could be inputted a list with the
                 # desired derived parameters and store the whole dictionary.
-            except Exception:
+            except Exception as e:
+                sys.stderr.write(str(self._params) + '\n')
+                sys.stderr.write(str(e))
+                sys.stderr.write('\n')
                 continue
-
-            print wbins
 
             if len(wbins) == 5:
                 self._save_computed(params, shoot, wbins, True)
