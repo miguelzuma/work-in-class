@@ -4,13 +4,13 @@ import numpy as np
 import os
 from classy import Class
 import sys
-
+from scipy.optimize import curve_fit
 
 class Binning():
-    def __init__(self, zbins, abins, fname, outdir='./'):
+    def __init__(self, fname, outdir='./'):
         self._cosmo = Class()
-        self._zbins = zbins
-        self._abins = abins
+        # self._zbins = zbins
+        # self._abins = abins
         self._set_file_names(fname, outdir)
         self._set_default_values()
 
@@ -22,20 +22,23 @@ class Binning():
         fwzname = os.path.join(outdir, fname+'-wz-bins')
         fwaname = os.path.join(outdir, fname+'-wa-bins')
         fparamsname = os.path.join(outdir, fname+'-params')
-        fshootname= os.path.join(outdir, fname+'-shooting')
+        fshootname = os.path.join(outdir, fname+'-shooting')
+        fPadename = os.path.join(outdir, fname+'-Pade')
 
         i = 0
 
         while (os.path.exists(fwzname + '-%s.txt' % i) or
               os.path.exists(fwaname + '-%s.txt' % i) or
               os.path.exists(fparamsname + '-%s.txt' % i) or
-              os.path.exists(fshootname + '-%s.txt' % i)):
+              os.path.exists(fshootname + '-%s.txt' % i) or
+              os.path.exists(fPadename + '-%s.txt' % i)):
             i += 1
 
         self._fwzname = fwzname + '-%s.txt' % i
         self._fwaname = fwaname + '-%s.txt' % i
         self._fparamsname = fparamsname + '-%s.txt' % i
         self._fshootname= fshootname + '-%s.txt' % i
+        self._fPadename= fPadename + '-%s.txt' % i
 
     def _set_default_values(self):
         """
@@ -131,6 +134,56 @@ class Binning():
 
         return wzbins, wabins
 
+    def compute_Pade_coefficients(self, params):
+        """
+        Returns the Pade coefficients for w computed from params and the maximum
+        and minimum residual in absolute value.
+        """
+        def w_par_pade(a, w0, wa, wb, wc, wd, we, wf, wg, wh, wi, wj):
+            num = [w0, wa, wb, wc, wd]
+            den = [we, wf, wg, wh, wi, wj]
+            N = D = 0
+
+            for n, wi in enumerate(num):
+                N += wi*(1-a)**n
+
+            for m, wi in enumerate(den):
+                D += wi*(1-a)**m
+
+            return N/D
+
+        self._params = params
+        self._cosmo.set(params)
+
+        try:
+            self._cosmo.compute()
+            b = self._cosmo.get_background()
+        except Exception as e:
+            self._cosmo.struct_cleanup()
+            self._cosmo.empty()
+            sys.stderr.write(str(self._params) + '\n')
+            sys.stderr.write(str(e))
+            sys.stderr.write('\n')
+            raise Exception
+
+        self._cosmo.struct_cleanup()
+        self._cosmo.empty()
+
+        abins = 1./(b['z']+1)
+        w = b['w_smg']
+
+        try:
+            padeCoefficients = curve_fit(w_par_pade, abins, w)[0]
+        except Exception as e:
+            sys.stderr.write(str(self._params) + '\n')
+            sys.stderr.write(str(e))
+            sys.stderr.write('\n')
+            raise Exception
+
+        r = np.abs(w_par_pade(abins, *padeCoefficients)/w - 1.)
+
+        return np.concatenate([padeCoefficients, [np.min(r), np.max(r)]])
+
     def compute_bins_from_params(self, params_func, number_of_rows):
         """
         Compute the w_i bins for the models given by the function
@@ -159,14 +212,50 @@ class Binning():
                 continue
 
             if len(wzbins) == 5:
-                self._save_computed(params, shoot, wzbins, wabins)
+                self._save_computed(params, shoot, [wzbins, wabins])
 
                 params = []
                 wzbins = []
                 wabins = []
                 shoot = []
 
-        self._save_computed(params, shoot, wzbins, wabins)
+        self._save_computed(params, shoot, [wzbins, wabins])
+
+    def compute_Pade_from_params(self, params_func, number_of_rows):
+        """
+        Compute the w_i bins for the models given by the function
+        params_func iterated #iterations.
+        """
+        self._create_output_files(True)
+
+        wbins = []
+        params = []
+        shoot = []
+
+        for row in range(number_of_rows):
+            sys.stdout.write("{}/{}\n".format(row+1, number_of_rows))
+            params_tmp = params_func().copy()
+
+            try:
+                wbins_tmp = self.compute_Pade_coefficients(params_tmp)
+                wbins.append(wbins_tmp)
+                params.append(params_tmp)
+                shoot.append(self._cosmo.get_current_derived_parameters(['tuning_parameter'])['tuning_parameter'])
+                # Easily generalizable. It could be inputted a list with the
+                # desired derived parameters and store the whole dictionary.
+            except Exception:
+                continue
+
+            print wbins
+
+            if len(wbins) == 5:
+                self._save_computed(params, shoot, wbins, True)
+
+                params = []
+                wbins = []
+                shoot = []
+
+        self._save_computed(params, shoot, wbins, True)
 
     def compute_bins_from_file(self, path):
         """
@@ -191,7 +280,7 @@ class Binning():
         self.compute_bins_from_params(params.next,
                                       len(self.params_smg))
 
-    def _create_output_files(self):
+    def _create_output_files(self, Pade=False):
         """
         Initialize the output files.
         """
@@ -202,15 +291,20 @@ class Binning():
         with open(self._fshootname, 'a') as f:
             f.write('# ' + "Shooting variable value" + '\n')
 
-        with open(self._fwzname, 'a') as f:
-            f.write('# ' + "Bins on redshift" + '\n')
-            f.write('# ' + str(self._zbins).strip('[]').replace('\n', '') + '\n')
+        if not Pade:
+            with open(self._fwzname, 'a') as f:
+                f.write('# ' + "Bins on redshift" + '\n')
+                f.write('# ' + str(self._zbins).strip('[]').replace('\n', '') + '\n')
 
-        with open(self._fwaname, 'a') as f:
-            f.write('# ' + "Bins on scale factor" + '\n')
-            f.write('# ' + str(self._abins).strip('[]').replace('\n', '') + '\n')
+            with open(self._fwaname, 'a') as f:
+                f.write('# ' + "Bins on scale factor" + '\n')
+                f.write('# ' + str(self._abins).strip('[]').replace('\n', '') + '\n')
+        else:
+            with open(self._fPadename, 'a') as f:
+                f.write('# ' + "Pade coefficients up to 4th order (num) | 6th order (den) | min(residual) | max(residual)" + '\n')
 
-    def _save_computed(self, params, shoot, wzbins, wabins):
+
+    def _save_computed(self, params, shoot, wbins, Pade=False):
         """
         Save stored iterations in file.
         """
@@ -221,11 +315,16 @@ class Binning():
         with open(self._fshootname, 'a') as f:
             np.savetxt(f, shoot)
 
-        with open(self._fwzname, 'a') as f:
-            np.savetxt(f, wzbins)
+        if not Pade:
+            wzbins, wabins = wbins
+            with open(self._fwzname, 'a') as f:
+                np.savetxt(f, wzbins)
 
-        with open(self._fwaname, 'a') as f:
-            np.savetxt(f, wabins)
+            with open(self._fwaname, 'a') as f:
+                np.savetxt(f, wabins)
+        else:
+            with open(self._fPadename, 'a') as f:
+                np.savetxt(f, wbins)
 
     def reset(self):
         """
