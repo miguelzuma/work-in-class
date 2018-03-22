@@ -58,6 +58,13 @@ class Binning():
         self._computed = False
         self._path = []
 
+    def set_PadeOrder(self, n_num, m_den):
+        """
+        Set what bins to use and reset to avoid confusions.
+        """
+        self._PadeOrder = [n_num, m_den]
+        self.reset()
+
     def set_bins(self, zbins, abins):
         """
         Set what bins to use and reset to avoid confusions.
@@ -138,21 +145,33 @@ class Binning():
         and minimum residual in absolute value.
         """
 
-        def w_par_pade(a, w0,w1,w2,w3,w4,w5,w6,w7,w8): #,w10,w11,w12,w13,w14,w15,w16,w17,w18,w19,w20):
-            """
-            Dina's!
-            """
-            ww = [w0,w1,w2,w3,w4,w5,w6,w7,w8] #,w10,w11,w12,w13,w14,w15,w16,w17,w18,w19,w20]
-            Np = 4
-            Mp = 4
-            num = w0
-            den = 1
-            for n in range(1, Np + 1):
-                num = num + ww[n]*(a)**n
+        """
+        Fit padde wrapper functions by Emilio Bellini.
+        """
 
-            for m in range(1, Mp + 1):
-                den = den + ww[n+m]*(a)**m
+        def wrapper(x, n_num, n_den, *args):
+            coeff_num = list(args[0:n_num+1])
+            coeff_den = list(args[n_num+1:n_num+n_den+1])
+            return pade_approx(x, coeff_num, coeff_den)
+
+        def pade_approx(x, coeff_num, coeff_den):  # the actual fit function
+            num = 0.
+            den = 1.
+            for i, coeff in enumerate(coeff_num):
+                num = num + coeff*(x**i)
+            for i, coeff in enumerate(coeff_den):
+                den = den + coeff*(x**(i+1))
             return num/den
+
+        def fit_pade(xdata, ydata, n_num, n_den):
+            p0 = np.ones(n_num+n_den+1)
+            popt, _ = curve_fit(lambda x, *p0: wrapper(xdata, n_num, n_den, *p0), xdata, ydata, p0=p0)
+            yfit = wrapper(xdata, n_num, n_den, *popt)
+            return popt, yfit
+
+        """
+        End of fit Pade wrapper.
+        """
 
         self._params = params
         self._cosmo.set(params)
@@ -172,9 +191,9 @@ class Binning():
         abins = 1./(b['z']+1)
         w = b['w_smg']
 
-        padeCoefficients = curve_fit(w_par_pade, abins, w)[0]
+        padeCoefficients, padeFit = fit_pade(abins, w, *self._PadeOrder)
 
-        r = np.abs(w_par_pade(abins, *padeCoefficients)/w - 1.)
+        r = np.abs(padeFit/w - 1.)
 
         return np.concatenate([padeCoefficients, [np.min(r), np.max(r)]]), shoot
 
@@ -299,7 +318,7 @@ class Binning():
                 f.write('# ' + str(self._abins).strip('[]').replace('\n', '') + '\n')
         else:
             with open(self._fPadename, 'a') as f:
-                f.write('# ' + "Pade coefficients up to 4th order (num) | 4th order (den) | min(residual) | max(residual)" + '\n')
+                f.write('# ' + "Pade coefficients up to {}th order (num) | {}th order (den) | min(residual) | max(residual)".format(*self._PadeOrder) + '\n')
 
 
     def _save_computed(self, params, shoot, wbins, Pade=False):
