@@ -121,6 +121,7 @@ class Binning():
                 wzbins[n] = self._cosmo.w_smg(z)
             for n, a in enumerate(self._abins):
                 wabins[n] = self._cosmo.w_smg(1./a-1.)
+            shoot = self._cosmo.get_current_derived_parameters(['tuning_parameter'])['tuning_parameter']
         except Exception as e:
             self._cosmo.struct_cleanup()
             self._cosmo.empty()
@@ -129,7 +130,7 @@ class Binning():
         self._cosmo.struct_cleanup()
         self._cosmo.empty()
 
-        return wzbins, wabins
+        return wzbins, wabins, shoot
 
     def compute_Pade_coefficients(self, params):
         """
@@ -159,6 +160,7 @@ class Binning():
         try:
             self._cosmo.compute()
             b = self._cosmo.get_background()
+            shoot = self._cosmo.get_current_derived_parameters(['tuning_parameter'])['tuning_parameter']
         except Exception as e:
             self._cosmo.struct_cleanup()
             self._cosmo.empty()
@@ -174,7 +176,7 @@ class Binning():
 
         r = np.abs(w_par_pade(abins, *padeCoefficients)/w - 1.)
 
-        return np.concatenate([padeCoefficients, [np.min(r), np.max(r)]])
+        return np.concatenate([padeCoefficients, [np.min(r), np.max(r)]]), shoot
 
     def compute_bins_from_params(self, params_func, number_of_rows):
         """
@@ -193,11 +195,11 @@ class Binning():
             params_tmp = params_func().copy()
 
             try:
-                wzbins_tmp, wabins_tmp = self.compute_bins(params_tmp)
+                wzbins_tmp, wabins_tmp, shoot_tmp = self.compute_bins(params_tmp)
                 wzbins.append(wzbins_tmp)
                 wabins.append(wabins_tmp)
                 params.append(params_tmp)
-                shoot.append(self._cosmo.get_current_derived_parameters(['tuning_parameter'])['tuning_parameter'])
+                shoot.append(shoot_tmp)
                 # Easily generalizable. It could be inputted a list with the
                 # desired derived parameters and store the whole dictionary.
             except Exception:
@@ -232,10 +234,10 @@ class Binning():
             params_tmp = params_func().copy()
 
             try:
-                wbins_tmp = self.compute_Pade_coefficients(params_tmp)
+                wbins_tmp, shoot_tmp = self.compute_Pade_coefficients(params_tmp)
                 wbins.append(wbins_tmp)
                 params.append(params_tmp)
-                shoot.append(self._cosmo.get_current_derived_parameters(['tuning_parameter'])['tuning_parameter'])
+                shoot.append(shoot_tmp)
                 # Easily generalizable. It could be inputted a list with the
                 # desired derived parameters and store the whole dictionary.
             except Exception as e:
