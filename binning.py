@@ -202,7 +202,7 @@ class Binning():
                 shoot.append(shoot_tmp)
                 # Easily generalizable. It could be inputted a list with the
                 # desired derived parameters and store the whole dictionary.
-            except Exception:
+            except Exception as e:
                 sys.stderr.write(str(self._params) + '\n')
                 sys.stderr.write(str(e))
                 sys.stderr.write('\n')
