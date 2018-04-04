@@ -34,7 +34,7 @@ if sys.argv[1] == '1':  # Quintessence monomial. Exponential in reals
         common_params()
         return params
 
-    binning = Binning(zbins, abins, 'quintessence_monomial-reals', sys.argv[2])
+    binning = Binning('quintessence_monomial-reals', sys.argv[2])
     #binning.compute_bins('./quintessence_monomial-w0_wa-201702071315.dat')
 
 if sys.argv[1] == '1log':  # Quintessence monomial. phi_ini \in [0.1, 70] in log scale
@@ -51,14 +51,13 @@ if sys.argv[1] == '1log':  # Quintessence monomial. phi_ini \in [0.1, 70] in log
         common_params()
         return params
 
-    binning = Binning(zbins, abins, 'quintessence_monomial-log-phii', sys.argv[2])
+    binning = Binning('quintessence_monomial-log-phii', sys.argv[2])
     #binning.compute_bins('./quintessence_monomial-w0_wa-201702071315.dat')
 
 if sys.argv[1] == '1i':  # Quintessence monomial. Exponential in integers
     def params_func():
         parameters_smg = [
-            #np.random.uniform(1, 7),  # "N"
-            np.random.randint(1, 7),  # "N"
+            np.random.randint(1, 8),  # "N"
             1., #10**np.random.uniform(-1, 1),  # "V0" tunned
             1e-100,  # phi_prime_ini,
             np.random.uniform(1, 7)  # "phi_ini"
@@ -69,13 +68,13 @@ if sys.argv[1] == '1i':  # Quintessence monomial. Exponential in integers
         common_params()
         return params
 
-    binning = Binning(zbins, abins, 'quintessence_monomial-ints', sys.argv[2])
+    binning = Binning('quintessence_monomial-ints-', sys.argv[2])
     #binning.compute_bins('./quintessence_monomial-w0_wa-201702071315.dat')
 
 if sys.argv[1] == '1iInverse':  # Quintessence monomial. Exponential in integers
     def params_func():
         parameters_smg = [
-            -np.random.randint(1, 7),  # "N"
+            -np.random.randint(1, 8),  # "N"
             1., #10**np.random.uniform(-1, 1),  # "V0" tunned
             1e-100,  # phi_prime_ini,
             np.random.uniform(1, 7)  # "phi_ini"
@@ -86,7 +85,7 @@ if sys.argv[1] == '1iInverse':  # Quintessence monomial. Exponential in integers
         common_params()
         return params
 
-    binning = Binning(zbins, abins, 'quintessence_monomial-Inverse-ints', sys.argv[2])
+    binning = Binning('quintessence_monomial-Inverse-ints-2', sys.argv[2])
     #binning.compute_bins('./quintessence_monomial-w0_wa-201702071315.dat')
 
 if sys.argv[1] == '1o':  # Quintessence monomial. Exponential in odds
@@ -104,7 +103,7 @@ if sys.argv[1] == '1o':  # Quintessence monomial. Exponential in odds
         common_params()
         return params
 
-    binning = Binning(zbins, abins, 'quintessence_monomial-ints-odd', sys.argv[2])
+    binning = Binning('quintessence_monomial-ints-odd', sys.argv[2])
     #binning.compute_bins('./quintessence_monomial-w0_wa-201702071315.dat')
 
 if sys.argv[1] == '1e':  # Quintessence monomial. Exponential in evens
@@ -122,7 +121,45 @@ if sys.argv[1] == '1e':  # Quintessence monomial. Exponential in evens
         common_params()
         return params
 
-    binning = Binning(zbins, abins, 'quintessence_monomial-ints-even-correct', sys.argv[2])
+    binning = Binning('quintessence_monomial-ints-even-correct', sys.argv[2])
+    #binning.compute_bins('./quintessence_monomial-w0_wa-201702071315.dat')
+
+if sys.argv[1] == '1Velocity':  # Quintessence monomial.
+    def params_func():
+        parameters_smg = [
+            np.random.randint(1, 8),  # "N"
+            1., #10**np.random.uniform(-1, 1),  # "V0" tunned
+            (1 if np.random.random() < 0.5 else -1) * 10**np.random.uniform(0,10),  # phi_prime_ini,
+            np.random.uniform(1, 7)  # "phi_ini"
+        ]
+
+        params.update({"parameters_smg": str(parameters_smg).strip('[]'),
+                       "gravity_model": "quintessence_monomial",
+                       "a_ini_over_a_today_default": 1e-10,
+                       "tol_initial_Omega_r": 1e-2})
+        common_params()
+        return params
+
+    binning = Binning('quintessence_monomial-ints-Velocity-BBN', sys.argv[2])
+    #binning.compute_bins('./quintessence_monomial-w0_wa-201702071315.dat')
+
+if sys.argv[1] == '1NegVelocity':  # Quintessence monomial.
+    def params_func():
+        parameters_smg = [
+            -np.random.randint(1, 8),  # "N"
+            1., #10**np.random.uniform(-1, 1),  # "V0" tunned
+            (1 if np.random.random() < 0.5 else -1) * 10**np.random.uniform(0,10),  # phi_prime_ini,
+            np.random.uniform(1, 7)  # "phi_ini"
+        ]
+
+        params.update({"parameters_smg": str(parameters_smg).strip('[]'),
+                       "gravity_model": "quintessence_monomial",
+                       "a_ini_over_a_today_default": 1e-10,
+                       "tol_initial_Omega_r": 1e-2})
+        common_params()
+        return params
+
+    binning = Binning('quintessence_monomial-ints-Neg-Velocity-BBN', sys.argv[2])
     #binning.compute_bins('./quintessence_monomial-w0_wa-201702071315.dat')
 
 elif sys.argv[1] == '2':
@@ -146,7 +183,7 @@ elif sys.argv[1] == '2':
         common_params()
         return params
 
-    binning = Binning(zbins, abins, gravity_model, sys.argv[2])
+    binning = Binning(gravity_model, sys.argv[2])
     #binning.compute_bins('./quintessence_modulus-w0_wa-201702071819.dat')
 
 elif sys.argv[1] == '3':
@@ -172,7 +209,7 @@ elif sys.argv[1] == '3':
         common_params()
         return params
 
-    binning = Binning(zbins, abins, gravity_model, sys.argv[2])
+    binning = Binning(gravity_model, sys.argv[2])
 
     #binning.compute_bins('./quintessence_axion-w0_wa-201702071506.dat')
 
@@ -201,7 +238,62 @@ elif sys.argv[1] == '4':
         common_params()
         return params
 
-    binning = Binning(zbins, abins, gravity_model+'-lambda1-largeEF', sys.argv[2])
+    binning = Binning(gravity_model+'-lambda1-largeEF', sys.argv[2])
     #binning.compute_bins('./quintessence_eft-w0_wa-201702081639.dat')
 
+elif sys.argv[1] == '4phi':
+    gravity_model = 'quintessence_eft'
+
+    def params_func():
+        E_F = 10 ** np.random.uniform(low=-3, high=-1)
+
+        parameters_smg = [
+            1e-100,  # phi_prime_ini
+            10**np.random.uniform(low=0, high=1),  # phi_ini
+            1.,  # 10 ** np.random.uniform(low=-1, high=1),  # V0, tunned
+            E_F,
+            np.random.randint(low=5, high=11),  # n_min, The highest number is 10.
+            np.random.randint(low=5, high=11),  # n_Q, The highest number is 10.
+            0. #np.random.standard_normal()  # zeta_Lambda, CC term
+        ]
+
+        parameters_2_smg = list(np.random.standard_normal(2 + parameters_smg[-2]))
+
+        params.update({"parameters_smg": str(parameters_smg).strip('[]'),
+                       "parameters_2_smg": str(parameters_2_smg).strip('[]'),
+                       "gravity_model": gravity_model})
+        common_params()
+        return params
+
+    binning = Binning(gravity_model+'-logPhi', sys.argv[2])
+
+elif sys.argv[1] == '4Lphi':
+    gravity_model = 'quintessence_eft'
+
+    def params_func():
+        E_F = 10 ** np.random.uniform(low=-3, high=-1)
+
+        parameters_smg = [
+            1e-100,  # phi_prime_ini
+            10**np.random.uniform(low=-3, high=1),  # phi_ini
+            1.,  # 10 ** np.random.uniform(low=-1, high=1),  # V0, tunned
+            E_F,
+            np.random.randint(low=5, high=11),  # n_min, The highest number is 10.
+            np.random.randint(low=5, high=11),  # n_Q, The highest number is 10.
+            1. #np.random.standard_normal()  # zeta_Lambda, CC term
+        ]
+
+        parameters_2_smg = list(np.random.standard_normal(2 + parameters_smg[-2]))
+
+        params.update({"parameters_smg": str(parameters_smg).strip('[]'),
+                       "parameters_2_smg": str(parameters_2_smg).strip('[]'),
+                       "gravity_model": gravity_model})
+        common_params()
+        return params
+
+    binning = Binning(gravity_model+'-lambda1-logPhi', sys.argv[2])
+
+binning.set_bins(zbins, abins)
 binning.compute_bins_from_params(params_func, int(sys.argv[3]))
+#binning.set_PadeOrder(5,5)
+#binning.compute_Pade_from_params(params_func, int(sys.argv[3]))
