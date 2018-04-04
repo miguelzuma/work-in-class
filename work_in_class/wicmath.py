@@ -75,6 +75,19 @@ def diff(x, y):
     return X, dydx
 
 
+def diff_three_points(x, y):
+    """
+    Output f'(x) = 1/2h [-3 f(x) + 4 f(x+h) - f(x+2h)]
+
+    x = array of values which y change respect to. x should be equispaced.
+    y = array of values to differentiate with respect to x.
+    """
+
+    h = np.diff(x)
+
+    return x[:-3], 0.5/h[:-3] * (-3. * y[:-3] + 4. * y[1:-2] - y[2:])
+
+
 def intermediate(array):
     """
     Return an array with the intermediate values of array
