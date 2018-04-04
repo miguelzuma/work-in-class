@@ -171,7 +171,8 @@ class Histograms():
         for histogram_rf in self.histograms_rf:
             self.histograms_rf_rb.append(self._rebin_unit_variance(histogram_rf))
 
-    def plot_histogram(self, index, variable_binned='bin_i', xlabel='x', xlim=[None, None]):
+    def plot_histogram(self, index, variable_binned='bin_i', xlabel='x',
+                       xlim=[None, None], outpath=''):
         """
         Plot histogram for bin with index, index
         """
@@ -198,10 +199,10 @@ class Histograms():
         plt.xlabel(xlabel)
         plt.ylabel('Normalized frequency')
         plt.title('{} = {}'.format(variable_binned, self.bins[index]))
-        plt.show()
-        plt.close()
+        self._plt_close_figure(plt, outpath)
 
-    def plot_evolution(self, xlabel='x', ylabel='y', scale=['linear', 'linear']):
+    def plot_evolution(self, xlabel='x', ylabel='y', scale=['linear', 'linear'],
+                       outpath=''):
         """
         Plot evolution.
         """
@@ -221,10 +222,10 @@ class Histograms():
         plt.xlabel(xlabel)
         plt.xscale(scale[0])
         plt.yscale(scale[1])
-        plt.show()
-        plt.close()
+        self._plt_close_figure(plt, outpath)
 
-    def plot_correlation_matrix(self, xlabel='x_i', ylabel='y_i', clabel='Correlation'):
+    def plot_correlation_matrix(self, xlabel='x_i', ylabel='y_i',
+                                clabel='Correlation', outpath=''):
         """
         Plot the correlation matrix.
         """
@@ -238,6 +239,16 @@ class Histograms():
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
         plt.title('Correlation matrix')
+
+        self._plt_close_figure(plt, outpath)
+
+    def _plt_close_figure(self, plt, outpath=''):
+        """
+        Show, save, if desired, and close figure.
+        """
+
+        if outpath:
+            plt.savefig(outpath)
 
         plt.show()
         plt.close()
