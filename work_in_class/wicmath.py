@@ -96,3 +96,20 @@ def intermediate(array):
         array = np.array(array)
 
     return array[:-1] + np.diff(array) / 2.
+
+
+def reflect_data(data):
+    """
+    Reflect data at its lowest value.
+    """
+    data_rf = []
+    for dat in data:
+        x = np.sort(dat)
+
+        x_rf = 2 * x[0] - x[x > x[0]]  # = x0 - (x - x0), x excluding x0
+
+        X = np.concatenate([x_rf, dat])
+
+        data_rf.append(X)
+
+    return data_rf
