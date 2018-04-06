@@ -202,7 +202,7 @@ class Histograms():
         self._plt_close_figure(plt, outpath)
 
     def plot_evolution(self, xlabel='x', ylabel='y', scale=['linear', 'linear'],
-                       outpath=''):
+                       outpath='', title=''):
         """
         Plot evolution.
         """
@@ -222,6 +222,7 @@ class Histograms():
         plt.xlabel(xlabel)
         plt.xscale(scale[0])
         plt.yscale(scale[1])
+        plt.title(title)
         self._plt_close_figure(plt, outpath)
 
     def plot_correlation_matrix(self, xlabel='x_i', ylabel='y_i',
