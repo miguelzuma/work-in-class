@@ -2,6 +2,7 @@
 
 import numpy as np
 from scipy.interpolate import interp1d
+from scipy.optimize import curve_fit
 
 
 def __deviation(x, y, cx, cy, kind):
@@ -113,3 +114,32 @@ def reflect_data(data):
         data_rf.append(X)
 
     return data_rf
+
+
+"""
+Fit padde wrapper functions by Emilio Bellini.
+"""
+
+def fit_pade(xdata, ydata, n_num, n_den):
+    def pade_approx(x, coeff_num, coeff_den):  # the actual fit function
+        num = 0.
+        den = 1.
+        for i, coeff in enumerate(coeff_num):
+            num = num + coeff*(x**i)
+        for i, coeff in enumerate(coeff_den):
+            den = den + coeff*(x**(i+1))
+        return num/den
+
+    def wrapper(x, n_num, n_den, *args):
+        coeff_num = list(args[0:n_num+1])
+        coeff_den = list(args[n_num+1:n_num+n_den+1])
+        return pade_approx(x, coeff_num, coeff_den)
+
+    p0 = np.ones(n_num+n_den+1)
+    popt, _ = curve_fit(lambda x, *p0: wrapper(xdata, n_num, n_den, *p0), xdata, ydata, p0=p0)
+    yfit = wrapper(xdata, n_num, n_den, *popt)
+    return popt, yfit
+
+"""
+End of fit Pade wrapper.
+"""

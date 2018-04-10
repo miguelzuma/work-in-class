@@ -4,7 +4,7 @@ import numpy as np
 import os
 from classy import Class
 import sys
-from scipy.optimize import curve_fit
+from wicmath import fit_pade
 
 class Binning():
     def __init__(self, fname, outdir='./'):
@@ -144,35 +144,6 @@ class Binning():
         Returns the Pade coefficients for w computed from params and the maximum
         and minimum residual in absolute value.
         """
-
-        """
-        Fit padde wrapper functions by Emilio Bellini.
-        """
-
-        def wrapper(x, n_num, n_den, *args):
-            coeff_num = list(args[0:n_num+1])
-            coeff_den = list(args[n_num+1:n_num+n_den+1])
-            return pade_approx(x, coeff_num, coeff_den)
-
-        def pade_approx(x, coeff_num, coeff_den):  # the actual fit function
-            num = 0.
-            den = 1.
-            for i, coeff in enumerate(coeff_num):
-                num = num + coeff*(x**i)
-            for i, coeff in enumerate(coeff_den):
-                den = den + coeff*(x**(i+1))
-            return num/den
-
-        def fit_pade(xdata, ydata, n_num, n_den):
-            p0 = np.ones(n_num+n_den+1)
-            popt, _ = curve_fit(lambda x, *p0: wrapper(xdata, n_num, n_den, *p0), xdata, ydata, p0=p0)
-            yfit = wrapper(xdata, n_num, n_den, *popt)
-            return popt, yfit
-
-        """
-        End of fit Pade wrapper.
-        """
-
         self._params = params
         self._cosmo.set(params)
 
