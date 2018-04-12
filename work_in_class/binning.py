@@ -58,11 +58,13 @@ class Binning():
         self._computed = False
         self._path = []
 
-    def set_PadeOrder(self, n_num, m_den):
+    def set_Pade(self, n_num, m_den, xvar='a', xReverse=False):
         """
-        Set what bins to use and reset to avoid confusions.
+        Set what Pade polynomial orders, temporal variable and its ordering use.
         """
         self._PadeOrder = [n_num, m_den]
+        self._Pade_xvar = xvar
+        self._Pade_xReverse = xReverse
         self.reset()
 
     def set_bins(self, zbins, abins):
@@ -159,10 +161,19 @@ class Binning():
         self._cosmo.struct_cleanup()
         self._cosmo.empty()
 
-        abins = 1./(b['z']+1)
+        xDict = {'z': b['z'],
+                 'z+1': b['z+1'],
+                 'a': 1./(b['z']+1),
+                 'log(a)': np.log(b['z']+1)}
+
+        X = xDict[self._Pade_xvar]
         w = b['w_smg']
 
-        padeCoefficients, padeFit = fit_pade(abins, w, *self._PadeOrder)
+        if self._Pade_xReverse:
+            X = X[::-1]
+            w = w[::-1]
+
+        padeCoefficients, padeFit = fit_pade(X, w, *self._PadeOrder)
 
         r = np.abs(padeFit/w - 1.)
 

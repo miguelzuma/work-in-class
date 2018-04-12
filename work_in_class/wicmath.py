@@ -86,7 +86,7 @@ def diff_three_points(x, y):
 
     h = np.diff(x)
 
-    return x[:-3], 0.5/h[:-3] * (-3. * y[:-3] + 4. * y[1:-2] - y[2:])
+    return x[:-2], 0.5/h[:-1] * (-3. * y[:-2] + 4. * y[1:-1] - y[2:])
 
 
 def intermediate(array):
@@ -116,30 +116,114 @@ def reflect_data(data):
     return data_rf
 
 
+def pade(an, m):
+    """
+    Return Pade approximation coefficients of a polynomial.
+    Parameters
+    ----------
+    an : (N,) array_like
+        Taylor series coefficients.
+    m : int
+        The order of the returned approximating polynomials.
+    Returns
+    -------
+    p, q : array
+        The pade approximation of the polynomial defined by `an` is
+        the polynomial with coefficients `poly(p)/poly(q)`.
+
+    Note
+    --------
+    This code is taken from scipy.misc.pade distributed under SciPy license (https://www.scipy.org/scipylib/license.html):
+
+    Copyright © 2001, 2002 Enthought, Inc.
+    All rights reserved.
+
+    Copyright © 2003-2013 SciPy Developers.
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+        Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+        Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+        Neither the name of Enthought nor the names of the SciPy Developers may be used to endorse or promote products derived from this software without specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+    """
+    from scipy import linalg
+    an = np.asarray(an)
+    N = len(an) - 1
+    n = N - m
+
+    if n < 0:
+        raise ValueError("Order of q <m> must be smaller than len(an)-1.")
+    Akj = np.eye(N+1, n+1)
+    Bkj = np.zeros((N+1, m), 'd')
+    for row in range(1, m+1):
+        Bkj[row, :row] = -(an[:row])[::-1]
+    for row in range(m+1, N+1):
+        Bkj[row, :] = -(an[row-m:row])[::-1]
+    C = np.hstack((Akj, Bkj))
+
+    pq = linalg.solve(C, an)
+    p = pq[:n+1]
+    q = np.r_[1.0, pq[n+1:]]
+
+    return p, q[1:]  # remove the denominator's 1 of (1 + ... )
+
+
 """
 Fit padde wrapper functions by Emilio Bellini.
 """
 
-def fit_pade(xdata, ydata, n_num, n_den):
-    def pade_approx(x, coeff_num, coeff_den):  # the actual fit function
-        num = 0.
-        den = 1.
-        for i, coeff in enumerate(coeff_num):
-            num = num + coeff*(x**i)
-        for i, coeff in enumerate(coeff_den):
-            den = den + coeff*(x**(i+1))
-        return num/den
 
-    def wrapper(x, n_num, n_den, *args):
-        coeff_num = list(args[0:n_num+1])
-        coeff_den = list(args[n_num+1:n_num+n_den+1])
-        return pade_approx(x, coeff_num, coeff_den)
+def pade_approx(x, coeff_num, coeff_den):  # the actual fit function
+    num = 0.
+    den = 1.
+    for i, coeff in enumerate(coeff_num):
+        num = num + coeff*(x**i)
+    for i, coeff in enumerate(coeff_den):
+        den = den + coeff*(x**(i+1))
+    return num/den
 
-    p0 = np.ones(n_num+n_den+1)
-    popt, _ = curve_fit(lambda x, *p0: wrapper(xdata, n_num, n_den, *p0), xdata, ydata, p0=p0)
-    yfit = wrapper(xdata, n_num, n_den, *popt)
+
+def _p0_calc(xdata, ydata, n_num, n_den):
+
+    len_der = 2*(n_num+n_den)+1
+
+    Y = ydata[:len_der]
+
+    taylor_coeff = [Y[0]]
+
+    for i in range(n_num+n_den):
+        _, Y = diff_three_points(xdata[:len(Y)], Y)
+        taylor_coeff.append(Y[0]/np.math.factorial(i+1))
+
+    for i in range(n_den + 1):
+        try:
+            p, q = pade(taylor_coeff[:n_den-i + n_num + 1], n_den-i)
+            break
+        except np.linalg.LinAlgError:
+            continue
+
+    return p, np.concatenate([q, np.zeros(i)])
+
+
+def _wrapper(x, n_num, n_den, *args):
+    coeff_num = list(args[0:n_num+1])
+    coeff_den = list(args[n_num+1:n_num+n_den+1])
+    return pade_approx(x, coeff_num, coeff_den)
+
+
+def fit_pade(xdata, ydata, n_num, n_den, p0=[]):
+
+    if p0 == []:
+        p0 = _p0_calc(xdata, ydata, n_num, n_den)
+        p0 = np.concatenate(p0)
+
+    popt, _ = curve_fit(lambda x, *p0: _wrapper(xdata, n_num, n_den, *p0), xdata, ydata, p0=p0)
+    yfit = _wrapper(xdata, n_num, n_den, *popt)
     return popt, yfit
 
 """
-End of fit Pade wrapper.
+End of fit padde wrapper functions by Emilio Bellini.
 """
