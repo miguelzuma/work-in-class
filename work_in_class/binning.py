@@ -162,9 +162,10 @@ class Binning():
         self._cosmo.empty()
 
         xDict = {'z': b['z'],
-                 'z+1': b['z+1'],
+                 'z+1': b['z']+1,
                  'a': 1./(b['z']+1),
-                 'log(a)': np.log(b['z']+1)}
+                 'log(a)': -np.log(b['z']+1),
+                 'log(z+1)': np.log(b['z']+1)}
 
         X = xDict[self._Pade_xvar]
         w = b['w_smg']
@@ -300,6 +301,7 @@ class Binning():
                 f.write('# ' + str(self._abins).strip('[]').replace('\n', '') + '\n')
         else:
             with open(self._fPadename, 'a') as f:
+                f.write('# ' + "Pade fit for temporal variable {}".format(self._Pade_xvar))
                 f.write('# ' + "Pade coefficients up to {}th order (num) | {}th order (den) | min(residual) | max(residual)".format(*self._PadeOrder) + '\n')
 
 
