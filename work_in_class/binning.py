@@ -301,9 +301,8 @@ class Binning():
                 f.write('# ' + str(self._abins).strip('[]').replace('\n', '') + '\n')
         else:
             with open(self._fPadename, 'a') as f:
-                f.write('# ' + "Pade fit for temporal variable {}".format(self._Pade_xvar))
+                f.write('# ' + "Pade fit for temporal variable {} \n".format(self._Pade_xvar))
                 f.write('# ' + "Pade coefficients up to {}th order (num) | {}th order (den) | min(residual) | max(residual)".format(*self._PadeOrder) + '\n')
-
 
     def _save_computed(self, params, shoot, wbins, Pade=False):
         """
