@@ -58,13 +58,14 @@ class Binning():
         self._computed = False
         self._path = []
 
-    def set_Pade(self, n_num, m_den, xvar='a', xReverse=False):
+    def set_Pade(self, n_num, m_den, xvar='a', xReverse=False, maxfev=0):
         """
         Set what Pade polynomial orders, temporal variable and its ordering use.
         """
         self._PadeOrder = [n_num, m_den]
         self._Pade_xvar = xvar
         self._Pade_xReverse = xReverse
+        self._Pade_maxfev = maxfev
         self.reset()
 
     def set_bins(self, zbins, abins):
@@ -174,7 +175,7 @@ class Binning():
             X = X[::-1]
             w = w[::-1]
 
-        padeCoefficients, padeFit = fit_pade(X, w, *self._PadeOrder)
+        padeCoefficients, padeFit = fit_pade(X, w, *self._PadeOrder, maxfev=self._Pade_maxfev)
 
         r = np.abs(padeFit/w - 1.)
 

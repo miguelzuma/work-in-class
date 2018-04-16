@@ -214,13 +214,13 @@ def _wrapper(x, n_num, n_den, *args):
     return pade_approx(x, coeff_num, coeff_den)
 
 
-def fit_pade(xdata, ydata, n_num, n_den, p0=[]):
+def fit_pade(xdata, ydata, n_num, n_den, p0=[], **kwards):
 
     if p0 == []:
         p0 = _p0_calc(xdata, ydata, n_num, n_den)
         p0 = np.concatenate(p0)
 
-    popt, _ = curve_fit(lambda x, *p0: _wrapper(xdata, n_num, n_den, *p0), xdata, ydata, p0=p0)
+    popt, _ = curve_fit(lambda x, *p0: _wrapper(xdata, n_num, n_den, *p0), xdata, ydata, p0=p0, **kwards)
     yfit = _wrapper(xdata, n_num, n_den, *popt)
     return popt, yfit
 
