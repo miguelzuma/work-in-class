@@ -175,9 +175,24 @@ class Binning():
             X = X[::-1]
             w = w[::-1]
 
-        padeCoefficients, padeFit = fit_pade(X, w, *self._PadeOrder, maxfev=self._Pade_maxfev)
+        PadeOrder = np.array(self._PadeOrder)
+
+        for tune in [[0, 0], [1, 0], [0, 1]]:
+            # Reduce the order of one of the polynomials in case [n/m] does not
+            # work
+            try:
+                padeCoefficients, padeFit = fit_pade(X, w, *(PadeOrder-tune),
+                                                     maxfev=self._Pade_maxfev)
+                break
+            except:
+                continue
 
         r = np.abs(padeFit/w - 1.)
+
+        if tune == [1, 0]:
+            padeCoefficients = np.insert(padeCoefficients, PadeOrder[0], 0.)
+        elif tune == [0, 1]:
+            padeCoefficients = np.append(padeCoefficients, 0.)
 
         return np.concatenate([padeCoefficients, [np.min(r), np.max(r)]]), shoot
 
