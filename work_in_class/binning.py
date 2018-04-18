@@ -184,7 +184,10 @@ class Binning():
                 padeCoefficients, padeFit = fit_pade(X, w, *(PadeOrder-tune),
                                                      maxfev=self._Pade_maxfev)
                 break
-            except:
+            except Exception as e:
+                if tune == [0,1]:
+                    raise e
+
                 continue
 
         r = np.abs(padeFit/w - 1.)
