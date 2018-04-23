@@ -19,22 +19,34 @@ class Histograms():
         self.correlations = []
         self.covariance = []
 
-    def read_file(self, fname, header=True):
+    def read_file(self, fname, header=0, **kwards):
         """
         Read the file with the binned data.
 
-        header = True or False. If True read extract bins from file header.
+        header = An int or False. The integer marks the row with the binning names.
+                If False, do not read the header.
         """
         self.fname = fname
 
-        self.data = np.loadtxt(fname, unpack=True)
+        self.data = np.loadtxt(fname, unpack=True, **kwards)
 
-        if header:
+        if type(header) is int:
             with open(self.fname) as f:
-                f.readline()
+                for i in range(header):
+                    f.readline()
                 header = f.readline()
 
-            self.bins = map(float, header.strip('# ').split())
+            header_split = np.array(header.strip('# ').split())
+
+            if 'usecols' in kwards:
+                header_arr = [header_split[i] for i in kwards['usecols']]
+            else:
+                header_arr = header_split
+
+            try:
+                self.bins = map(float, header_arr)
+            except:
+                self.bins = header_arr
 
     def _compute_histograms(self, bins):
         """
