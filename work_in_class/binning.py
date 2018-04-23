@@ -324,7 +324,7 @@ class Binning():
                 coeff_header_num = ['num_{}'.format(n) for n in range(self._PadeOrder[0] + 1)]
                 coeff_header_den = ['den_{}'.format(n + 1) for n in range(self._PadeOrder[1])]
                 res_header = ['min(residual)', 'max(residual)']
-                f.write(' #' + ' '.join(coeff_header_num + coeff_header_den + res_header) + '\n')
+                f.write('# ' + ' '.join(coeff_header_num + coeff_header_den + res_header) + '\n')
 
     def _save_computed(self, params, shoot, wbins, Pade=False):
         """
