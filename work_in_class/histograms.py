@@ -238,20 +238,21 @@ class Histograms():
         self._plt_close_figure(plt, outpath)
 
     def plot_correlation_matrix(self, xlabel='x_i', ylabel='y_i',
-                                clabel='Correlation', outpath=''):
+                                clabel='Correlation', bins_step=50,
+                                title='Correlation matrix', outpath=''):
         """
         Plot the correlation matrix.
         """
         plt.imshow(self.correlations)
         cbar = plt.colorbar()
 
-        plt.xticks(range(len(self.bins))[::50], self.bins[::50])
-        plt.yticks(range(len(self.bins))[::50], self.bins[::50])
+        plt.xticks(range(len(self.bins))[::bins_step], self.bins[::bins_step])
+        plt.yticks(range(len(self.bins))[::bins_step], self.bins[::bins_step])
 
         cbar.set_label(clabel)
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
-        plt.title('Correlation matrix')
+        plt.title(title)
 
         self._plt_close_figure(plt, outpath)
 
