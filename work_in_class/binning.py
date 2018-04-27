@@ -177,7 +177,9 @@ class Binning():
 
         PadeOrder = np.array(self._PadeOrder)
 
-        for tune in [[0, 0], [1, 0], [0, 1]]:
+        reduceOrder = [[0, 0], [1, 0], [0, 1], [2, 0], [2, 1], [3, 1]]
+
+        for tune in reduceOrder:
             # Reduce the order of one of the polynomials in case [n/m] does not
             # work
             try:
@@ -185,17 +187,15 @@ class Binning():
                                                      maxfev=self._Pade_maxfev)
                 break
             except Exception as e:
-                if tune == [0,1]:
+                if tune == reduceOrder[-1]:
                     raise e
 
                 continue
 
         r = np.abs(padeFit/w - 1.)
 
-        if tune == [1, 0]:
-            padeCoefficients = np.insert(padeCoefficients, PadeOrder[0], 0.)
-        elif tune == [0, 1]:
-            padeCoefficients = np.append(padeCoefficients, 0.)
+        padeCoefficients = np.insert(padeCoefficients, PadeOrder[0], [0.]*tune[0])
+        padeCoefficients = np.append(padeCoefficients, [0.]*tune[1])
 
         return np.concatenate([padeCoefficients, [np.min(r), np.max(r)]]), shoot
 
