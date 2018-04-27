@@ -256,10 +256,39 @@ class Histograms():
 
         self._plt_close_figure(plt, outpath, show)
 
+    def plot_covariance_matrix(self, xlabel='x_i', ylabel='y_i',
+                               clabel='Covariance', bins_step=50,
+                               title='Covariance matrix', outpath='',
+                               show=True, cut=None):
+        """
+        Plot the correlation matrix.
+        """
+        if cut:
+            self.covariance[self.covariance < cut] = 0.
+
+        plt.imshow(self.covariance, norm=colors.LogNorm(), cmap=cm.Reds)
+        cbarP = plt.colorbar()
+
+        plt.imshow(-self.covariance, norm=colors.LogNorm(), cmap=cm.winter)
+        cbarN = plt.colorbar()
+
+        plt.xticks(range(len(self.bins))[::bins_step], self.bins[::bins_step])
+        plt.yticks(range(len(self.bins))[::bins_step], self.bins[::bins_step])
+
+        cbarP.set_label(clabel + " Positive values")
+        cbarN.set_label(clabel + " Negative values")
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.title(title)
+
+        self._plt_close_figure(plt, outpath, show)
+
     def _plt_close_figure(self, plt, outpath='', show=True):
         """
         Show, save, if desired, and close figure.
         """
+
+        plt.tight_layout()
 
         if outpath:
             print "Saving figure: {}".format(outpath)
