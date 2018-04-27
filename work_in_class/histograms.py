@@ -239,7 +239,7 @@ class Histograms():
 
     def plot_correlation_matrix(self, xlabel='x_i', ylabel='y_i',
                                 clabel='Correlation', bins_step=50,
-                                title='Correlation matrix', outpath=''):
+                                title='Correlation matrix', outpath='', show=True):
         """
         Plot the correlation matrix.
         """
@@ -254,17 +254,19 @@ class Histograms():
         plt.ylabel(ylabel)
         plt.title(title)
 
-        self._plt_close_figure(plt, outpath)
+        self._plt_close_figure(plt, outpath, show)
 
-    def _plt_close_figure(self, plt, outpath=''):
+    def _plt_close_figure(self, plt, outpath='', show=True):
         """
         Show, save, if desired, and close figure.
         """
 
         if outpath:
+            print "Saving figure: {}".format(outpath)
             plt.savefig(outpath)
 
-        plt.show()
+        if show:
+            plt.show()
         plt.close()
 
     def reset(self):
