@@ -58,7 +58,7 @@ class Binning():
         self._computed = False
         self._path = []
 
-    def set_Pade(self, n_num, m_den, xvar='a', xReverse=False, maxfev=0):
+    def set_Pade(self, n_num, m_den, xvar='a', xReverse=False, accuracy=1e-3, increase=False, maxfev=0):
         """
         Set what Pade polynomial orders, temporal variable and its ordering use.
         """
@@ -66,6 +66,8 @@ class Binning():
         self._Pade_xvar = xvar
         self._Pade_xReverse = xReverse
         self._Pade_maxfev = maxfev
+        self._Pade_increase = increase
+        self._Pade_accuracy = accuracy
         self.reset()
 
     def set_bins(self, zbins, abins):
@@ -177,25 +179,43 @@ class Binning():
 
         PadeOrder = np.array(self._PadeOrder)
 
-        reduceOrder = [[0, 0], [1, 0], [0, 1], [2, 0], [2, 1], [3, 1]]
+        if not self._Pade_increase:
+            reduceOrder = [[0, 0], [1, 0], [0, 1], [2, 0], [2, 1], [3, 1]]
+            orderList = PadeOrder - reduceOrder
 
-        for tune in reduceOrder:
-            # Reduce the order of one of the polynomials in case [n/m] does not
-            # work
+        else:
+            orderList = [[1, 1], [2, 0], [3, 0], [2, 1], [2, 2], [3, 1], [4, 0],
+                         [2, 3], [3, 2], [4, 1], [5, 0], [3, 3], [4, 2], [5, 1],
+                         [3, 4], [4, 3], [5, 2], [3, 5], [4, 4], [5, 3], [4, 5],
+                         [5, 4], [5, 5]]
+
+        r = np.array([np.inf])
+        for order in orderList:
+            # Increase order of Pade up to [5/5].
             try:
-                padeCoefficients, padeFit = fit_pade(X, w, *(PadeOrder-tune),
-                                                     maxfev=self._Pade_maxfev)
-                break
+                padeCoefficientsTMP, padeFitTMP = fit_pade(X, w, *order,
+                                                           maxfev=self._Pade_maxfev)
+                rTMP = np.abs(padeFitTMP/w - 1.)
+                if self._Pade_increase and (np.max(rTMP) > self._Pade_accuracy):
+                    if np.max(rTMP) < np.max(r):
+                        padeCoefficients = padeCoefficientsTMP
+                        r = rTMP
+                    continue
+                else:
+                    padeCoefficients = padeCoefficientsTMP
+                    r = rTMP
+                    break
             except Exception as e:
-                if tune == reduceOrder[-1]:
+                if (order == orderList[-1]) and (len(r) == 1):
                     raise e
 
                 continue
 
-        r = np.abs(padeFit/w - 1.)
+        zeros = (PadeOrder - order)
 
-        padeCoefficients = np.insert(padeCoefficients, PadeOrder[0], [0.]*tune[0])
-        padeCoefficients = np.append(padeCoefficients, [0.]*tune[1])
+        numCoefficients = np.append(padeCoefficients[:order[0] + 1], [0.]*zeros[0])
+        denCoefficients = np.append(padeCoefficients[order[0] + 1:], [0.]*zeros[1])
+        padeCoefficients = np.concatenate([numCoefficients, denCoefficients])
 
         return np.concatenate([padeCoefficients, [np.min(r), np.max(r)]]), shoot
 
