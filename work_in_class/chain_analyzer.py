@@ -11,11 +11,11 @@ class Chain():
     Class to store and analyze MCMC chains.
     """
     def __init__(self):
-        self.chains = []
+        self.chains = np.array([])
         self.CosmoHammerArguments = {}
 
     def empty(self):
-        self.chains = []
+        self.chains = np.array([])
 
     def _readCosmoHammerOptions(self, fileArguments):
         """
@@ -35,7 +35,7 @@ class Chain():
 
         walkers = self.CosmoHammerArguments['walkersRatio'] * numberFreeParam
 
-        self.chains = [[] for i in range(walkers)]
+        chains = [[] for i in range(walkers)]
 
         for filePath in [burninPath, outPath]:
 
@@ -53,12 +53,13 @@ class Chain():
                                 print "Removing point with lkl=-np.inf. Be aware it can " +\
                                     "make the rest of operations meaningless."
                                 continue
-                            self.chains[walker].append(np.array([float(x) for x in line]))
+                            chains[walker].append(np.array([float(x) for x in line]))
                     except StopIteration:
                         print("Stop Iteration error found.")
                         print("Cleaning chains")
                         self.empty()
                         sys.exit("Check the number of free parameters given")
+            self.chains = np.array([np.array(chain) for chain in chains])
 
     def readChain(self, filepath, removeFirstCols=True):
         """
@@ -78,11 +79,32 @@ class Chain():
                 for n in range(multiplicity):
                     chain.append(columns[firstColumnToStore:])
 
-        self.chains.append(chain)
+        # self.chains.append(chain)
+        self.chains = np.append(self.chains, chain, axis=0)
 
         # TODO: Think about removing first two columns or adding them to CH
         # (more problematic? Think if this program is going to be only for test
         # convergence so lkl is not necessarily required)
+
+    def autocorrelation_acor(self, paramIndex, walker=None):
+        """
+        Returns the autocorrelation fucntion for paramIndex.
+
+        walker = None or int. If int, return the autocorrelation function for
+        paramIndex for walker.
+
+        Uses acor
+        """
+        import acor
+
+        if walker:
+            acor.function(self.chains[walker, :, paramIndex])
+        else:
+            mean = 0
+            walkers = len(self.chains)
+            for i in range(walkers):
+                mean += acor.function(self.chains[i, :, paramIndex])
+            return mean/float(walkers)
 
     def autocorrelation(self, T, paramIndex):
         """
@@ -142,21 +164,24 @@ class Chain():
 
         return value / len(self.chains)
 
-    def plotAutocorrelation(self, paramIndex, normalized=False, GoodmanWeare=False, withExponential=False, **kwards):
+    def plotAutocorrelation(self, paramIndex, acor=True, normalized=False, GoodmanWeare=False, withExponential=False, **kwards):
         """
         Plot the autocorrelation function. It fails if some chains are removed.
         """
+
         n = len(self.chains[0])
         if type(paramIndex) is not list:
             paramIndex = [paramIndex]
 
         for index in paramIndex:
-            if not GoodmanWeare:
+            if acor:
+                autocorrelation = self.autocorrelation_acor(index)
+            elif not GoodmanWeare:
                 autocorrelation = [self.autocorrelation(T, index) for T in range(n)]
             else:
                 autocorrelation = [self.autocorrelationGoodmanWeare(T, index) for T in range(n)]
 
-            if normalized:
+            if normalized and (not acor):
                 autocorrelation = np.array(autocorrelation) / autocorrelation[0]
 
             plt.plot(range(n), autocorrelation, label=index)
