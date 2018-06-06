@@ -13,6 +13,10 @@ class Chain():
     def __init__(self):
         self.chains = np.array([])
         self.CosmoHammerArguments = {}
+        self.paramsNames = []
+        self.paramsByType = {'cosmo': [],
+                             'nuisance': [],
+                             'derived': []}
 
     def empty(self):
         self.chains = np.array([])
@@ -26,6 +30,21 @@ class Chain():
             for line in f:
                 argument, value = line.split('=')
                 self.CosmoHammerArguments[argument.strip()] = int(value)
+
+    def readMCMCParameters(self, logparamPath):
+        """
+        Read the name of MCMC parameters and distinguish between 'cosmo',
+        'nuisance' and 'derived'.
+        """
+        with open(logparamPath) as f:
+            for line in f:
+                if ('data.parameters' in line) and (line.strip()[0] != '#'):
+                    a = line.split("'")
+                    paramType = a[-2]
+                    paramName = a[1]
+
+                    self.paramsNames.append(paramName)
+                    self.paramsByType[paramType].append(paramName)
 
     def readCosmoHammerChain(self, outPath, burninPath, fileArguments, numberFreeParam, removeError=False):
         """
@@ -331,3 +350,14 @@ class Chain():
                                                                GoodmanWeare)[1])
 
         return tau
+
+    def getStepFailed(self):
+        """
+        Return list of parameters for which computation failed (lkl = -inf).
+        """
+        result = [[]] * len(self.chains)
+
+        for i, walker in enumerate(self.chains):
+            result[i] = [step for step in walker if True in np.isnan(step)]
+
+        return result
