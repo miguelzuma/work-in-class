@@ -4,6 +4,7 @@ import numpy as np
 from scipy.optimize import curve_fit
 from matplotlib import pyplot as plt
 import sys
+import re
 
 
 class Chain():
@@ -17,6 +18,8 @@ class Chain():
         self.paramsByType = {'cosmo': [],
                              'nuisance': [],
                              'derived': []}
+        self.paramsFixedByType = {'cosmo': {},
+                                  'nuisance': {}}
 
     def empty(self):
         self.chains = np.array([])
@@ -43,8 +46,13 @@ class Chain():
                     paramType = a[-2]
                     paramName = a[1]
 
-                    self.paramsNames.append(paramName)
-                    self.paramsByType[paramType].append(paramName)
+                    arguments = line.split("[")[-1].split(',')
+
+                    if (float(arguments[3]) == 0) and (paramType != 'derived'):
+                        self.paramsFixedByType[paramType].update({paramName: float(arguments[0])})
+                    else:
+                        self.paramsNames.append(paramName)
+                        self.paramsByType[paramType].append(paramName)
 
     def readCosmoHammerChain(self, outPath, burninPath, fileArguments, numberFreeParam, removeError=False):
         """
@@ -351,13 +359,62 @@ class Chain():
 
         return tau
 
-    def getStepFailed(self):
+    def getStepFailed(self, cosmo=False):
         """
-        Return list of parameters for which computation failed (lkl = -inf).
+        Return steps for which computation failed (lkl = -inf).
+
+        cosmo = False. If True return just the cosmological parameters.
         """
         result = [[]] * len(self.chains)
 
-        for i, walker in enumerate(self.chains):
-            result[i] = [step for step in walker if True in np.isnan(step)]
+        if cosmo:
+            selection = [param in self.paramsByType['cosmo'] for param in self.paramsNames]
+        else:
+            selection = [True] * len(self.chains[0][0])
 
-        return result
+
+        for i, walker in enumerate(self.chains):
+            result[i] = np.array([step[selection] for step in walker if True in np.isnan(step)])
+
+        return np.array(result)
+
+    def getCosmoParamsStepFailed(self):
+        """
+        Return the classy dictionary to compute the steps that failed.
+        """
+        cosmoParams = self.getStepFailed(cosmo=True)
+        cosmoNames = self.paramsByType['cosmo']
+        cosmoFixedNames = [name for name in self.paramsFixedByType['cosmo'].iterkeys()]
+
+        allNames = cosmoNames + cosmoFixedNames
+
+        parameters_smgNames = filter(re.compile('parameters_smg').match, allNames)
+        parameters_2_smgNames = filter(re.compile('parameters_2_smg').match, allNames)
+
+        parameters_smgNames.sort()
+        parameters_2_smgNames.sort()
+
+        params = [[]] * len(cosmoParams)
+
+        for i, walker in enumerate(cosmoParams):
+            for step in walker:
+                d = {key: val for key, val in zip(cosmoNames, step)}
+                d.update(self.paramsFixedByType['cosmo'])
+
+                parameters_smg = []
+                for name in parameters_smgNames:
+                    parameters_smg.append(d[name])
+                    del d[name]
+                if parameters_smg:
+                    d['parameters_smg'] = str(parameters_smg).strip('[]')
+
+                parameters_2_smg = []
+                for name in parameters_2_smgNames:
+                    parameters_2_smg.append(d[name])
+                    del d[name]
+                if parameters_2_smg:
+                    d['parameters_2_smg'] = str(parameters_smg).strip('[]')
+
+                params[i].append(d)
+
+        return params
