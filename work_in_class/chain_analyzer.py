@@ -3,7 +3,6 @@
 import numpy as np
 from scipy.optimize import curve_fit
 from matplotlib import pyplot as plt
-import sys
 import re
 
 
@@ -62,31 +61,19 @@ class Chain():
 
         walkers = self.CosmoHammerArguments['walkersRatio'] * numberFreeParam
 
-        chains = [[] for i in range(walkers)]
+        chain = np.loadtxt(burninPath)
+        chain = np.vstack((chain, np.loadtxt(outPath)))
 
-        for filePath in [burninPath, outPath]:
+        chainsWalker = np.array([chain[i::walkers] for i in range(walkers)])
 
-            if 'burn' in filePath:
-                iterKey = 'burninIterations'
-            else:
-                iterKey = 'sampleIterations'
+        if removeError:
+            chains = []
+            for walker in chainsWalker:
+                chains.append(walker[~np.isnan(walker).any(axis=1)])
+            self.chains = np.array(chains)
 
-            with open(filePath) as f:
-                for iteration in range(self.CosmoHammerArguments[iterKey]):
-                    try:
-                        for walker in range(walkers):
-                            line = f.next().split()
-                            if ('nan' in line) and removeError:
-                                print "Removing point with lkl=-np.inf. Be aware it can " +\
-                                    "make the rest of operations meaningless."
-                                continue
-                            chains[walker].append(np.array([float(x) for x in line]))
-                    except StopIteration:
-                        print("Stop Iteration error found.")
-                        print("Cleaning chains")
-                        self.empty()
-                        sys.exit("Check the number of free parameters given")
-            self.chains = np.array([np.array(chain) for chain in chains])
+        else:
+            self.chains = chainsWalker
 
     def readChain(self, filepath, removeFirstCols=True):
         """
