@@ -53,7 +53,7 @@ class Chain():
                         self.paramsNames.append(paramName)
                         self.paramsByType[paramType].append(paramName)
 
-    def readCosmoHammerChain(self, outPath, burninPath, fileArguments, numberFreeParam, removeError=False):
+    def readCosmoHammerChain(self, chainPaths, fileArguments, numberFreeParam, removeError=False):
         """
         Append individual walkers chains in self.chains array
         """
@@ -61,8 +61,9 @@ class Chain():
 
         walkers = self.CosmoHammerArguments['walkersRatio'] * numberFreeParam
 
-        chain = np.loadtxt(burninPath)
-        chain = np.vstack((chain, np.loadtxt(outPath)))
+        chain = np.loadtxt(chainPaths[0])
+        for cpath in chainPaths[1:]:
+            chain = np.vstack((chain, np.loadtxt(cpath)))
 
         chainsWalker = np.array([chain[i::walkers] for i in range(walkers)])
 
