@@ -14,6 +14,9 @@ class Chain():
         self.chains = np.array([])
         self.CosmoHammerArguments = {}
         self.paramsNames = []
+        self.paramsScaleByType = {'cosmo': [],
+                                  'nuisance': [],
+                                  'derived': []}
         self.paramsByType = {'cosmo': [],
                              'nuisance': [],
                              'derived': []}
@@ -52,10 +55,13 @@ class Chain():
                     arguments = line.split("[")[-1].split(',')
 
                     if (float(arguments[3]) == 0) and (paramType != 'derived'):
-                        self.paramsFixedByType[paramType].update({paramName: float(arguments[0])})
+                        value = float(arguments[0]) * float(arguments[4])
+                        self.paramsFixedByType[paramType].update({paramName:
+                                                                  value})
                     else:
                         self.paramsNames.append(paramName)
                         self.paramsByType[paramType].append(paramName)
+                        self.paramsScaleByType[paramType].append(float(arguments[4]))
 
                 elif ('data.cosmo_arguments' in line):
                     paramName = line.split("'")[1]
@@ -373,7 +379,6 @@ class Chain():
         else:
             selection = [True] * len(self.chains[0][0])
 
-
         for i, walker in enumerate(self.chains):
             result[i] = np.array([step[selection] for step in walker if True in np.isnan(step)])
 
@@ -406,6 +411,7 @@ class Chain():
         Return the classy dictionary to compute the step inputted.
         """
         cosmoNames = self.paramsByType['cosmo']
+        cosmoScales = self.paramsScaleByType['cosmo']
         cosmoFixedNames = [name for name in self.paramsFixedByType['cosmo'].iterkeys()]
 
         allNames = cosmoNames + cosmoFixedNames
@@ -416,7 +422,7 @@ class Chain():
         parameters_smgNames.sort()
         parameters_2_smgNames.sort()
 
-        d = {key: val for key, val in zip(cosmoNames, step)}
+        d = {key: val * scale for key, val, scale in zip(cosmoNames, step, cosmoScales)}
         d.update(self.paramsFixedByType['cosmo'])
 
         parameters_smg = []
