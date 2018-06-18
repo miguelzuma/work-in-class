@@ -19,6 +19,7 @@ class Chain():
                              'derived': []}
         self.paramsFixedByType = {'cosmo': {},
                                   'nuisance': {}}
+        self.cosmoArguments = {}
 
     def empty(self):
         self.chains = np.array([])
@@ -40,7 +41,10 @@ class Chain():
         """
         with open(logparamPath) as f:
             for line in f:
-                if ('data.parameters' in line) and (line.strip()[0] != '#'):
+                if ('=' not in line) or (line.strip()[0] == '#'):
+                    continue
+
+                if ('data.parameters' in line):
                     a = line.split("'")
                     paramType = a[-2]
                     paramName = a[1]
@@ -52,6 +56,15 @@ class Chain():
                     else:
                         self.paramsNames.append(paramName)
                         self.paramsByType[paramType].append(paramName)
+
+                elif ('data.cosmo_arguments' in line):
+                    paramName = line.split("'")[1]
+                    paramValue = line.split("=")[1]
+                    try:
+                        self.cosmoArguments.update({paramName: float(paramValue)})
+                    except:
+                        s = paramValue.strip().replace("'", '').replace('"', '')
+                        self.cosmoArguments.update({paramName: s})
 
     def readCosmoHammerChain(self, chainPaths, fileArguments, numberFreeParam, removeError=False):
         """
@@ -370,7 +383,28 @@ class Chain():
         """
         Return the classy dictionary to compute the steps that failed.
         """
-        cosmoParams = self.getStepFailed(cosmo=True)
+        return self.getCosmoParamsFromWalkersSteps(self.getStepFailed(cosmo=True))
+
+    def getCosmoParamsFromWalkersSteps(self, walkersSteps):
+        """
+        Return the classy dictionary to compute the steps inputted.
+
+        walkersSteps must be an array with shape (#walkers, #steps, #params)
+        """
+        cosmoParams = walkersSteps
+
+        params = [[]] * len(cosmoParams)
+
+        for i, walker in enumerate(cosmoParams):
+            for step in walker:
+                params[i].append(self.getCosmoParamsFromOneStep(step))
+
+        return params
+
+    def getCosmoParamsFromOneStep(self, step):
+        """
+        Return the classy dictionary to compute the step inputted.
+        """
         cosmoNames = self.paramsByType['cosmo']
         cosmoFixedNames = [name for name in self.paramsFixedByType['cosmo'].iterkeys()]
 
@@ -382,27 +416,21 @@ class Chain():
         parameters_smgNames.sort()
         parameters_2_smgNames.sort()
 
-        params = [[]] * len(cosmoParams)
+        d = {key: val for key, val in zip(cosmoNames, step)}
+        d.update(self.paramsFixedByType['cosmo'])
 
-        for i, walker in enumerate(cosmoParams):
-            for step in walker:
-                d = {key: val for key, val in zip(cosmoNames, step)}
-                d.update(self.paramsFixedByType['cosmo'])
+        parameters_smg = []
+        for name in parameters_smgNames:
+            parameters_smg.append(d[name])
+            del d[name]
+        if parameters_smg:
+            d['parameters_smg'] = str(parameters_smg).strip('[]')
 
-                parameters_smg = []
-                for name in parameters_smgNames:
-                    parameters_smg.append(d[name])
-                    del d[name]
-                if parameters_smg:
-                    d['parameters_smg'] = str(parameters_smg).strip('[]')
+        parameters_2_smg = []
+        for name in parameters_2_smgNames:
+            parameters_2_smg.append(d[name])
+            del d[name]
+        if parameters_2_smg:
+            d['parameters_2_smg'] = str(parameters_smg).strip('[]')
 
-                parameters_2_smg = []
-                for name in parameters_2_smgNames:
-                    parameters_2_smg.append(d[name])
-                    del d[name]
-                if parameters_2_smg:
-                    d['parameters_2_smg'] = str(parameters_smg).strip('[]')
-
-                params[i].append(d)
-
-        return params
+        return d
