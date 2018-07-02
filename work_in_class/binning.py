@@ -5,8 +5,10 @@ import os
 from classy import Class
 import sys
 import scipy.integrate as integrate
+import wicmath as wicm
 from wicmath import fit_pade
 from wicmath import fit, Taylor
+from scipy.interpolate import interp1d
 
 class Binning():
     def __init__(self, fname, outdir='./'):
@@ -84,6 +86,7 @@ class Binning():
         self._n_coeffs = n_coeffs
         self._binType = 'fit'
         self.reset()
+        self._params.update({'output': 'mPk', 'z_max_pk': 1000})
 
     def set_bins(self, zbins, abins):
         """
@@ -166,8 +169,8 @@ class Binning():
         Returns the coefficients of the polynomial fit of f(a) = \int w and the
         maximum and minimum residual in absolute value.
         """
-        self._params = params
-        self._cosmo.set(params)
+        self._params.update(params)
+        self._cosmo.set(self._params)
 
         try:
             self._cosmo.compute()
@@ -178,21 +181,63 @@ class Binning():
             self._cosmo.empty()
             raise e
 
+        #####
+        # NOTE: Emilio's functions from classy.pyx. self should not be used like this, but let's do an exception.
+        #####
+
+        def growthrate_at_k_and_z(cosmo, k, z):
+            dz = 0.005
+            f=-0.5*(1+z)*(-3.*np.log(cosmo.pk(k,z))+4.*np.log(cosmo.pk(k,z+dz))-np.log(cosmo.pk(k,z+2.*dz)))/(2.*dz)
+            if (f==0.):
+                raise CosmoSevereError(
+                    "The step in redshift is too small to compute growth rate")
+            return f
+
+        def growthrate_at_z(cosmo, z):
+            k_fid = 0.01
+            return growthrate_at_k_and_z(cosmo, k_fid, z)
+        #########
+
+        def fprime(OmegaDEw, OmegaM):
+            """
+            Return value for df/dz.
+
+            w, OmegaDE and OmegaM must be functions of z
+            """
+            def wrap(z, f):
+                try:
+                    #output = 1.5 * OmegaM(z) - 0.5 * (1 - 3*w(z)*OmegaDE(z)) * f - f**2
+                    output = ((0.5 * (1 - 3*OmegaDEw(z))) * f + f**2 - 1.5 * OmegaM(z)) / (1+z)
+                except Exception as e:
+                    raise e
+                return output
+            return wrap
+
 
         # Compute the exact growth rate
         #####################
+        z_max_pk = self._params['z_max_pk']
         z, w = b['z'], b['w_smg']
         rhoDE = b['(.)rho_smg']
         rhoM = (b['(.)rho_b'] + b['(.)rho_cdm'])
         rhoR = (b['(.)rho_g'] + b['(.)rho_ur'])
+        DA = b['ang.diam.dist.']
 
         OmegaDEwF_exact = interp1d(z[z<=z_max_pk], (b['(.)rho_smg']/b['(.)rho_crit']*w)[z<=z_max_pk])
         OmegaMF = interp1d(z[z<=z_max_pk], (rhoM/b['(.)rho_crit'])[z<=z_max_pk])
 
         time_boundaries = [z[z<=z_max_pk][0], z[z<=z_max_pk][-1]]
 
-        f = integrate.solve_ivp(fprime(OmegaDEwF_exact, OmegaMF), time_boundaries, [growthrate_at_z(cosmo, z_max_pk)],
+        f = integrate.solve_ivp(fprime(OmegaDEwF_exact, OmegaMF), time_boundaries, [growthrate_at_z(self._cosmo, z_max_pk)],
                                 method='RK45', dense_output=True)
+
+        # Compute the exact \int dlna a
+        ###############################
+        Fint = []
+        lna = -np.log(1+z)[::-1]
+        for i in lna:
+            Fint.append(integrate.trapz(w[::-1][lna>=i], lna[lna>=i]))
+        Fint = np.array(Fint)
 
         #####
 
@@ -229,7 +274,7 @@ class Binning():
         #OmegaMF_fit = interp1d(zTMP, rhoM[z<=zlim]/H_fit**2)      ####### THIS FITS OBSERVABLES CORRECTLY
         OmegaDEwF_fit = interp1d(zTMP, rhoDE_fit/H_fit**2 * w_fit)
 
-        f_fit = integrate.solve_ivp(fprime(OmegaDEwF_fit, OmegaMF_fit), [zTMP[0], zTMP[-1]], [growthrate_at_z(cosmo, zTMP[0])],
+        f_fit = integrate.solve_ivp(fprime(OmegaDEwF_fit, OmegaMF_fit), [zTMP[0], zTMP[-1]], [growthrate_at_z(self._cosmo, zTMP[0])],
                                     method='RK45', dense_output=True)
 
         # Free structures
@@ -240,11 +285,9 @@ class Binning():
         # Obtain rel. deviations.
         ################
         f_reldev = max(np.abs(wicm.relative_deviation(f_fit.t, f_fit.y[0], f.t, f.y[0])[1])) * 100.
-        DA_reldev = max(np.abs((DA_fit/DA - 1)))
+        DA_reldev = max(np.abs((DA_fit/DA[z<=zlim] - 1)))
 
-        return np.concatenate([pop1, [f_reldev, DA_reldev]]), shoot
-
-
+        return np.concatenate([popt1, [f_reldev, DA_reldev]]), shoot
 
     def compute_Pade_coefficients(self, params):
         """
@@ -411,12 +454,12 @@ class Binning():
 
         for row in range(number_of_rows):
             sys.stdout.write("{}/{}\n".format(row+1, number_of_rows))
-            params_tmp = params_func().copy()
+            # params_tmp = params_func().copy()
 
             try:
-                wbins_tmp, shoot_tmp = self.compute_Pade_coefficients(params_tmp)
+                wbins_tmp, shoot_tmp = self.compute_f_coefficients(params_func())
                 wbins.append(wbins_tmp)
-                params.append(params_tmp)
+                params.append(self._params.copy())
                 shoot.append(shoot_tmp)
                 # Easily generalizable. It could be inputted a list with the
                 # desired derived parameters and store the whole dictionary.
