@@ -207,7 +207,7 @@ class Binning():
 
         # Fit to fit_function
         #####################
-        popt1, yfit1 = fit(Taylor, X, Y1, self.n_coeffs)
+        popt1, yfit1 = fit(Taylor, X, Y1, self._n_coeffs)
 
         # Compute D_A for fitted model
         ################
