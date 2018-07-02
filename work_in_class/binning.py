@@ -262,7 +262,8 @@ class Binning():
 
         DA_fit = []
         for i in z[z<zlim]:
-            DA_fit.append(1/(1+i)*integrate.trapz(1/H_fit[zTMP<=i][::-1], zTMP[zTMP<=i][::-1]))
+            #DA_fit.append(1/(1+i)*integrate.trapz(1/H_fit[zTMP<=i][::-1], zTMP[zTMP<=i][::-1]))
+            DA_fit.append(1/(1+i)*integrate.simps(1/H_fit[zTMP<=i][::-1], zTMP[zTMP<=i][::-1], even='last'))
         DA_fit = np.array(DA_fit)
 
         # Compute the growth rate for fitted model
@@ -284,10 +285,14 @@ class Binning():
 
         # Obtain rel. deviations.
         ################
-        f_reldev = max(np.abs(wicm.relative_deviation(f_fit.t, f_fit.y[0], f.t, f.y[0])[1])) * 100.
-        DA_reldev = max(np.abs((DA_fit/DA[z<=zlim] - 1)))
 
-        return np.concatenate([popt1, [f_reldev, DA_reldev]]), shoot
+        # Remove close to 0 points as rel.dev diverges. z = 0.05 is the lowest
+        # redshift observed and is done in BOSS survey. arXiv: 1308.4164
+        # DA_reldev = max(np.abs(DA_fit[zTMP>=0.04]/DA[ (z>=0.04) & (z<=zlim)] - 1))
+        DA_reldev = max(np.abs(DA_fit/DA[z<=zlim] - 1))
+        f_reldev = max(np.abs(f_fit.sol(zTMP)[0]/f.sol(zTMP)[0] - 1))
+
+        return np.concatenate([popt1, [DA_reldev, f_reldev]]), shoot
 
     def compute_Pade_coefficients(self, params):
         """
