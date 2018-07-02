@@ -70,6 +70,7 @@ class Binning():
         """
         Set what Pade polynomial orders, temporal variable and its ordering use.
         """
+        self.reset()
         self._PadeOrder = [n_num, m_den]
         self._Pade_xvar = xvar
         self._Pade_xReverse = xReverse
@@ -77,25 +78,24 @@ class Binning():
         self._Pade_increase = increase
         self._Pade_accuracy = accuracy
         self._binType = 'Pade'
-        self.reset()
 
     def set_n_coeffs_fit(self, n_coeffs):
         """
         Set the number of coefficients for Taylor fit of F(a) ~ \int dlna w
         """
+        self.reset()
         self._n_coeffs = n_coeffs
         self._binType = 'fit'
-        self.reset()
         self._params.update({'output': 'mPk', 'z_max_pk': 1000})
 
     def set_bins(self, zbins, abins):
         """
         Set what bins to use and reset to avoid confusions.
         """
+        self.reset()
         self._zbins = zbins
         self._abins = abins
         self._binType = 'bins'
-        self.reset()
 
     def _read_from_file(self, path):
         """
