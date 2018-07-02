@@ -227,3 +227,25 @@ def fit_pade(xdata, ydata, n_num, n_den, p0=[], **kwards):
 """
 End of fit padde wrapper functions by Emilio Bellini.
 """
+
+
+def Taylor(x, c):
+    s = 0
+    for i, ci in enumerate(c):
+        s += ci * x**i
+    return s
+
+
+def _wrapper_fit(function):
+    def wrapper_out(x, n_coeffs, *args):
+        coeffs = list(args)
+        return function(x, coeffs)
+    return wrapper_out
+
+
+def fit(function, xdata, ydata, n_coeffs, p0=[], **kargs):
+    if p0 == []:
+        p0 = np.ones(n_coeffs)
+    popt, _ = curve_fit(lambda x, *p0: _wrapper_fit(function)(xdata, n_coeffs, *p0), xdata, ydata, p0=p0, **kargs)
+    yfit = _wrapper_fit(function)(xdata, n_coeffs, *popt)
+    return popt, yfit
