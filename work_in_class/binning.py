@@ -26,6 +26,7 @@ class Binning():
         fparamsname = os.path.join(outdir, fname+'-params')
         fshootname = os.path.join(outdir, fname+'-shooting')
         fPadename = os.path.join(outdir, fname+'-Pade')
+        fFitname = os.path.join(outdir, fname+'-fit-F')
 
         i = 0
 
@@ -33,7 +34,8 @@ class Binning():
               os.path.exists(fwaname + '-%s.txt' % i) or
               os.path.exists(fparamsname + '-%s.txt' % i) or
               os.path.exists(fshootname + '-%s.txt' % i) or
-              os.path.exists(fPadename + '-%s.txt' % i)):
+              os.path.exists(fPadename + '-%s.txt' % i) or
+              os.path.exists(fFitname + '-%s.txt' % i)):
             i += 1
 
         self._fwzname = fwzname + '-%s.txt' % i
@@ -41,6 +43,7 @@ class Binning():
         self._fparamsname = fparamsname + '-%s.txt' % i
         self._fshootname= fshootname + '-%s.txt' % i
         self._fPadename= fPadename + '-%s.txt' % i
+        self._fFitname= fFitname + '-%s.txt' % i
 
     def _set_default_values(self):
         """
@@ -78,7 +81,7 @@ class Binning():
         """
         Set the number of coefficients for Taylor fit of F(a) ~ \int dlna w
         """
-        self.n_coeffs = n_coeffs
+        self._n_coeffs = n_coeffs
         self._binType = 'fit'
         self.reset()
 
@@ -363,7 +366,7 @@ class Binning():
         Compute the w_i bins for the models given by the function
         params_func iterated #iterations.
         """
-        self._create_output_files(True)
+        self._create_output_files()
 
         wbins = []
         params = []
@@ -387,20 +390,20 @@ class Binning():
                 continue
 
             if len(wbins) == 5:
-                self._save_computed(params, shoot, wbins, True)
+                self._save_computed(params, shoot, wbins)
 
                 params = []
                 wbins = []
                 shoot = []
 
-        self._save_computed(params, shoot, wbins, True)
+        self._save_computed(params, shoot, wbins)
 
     def compute_f_from_params(self, params_func, number_of_rows):
         """
         Compute the w_i bins for the models given by the function
         params_func iterated #iterations.
         """
-        self._create_output_files(True)
+        self._create_output_files()
 
         wbins = []
         params = []
@@ -424,13 +427,13 @@ class Binning():
                 continue
 
             if len(wbins) == 5:
-                self._save_computed(params, shoot, wbins, True)
+                self._save_computed(params, shoot, wbins)
 
                 params = []
                 wbins = []
                 shoot = []
 
-        self._save_computed(params, shoot, wbins, True)
+        self._save_computed(params, shoot, wbins)
 
     def compute_bins_from_file(self, path):
         """
@@ -455,7 +458,7 @@ class Binning():
         self.compute_bins_from_params(params.next,
                                       len(self.params_smg))
 
-    def _create_output_files(self, Pade=False):
+    def _create_output_files(self):
         """
         Initialize the output files.
         """
@@ -466,7 +469,7 @@ class Binning():
         with open(self._fshootname, 'a') as f:
             f.write('# ' + "Shooting variable value" + '\n')
 
-        if not Pade:
+        if self._binType == 'bins':
             with open(self._fwzname, 'a') as f:
                 f.write('# ' + "Bins on redshift" + '\n')
                 f.write('# ' + str(self._zbins).strip('[]').replace('\n', '') + '\n')
@@ -474,15 +477,21 @@ class Binning():
             with open(self._fwaname, 'a') as f:
                 f.write('# ' + "Bins on scale factor" + '\n')
                 f.write('# ' + str(self._abins).strip('[]').replace('\n', '') + '\n')
-        else:
+        elif self._binType == 'Pade':
             with open(self._fPadename, 'a') as f:
                 f.write('# ' + "Pade fit for temporal variable {} \n".format(self._Pade_xvar))
                 coeff_header_num = ['num_{}'.format(n) for n in range(self._PadeOrder[0] + 1)]
                 coeff_header_den = ['den_{}'.format(n + 1) for n in range(self._PadeOrder[1])]
                 res_header = ['min(residual)', 'max(residual)']
                 f.write('# ' + ' '.join(coeff_header_num + coeff_header_den + res_header) + '\n')
+        elif self._binType == 'fit':
+            with open(self._fFitname, 'a') as f:
+                f.write('# ' + "Taylor fit for temporal variable ln(a) of \int dlna w\n")
+                coeff_header_num = ['c_{}'.format(n) for n in range(self._n_coeffs)]
+                res_header = ['max(rel.dev. D_A)', 'max(rel.dev. f)']
+                f.write('# ' + ' '.join(coeff_header_num + res_header) + '\n')
 
-    def _save_computed(self, params, shoot, wbins, Pade=False):
+    def _save_computed(self, params, shoot, wbins):
         """
         Save stored iterations in file.
         """
@@ -493,15 +502,18 @@ class Binning():
         with open(self._fshootname, 'a') as f:
             np.savetxt(f, shoot)
 
-        if not Pade:
+        if self._binType == 'bins':
             wzbins, wabins = wbins
             with open(self._fwzname, 'a') as f:
                 np.savetxt(f, wzbins)
 
             with open(self._fwaname, 'a') as f:
                 np.savetxt(f, wabins)
-        else:
+        elif self._binType == 'Pade':
             with open(self._fPadename, 'a') as f:
+                np.savetxt(f, wbins)
+        elif self._binType == 'fit':
+            with open(self._fFitname, 'a') as f:
                 np.savetxt(f, wbins)
 
     def reset(self):
