@@ -4,7 +4,9 @@ import numpy as np
 import os
 from classy import Class
 import sys
+import scipy.integrate as integrate
 from wicmath import fit_pade
+from wicmath import fit, Taylor
 
 class Binning():
     def __init__(self, fname, outdir='./'):
@@ -57,6 +59,7 @@ class Binning():
 
         self._computed = False
         self._path = []
+        self._binType = ''
 
     def set_Pade(self, n_num, m_den, xvar='a', xReverse=False, accuracy=1e-3, increase=False, maxfev=0):
         """
@@ -68,6 +71,15 @@ class Binning():
         self._Pade_maxfev = maxfev
         self._Pade_increase = increase
         self._Pade_accuracy = accuracy
+        self._binType = 'Pade'
+        self.reset()
+
+    def set_n_coeffs_fit(self, n_coeffs):
+        """
+        Set the number of coefficients for Taylor fit of F(a) ~ \int dlna w
+        """
+        self.n_coeffs = n_coeffs
+        self._binType = 'fit'
         self.reset()
 
     def set_bins(self, zbins, abins):
@@ -76,6 +88,7 @@ class Binning():
         """
         self._zbins = zbins
         self._abins = abins
+        self._binType = 'bins'
         self.reset()
 
     def _read_from_file(self, path):
@@ -143,6 +156,92 @@ class Binning():
         self._cosmo.empty()
 
         return wzbins, wabins, shoot
+
+
+    def compute_f_coefficients(self, params):
+        """
+        Returns the coefficients of the polynomial fit of f(a) = \int w and the
+        maximum and minimum residual in absolute value.
+        """
+        self._params = params
+        self._cosmo.set(params)
+
+        try:
+            self._cosmo.compute()
+            b = self._cosmo.get_background()
+            shoot = self._cosmo.get_current_derived_parameters(['tuning_parameter'])['tuning_parameter']
+        except Exception as e:
+            self._cosmo.struct_cleanup()
+            self._cosmo.empty()
+            raise e
+
+
+        # Compute the exact growth rate
+        #####################
+        z, w = b['z'], b['w_smg']
+        rhoDE = b['(.)rho_smg']
+        rhoM = (b['(.)rho_b'] + b['(.)rho_cdm'])
+        rhoR = (b['(.)rho_g'] + b['(.)rho_ur'])
+
+        OmegaDEwF_exact = interp1d(z[z<=z_max_pk], (b['(.)rho_smg']/b['(.)rho_crit']*w)[z<=z_max_pk])
+        OmegaMF = interp1d(z[z<=z_max_pk], (rhoM/b['(.)rho_crit'])[z<=z_max_pk])
+
+        time_boundaries = [z[z<=z_max_pk][0], z[z<=z_max_pk][-1]]
+
+        f = integrate.solve_ivp(fprime(OmegaDEwF_exact, OmegaMF), time_boundaries, [growthrate_at_z(cosmo, z_max_pk)],
+                                method='RK45', dense_output=True)
+
+        #####
+
+        zlim = 1000
+        X = np.log(z + 1)[z<=zlim]
+
+        #####################
+        zTMP = z[z<=zlim]
+        Y1 = Fint[::-1][z<zlim]  # Ordered as in CLASS
+
+        #####################
+
+        # Fit to fit_function
+        #####################
+        popt1, yfit1 = fit(Taylor, X, Y1, self.n_coeffs)
+
+        # Compute D_A for fitted model
+        ################
+        rhoDE_fit = b['(.)rho_smg'][-1]*np.exp(-3 * yfit1) *(1+zTMP)**3   ###### CHANGE WITH CHANGE OF FITTED THING
+
+        H_fit = np.sqrt(rhoM[z<=zlim] + rhoR[z<=zlim] + rhoDE_fit)
+
+        DA_fit = []
+        for i in z[z<zlim]:
+            DA_fit.append(1/(1+i)*integrate.trapz(1/H_fit[zTMP<=i][::-1], zTMP[zTMP<=i][::-1]))
+        DA_fit = np.array(DA_fit)
+
+        # Compute the growth rate for fitted model
+        ###############
+        Xw_fit, w_fit = wicm.diff(X, yfit1)
+        w_fit = -interp1d(Xw_fit, w_fit, bounds_error=False, fill_value='extrapolate')(X)
+
+        OmegaMF_fit = interp1d(zTMP, 1-rhoDE_fit/H_fit**2-rhoR[z<=zlim]/H_fit**2)   ####### THIS FITS OBSERVABLES CORRECTLY
+        #OmegaMF_fit = interp1d(zTMP, rhoM[z<=zlim]/H_fit**2)      ####### THIS FITS OBSERVABLES CORRECTLY
+        OmegaDEwF_fit = interp1d(zTMP, rhoDE_fit/H_fit**2 * w_fit)
+
+        f_fit = integrate.solve_ivp(fprime(OmegaDEwF_fit, OmegaMF_fit), [zTMP[0], zTMP[-1]], [growthrate_at_z(cosmo, zTMP[0])],
+                                    method='RK45', dense_output=True)
+
+        # Free structures
+        ###############
+        self._cosmo.struct_cleanup()
+        self._cosmo.empty()
+
+        # Obtain rel. deviations.
+        ################
+        f_reldev = max(np.abs(wicm.relative_deviation(f_fit.t, f_fit.y[0], f.t, f.y[0])[1])) * 100.
+        DA_reldev = max(np.abs((DA_fit/DA - 1)))
+
+        return np.concatenate([pop1, [f_reldev, DA_reldev]]), shoot
+
+
 
     def compute_Pade_coefficients(self, params):
         """
@@ -260,6 +359,43 @@ class Binning():
         self._save_computed(params, shoot, [wzbins, wabins])
 
     def compute_Pade_from_params(self, params_func, number_of_rows):
+        """
+        Compute the w_i bins for the models given by the function
+        params_func iterated #iterations.
+        """
+        self._create_output_files(True)
+
+        wbins = []
+        params = []
+        shoot = []
+
+        for row in range(number_of_rows):
+            sys.stdout.write("{}/{}\n".format(row+1, number_of_rows))
+            params_tmp = params_func().copy()
+
+            try:
+                wbins_tmp, shoot_tmp = self.compute_Pade_coefficients(params_tmp)
+                wbins.append(wbins_tmp)
+                params.append(params_tmp)
+                shoot.append(shoot_tmp)
+                # Easily generalizable. It could be inputted a list with the
+                # desired derived parameters and store the whole dictionary.
+            except Exception as e:
+                sys.stderr.write(str(self._params) + '\n')
+                sys.stderr.write(str(e))
+                sys.stderr.write('\n')
+                continue
+
+            if len(wbins) == 5:
+                self._save_computed(params, shoot, wbins, True)
+
+                params = []
+                wbins = []
+                shoot = []
+
+        self._save_computed(params, shoot, wbins, True)
+
+    def compute_f_from_params(self, params_func, number_of_rows):
         """
         Compute the w_i bins for the models given by the function
         params_func iterated #iterations.
