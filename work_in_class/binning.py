@@ -79,12 +79,13 @@ class Binning():
         self._Pade_accuracy = accuracy
         self._binType = 'Pade'
 
-    def set_n_coeffs_fit(self, n_coeffs):
+    def set_n_coeffs_fit(self, n_coeffs, fix_origin=False):
         """
         Set the number of coefficients for Taylor fit of F(a) ~ \int dlna w
         """
         self.reset()
         self._n_coeffs = n_coeffs
+        self._fix_origin = fix_origin
         self._binType = 'fit'
         self._params.update({'output': 'mPk', 'z_max_pk': 1000})
 
@@ -252,7 +253,12 @@ class Binning():
 
         # Fit to fit_function
         #####################
-        popt1, yfit1 = fit(Taylor, X, Y1, self._n_coeffs)
+        if not self._fix_origin:
+            popt1, yfit1 = fit(Taylor, X, Y1, self._n_coeffs)
+        else:
+            def Taylor_fix_origin(x, c):
+                return Taylor(x, np.concatenate([[0.], c]))
+            popt1, yfit1 = fit(Taylor_fix_origin, X, Y1, self._n_coeffs)
 
         # Compute D_A for fitted model
         ################
@@ -535,7 +541,10 @@ class Binning():
         elif self._binType == 'fit':
             with open(self._fFitname, 'a') as f:
                 f.write('# ' + "Taylor fit for temporal variable ln(a) of \int dlna w\n")
-                coeff_header_num = ['c_{}'.format(n) for n in range(self._n_coeffs)]
+                if self._fix_origin:
+                    coeff_header_num = ['c_{}'.format(n) for n in range(1, self._n_coeffs + 1)]
+                else:
+                    coeff_header_num = ['c_{}'.format(n) for n in range(1, self._n_coeffs)]
                 res_header = ['max(rel.dev. D_A)', 'max(rel.dev. f)']
                 f.write('# ' + ' '.join(coeff_header_num + res_header) + '\n')
 
