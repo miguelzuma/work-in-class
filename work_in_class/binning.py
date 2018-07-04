@@ -229,8 +229,10 @@ class Binning():
 
         time_boundaries = [z[z<=z_max_pk][0], z[z<=z_max_pk][-1]]
 
+        # Use LSODA integrator as some solutions were wrong with RK45 and OK
+        # with this.
         f = integrate.solve_ivp(fprime(OmegaDEwF_exact, OmegaMF), time_boundaries, [growthrate_at_z(self._cosmo, z_max_pk)],
-                                method='RK45', dense_output=True)
+                                method='LSODA', dense_output=True)
 
         # Compute the exact \int dlna a
         ###############################
@@ -282,7 +284,7 @@ class Binning():
         OmegaDEwF_fit = interp1d(zTMP, rhoDE_fit/H_fit**2 * w_fit)
 
         f_fit = integrate.solve_ivp(fprime(OmegaDEwF_fit, OmegaMF_fit), [zTMP[0], zTMP[-1]], [growthrate_at_z(self._cosmo, zTMP[0])],
-                                    method='RK45', dense_output=True)
+                                    method='LSODA', dense_output=True)
 
         # Free structures
         ###############
