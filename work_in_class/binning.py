@@ -546,7 +546,7 @@ class Binning():
                 if self._fix_origin:
                     coeff_header_num = ['c_{}'.format(n) for n in range(1, self._n_coeffs + 1)]
                 else:
-                    coeff_header_num = ['c_{}'.format(n) for n in range(1, self._n_coeffs)]
+                    coeff_header_num = ['c_{}'.format(n) for n in range(self._n_coeffs)]
                 res_header = ['max(rel.dev. D_A)', 'max(rel.dev. f)']
                 f.write('# ' + ' '.join(coeff_header_num + res_header) + '\n')
 
