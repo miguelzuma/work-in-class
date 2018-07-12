@@ -89,6 +89,17 @@ class Binning():
         self._binType = 'fit'
         self._params.update({'output': 'mPk', 'z_max_pk': 1000})
 
+    def set_fit(self, fit_function, n_coeffs, fit_function_label=''):
+        """
+        Set the fitting_function and the number of coefficients.
+
+        fit_function_label will be written in the header of fit files.
+        """
+        self.reset()
+        self._n_coeffs = n_coeffs
+        self._fix_origin = fix_origin
+        self._binType = 'fit'
+
     def set_bins(self, zbins, abins):
         """
         Set what bins to use and reset to avoid confusions.
