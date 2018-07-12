@@ -89,7 +89,7 @@ class Binning():
         self._binType = 'fit'
         self._params.update({'output': 'mPk', 'z_max_pk': 1000})
 
-    def set_fit(self, fit_function, n_coeffs, fit_function_label=''):
+    def set_fit(self, fit_function, n_coeffs, variable_to_fit, fit_function_label=''):
         """
         Set the fitting_function and the number of coefficients.
 
@@ -97,7 +97,8 @@ class Binning():
         """
         self.reset()
         self._n_coeffs = n_coeffs
-        self._fix_origin = fix_origin
+        self._fix_origin = False
+        self._variable_to_fit = variable_to_fit
         self._binType = 'fit'
 
     def set_bins(self, zbins, abins):
@@ -501,6 +502,53 @@ class Binning():
                 shoot = []
 
         self._save_computed(params, shoot, wbins)
+
+    def compute_fit_from_params(self, params_func, number_of_rows):
+        """
+        Compute the fit for the models given by the function
+        params_func iterated #iterations.
+
+        The variable to fit is chosen in self.set_fit
+        """
+        # TODO: If this grows, consider creating a separate method
+        if self._variable_to_fit == 'f':
+            self._params.update({'output': 'mPk', 'z_max_pk': 1000})
+            fit_variable_function = self.compute_f_coefficients
+        elif self._variable_to_fit == 'w':
+            self.compute_w_coefficients,
+
+        self._create_output_files()
+
+
+        coeffs = []
+        params = []
+        shoot = []
+
+        for row in range(number_of_rows):
+            sys.stdout.write("{}/{}\n".format(row+1, number_of_rows))
+            # params_tmp = params_func().copy()
+
+            try:
+                coeffs_tmp, shoot_tmp = fit_variable_function(params_func())
+                coeffs.append(coeffs_tmp)
+                params.append(self._params.copy())
+                shoot.append(shoot_tmp)
+                # Easily generalizable. It could be inputted a list with the
+                # desired derived parameters and store the whole dictionary.
+            except Exception as e:
+                sys.stderr.write(str(self._params) + '\n')
+                sys.stderr.write(str(e))
+                sys.stderr.write('\n')
+                continue
+
+            if len(coeffs) == 5:
+                self._save_computed(params, shoot, coeffs)
+
+                params = []
+                coeffs = []
+                shoot = []
+
+        self._save_computed(params, shoot, coeffs)
 
     def compute_bins_from_file(self, path):
         """
