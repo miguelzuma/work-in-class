@@ -7,7 +7,6 @@ import sys
 import scipy.integrate as integrate
 import wicmath as wicm
 from wicmath import fit_pade
-from wicmath import fit, Taylor
 from scipy.interpolate import interp1d
 
 class Binning():
@@ -193,6 +192,57 @@ class Binning():
             self._cosmo.empty()
             raise e
 
+        # Compute the exact \int dlna a
+        ###############################
+        z, w = b['z'], b['w_smg']
+
+        Fint = []
+        lna = -np.log(1+z)[::-1]
+        for i in lna:
+            Fint.append(integrate.trapz(w[::-1][lna>=i], lna[lna>=i]))
+        Fint = np.array(Fint)
+
+        #####
+
+        zlim = self._params['z_max_pk']
+        X = np.log(z + 1)[z<=zlim]
+
+        #####################
+        zTMP = z[z<=zlim]
+        Y1 = Fint[::-1][z<zlim]  # Ordered as in CLASS
+
+        #####################
+
+        # Fit to fit_function
+        #####################
+        popt1, yfit1 = wicm.fit(self._fit_function, X, Y1, self._n_coeffs)
+
+        # Obtain max. rel. dev. for DA and f.
+        #####################
+
+        rhoDE_fit = b['(.)rho_smg'][-1]*np.exp(-3 * yfit1) *(1+zTMP)**3   ###### CHANGE WITH CHANGE OF FITTED THING
+
+        Xw_fit, w_fit = wicm.diff(X, yfit1)
+        w_fit = -interp1d(Xw_fit, w_fit, bounds_error=False, fill_value='extrapolate')(X)
+
+        DA_reldev, f_reldev = self._compute_maximum_relative_error_DA_f(rhoDE_fit, w_fit)
+
+        # Free structures
+        ###############
+        self._cosmo.struct_cleanup()
+        self._cosmo.empty()
+
+        return np.concatenate([popt1, [DA_reldev, f_reldev]]), shoot
+
+    def _compute_maximum_relative_error_DA_f(self, rhoDE_fit, w_fit):
+        """
+        Return the relative error for the diameter angular distance and the
+        growth factor, f.
+
+        rhoDE_fit = array
+        wfit = interp1d(w)
+        """
+
         #####
         # NOTE: Emilio's functions from classy.pyx. self should not be used like this, but let's do an exception.
         #####
@@ -225,11 +275,14 @@ class Binning():
                 return output
             return wrap
 
+        b = self._cosmo.get_background()
 
         # Compute the exact growth rate
         #####################
         z_max_pk = self._params['z_max_pk']
+        zlim = z_max_pk
         z, w = b['z'], b['w_smg']
+        zTMP = z[z<=zlim]
         rhoDE = b['(.)rho_smg']
         rhoM = (b['(.)rho_b'] + b['(.)rho_cdm'])
         rhoR = (b['(.)rho_g'] + b['(.)rho_ur'])
@@ -245,33 +298,9 @@ class Binning():
         f = integrate.solve_ivp(fprime(OmegaDEwF_exact, OmegaMF), time_boundaries, [growthrate_at_z(self._cosmo, z_max_pk)],
                                 method='LSODA', dense_output=True)
 
-        # Compute the exact \int dlna a
-        ###############################
-        Fint = []
-        lna = -np.log(1+z)[::-1]
-        for i in lna:
-            Fint.append(integrate.trapz(w[::-1][lna>=i], lna[lna>=i]))
-        Fint = np.array(Fint)
-
-        #####
-
-        zlim = 1000
-        X = np.log(z + 1)[z<=zlim]
-
-        #####################
-        zTMP = z[z<=zlim]
-        Y1 = Fint[::-1][z<zlim]  # Ordered as in CLASS
-
-        #####################
-
-        # Fit to fit_function
-        #####################
-        popt1, yfit1 = fit(self._fit_function, X, Y1, self._n_coeffs)
 
         # Compute D_A for fitted model
         ################
-        rhoDE_fit = b['(.)rho_smg'][-1]*np.exp(-3 * yfit1) *(1+zTMP)**3   ###### CHANGE WITH CHANGE OF FITTED THING
-
         H_fit = np.sqrt(rhoM[z<=zlim] + rhoR[z<=zlim] + rhoDE_fit)
 
         DA_fit = []
@@ -282,8 +311,6 @@ class Binning():
 
         # Compute the growth rate for fitted model
         ###############
-        Xw_fit, w_fit = wicm.diff(X, yfit1)
-        w_fit = -interp1d(Xw_fit, w_fit, bounds_error=False, fill_value='extrapolate')(X)
 
         OmegaMF_fit = interp1d(zTMP, 1-rhoDE_fit/H_fit**2-rhoR[z<=zlim]/H_fit**2)   ####### THIS FITS OBSERVABLES CORRECTLY
         #OmegaMF_fit = interp1d(zTMP, rhoM[z<=zlim]/H_fit**2)      ####### THIS FITS OBSERVABLES CORRECTLY
@@ -292,10 +319,6 @@ class Binning():
         f_fit = integrate.solve_ivp(fprime(OmegaDEwF_fit, OmegaMF_fit), [zTMP[0], zTMP[-1]], [growthrate_at_z(self._cosmo, zTMP[0])],
                                     method='LSODA', dense_output=True)
 
-        # Free structures
-        ###############
-        self._cosmo.struct_cleanup()
-        self._cosmo.empty()
 
         # Obtain rel. deviations.
         ################
@@ -306,7 +329,8 @@ class Binning():
         DA_reldev = max(np.abs(DA_fit/DA[z<=zlim] - 1))
         f_reldev = max(np.abs(f_fit.sol(zTMP)[0]/f.sol(zTMP)[0] - 1))
 
-        return np.concatenate([popt1, [DA_reldev, f_reldev]]), shoot
+        return DA_reldev, f_reldev
+
 
     def compute_Pade_coefficients(self, params):
         """
