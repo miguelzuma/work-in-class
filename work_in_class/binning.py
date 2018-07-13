@@ -3,6 +3,7 @@
 import numpy as np
 import os
 from classy import Class
+from classy import CosmoSevereError
 import sys
 import scipy.integrate as integrate
 import wicmath as wicm
@@ -282,16 +283,15 @@ class Binning():
         z_max_pk = self._params['z_max_pk']
         zlim = z_max_pk
         z, w = b['z'], b['w_smg']
-        zTMP = z[z<=zlim]
-        rhoDE = b['(.)rho_smg']
+        zTMP = z[z <= zlim]
         rhoM = (b['(.)rho_b'] + b['(.)rho_cdm'])
         rhoR = (b['(.)rho_g'] + b['(.)rho_ur'])
         DA = b['ang.diam.dist.']
 
-        OmegaDEwF_exact = interp1d(z[z<=z_max_pk], (b['(.)rho_smg']/b['(.)rho_crit']*w)[z<=z_max_pk])
-        OmegaMF = interp1d(z[z<=z_max_pk], (rhoM/b['(.)rho_crit'])[z<=z_max_pk])
+        OmegaDEwF_exact = interp1d(z[z <= z_max_pk], (b['(.)rho_smg']/b['(.)rho_crit']*w)[z <= z_max_pk])
+        OmegaMF = interp1d(z[z <= z_max_pk], (rhoM/b['(.)rho_crit'])[z <= z_max_pk])
 
-        time_boundaries = [z[z<=z_max_pk][0], z[z<=z_max_pk][-1]]
+        time_boundaries = [z[z <= z_max_pk][0], z[z <= z_max_pk][-1]]
 
         # Use LSODA integrator as some solutions were wrong with RK45 and OK
         # with this.
@@ -301,18 +301,18 @@ class Binning():
 
         # Compute D_A for fitted model
         ################
-        H_fit = np.sqrt(rhoM[z<=zlim] + rhoR[z<=zlim] + rhoDE_fit)
+        H_fit = np.sqrt(rhoM[z <= zlim] + rhoR[z <= zlim] + rhoDE_fit)
 
         DA_fit = []
-        for i in z[z<zlim]:
+        for i in z[z < zlim]:
             #DA_fit.append(1/(1+i)*integrate.trapz(1/H_fit[zTMP<=i][::-1], zTMP[zTMP<=i][::-1]))
-            DA_fit.append(1/(1+i)*integrate.simps(1/H_fit[zTMP<=i][::-1], zTMP[zTMP<=i][::-1], even='last'))
+            DA_fit.append(1/(1+i)*integrate.simps(1/H_fit[zTMP <= i][::-1], zTMP[zTMP <= i][::-1], even='last'))
         DA_fit = np.array(DA_fit)
 
         # Compute the growth rate for fitted model
         ###############
 
-        OmegaMF_fit = interp1d(zTMP, 1-rhoDE_fit/H_fit**2-rhoR[z<=zlim]/H_fit**2)   ####### THIS FITS OBSERVABLES CORRECTLY
+        OmegaMF_fit = interp1d(zTMP, 1-rhoDE_fit/H_fit**2-rhoR[z <= zlim]/H_fit**2)   ####### THIS FITS OBSERVABLES CORRECTLY
         #OmegaMF_fit = interp1d(zTMP, rhoM[z<=zlim]/H_fit**2)      ####### THIS FITS OBSERVABLES CORRECTLY
         OmegaDEwF_fit = interp1d(zTMP, rhoDE_fit/H_fit**2 * w_fit)
 
@@ -326,7 +326,7 @@ class Binning():
         # Remove close to 0 points as rel.dev diverges. z = 0.05 is the lowest
         # redshift observed and is done in BOSS survey. arXiv: 1308.4164
         # DA_reldev = max(np.abs(DA_fit[zTMP>=0.04]/DA[ (z>=0.04) & (z<=zlim)] - 1))
-        DA_reldev = max(np.abs(DA_fit/DA[z<=zlim] - 1))
+        DA_reldev = max(np.abs(DA_fit/DA[z <= zlim] - 1))
         f_reldev = max(np.abs(f_fit.sol(zTMP)[0]/f.sol(zTMP)[0] - 1))
 
         return DA_reldev, f_reldev
@@ -573,7 +573,7 @@ class Binning():
         Compute the w_i bins for the models given in path.
         """
         if self._computed is True:
-            print "Bins already computed. Use reset if you want to compute it again"
+            print("Bins already computed. Use reset if you want to compute it again")
             return
 
         self._path = path
