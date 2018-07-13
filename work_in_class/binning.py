@@ -79,16 +79,6 @@ class Binning():
         self._Pade_accuracy = accuracy
         self._binType = 'Pade'
 
-    def set_n_coeffs_fit(self, n_coeffs, fix_origin=False):
-        """
-        Set the number of coefficients for Taylor fit of F(a) ~ \int dlna w
-        """
-        self.reset()
-        self._n_coeffs = n_coeffs
-        self._fix_origin = fix_origin
-        self._binType = 'fit'
-        self._params.update({'output': 'mPk', 'z_max_pk': 1000})
-
     def set_fit(self, fit_function, n_coeffs, variable_to_fit, fit_function_label=''):
         """
         Set the fitting_function and the number of coefficients.
