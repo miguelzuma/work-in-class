@@ -60,7 +60,9 @@ class Binning():
 
         self._params = {"Omega_Lambda": 0,
                         "Omega_fld": 0,
-                        "Omega_smg": -1}
+                        "Omega_smg": -1,
+                        'output': 'mPk',   #
+                        'z_max_pk': 1000}  # Added for relative errors in f.
 
         self._computed = False
         self._path = []
@@ -79,7 +81,7 @@ class Binning():
         self._Pade_accuracy = accuracy
         self._binType = 'Pade'
 
-    def set_fit(self, fit_function, n_coeffs, variable_to_fit, fit_function_label=''):
+    def set_fit(self, fit_function, n_coeffs, variable_to_fit, fit_function_label='', z_max_pk=1000):
         """
         Set the fitting_function and the number of coefficients.
 
@@ -99,6 +101,7 @@ class Binning():
         self._fit_function_label = fit_function_label
         self._binType = 'fit'
         self._fFitname = self._set_full_filenames(['fit-' + variable_to_fit])[0]
+        self._params.update({'z_max_pk': z_max_pk})
 
     def set_bins(self, zbins, abins):
         """
@@ -243,6 +246,50 @@ class Binning():
 
         return np.concatenate([popt1, [DA_reldev, f_reldev]]), shoot
 
+    def compute_fit_coefficients_for_w(self, params):
+        """
+        Returns the coefficients of the polynomial fit of f(a) = \int w and the
+        maximum and minimum residual in absolute value.
+        """
+        b, shoot = self._compute_common_init(params)
+
+        # Compute the exact \int dlna a
+        ###############################
+        z, w = b['z'], b['w_smg']
+
+        zlim = self._params['z_max_pk']
+        X = np.log(z + 1)[z <= zlim]
+
+        #####################
+        zTMP = z[z <= zlim]
+        Y1 = w[z <= zlim]
+
+        # Fit to fit_function
+        #####################
+        popt1, yfit1 = wicm.fit(self._fit_function, X, Y1, self._n_coeffs)
+
+        # Obtain max. rel. dev. for DA and f.
+        #####################
+        Fint = []
+        lna = -np.log(1+zTMP)[::-1]
+        for i in lna:
+            Fint.append(integrate.trapz(yfit1[::-1][lna >= i], lna[lna >= i]))
+        Fint = np.array(Fint[::-1])
+
+        rhoDE_fit = b['(.)rho_smg'][-1] * np.exp(-3 * Fint) * (1+zTMP)**3   # CHANGE WITH CHANGE OF FITTED THING
+
+        Xw_fit, w_fit = X, yfit1
+        w_fit = interp1d(Xw_fit, w_fit, bounds_error=False, fill_value='extrapolate')(X)
+
+        DA_reldev, f_reldev = self._compute_maximum_relative_error_DA_f(rhoDE_fit, w_fit)
+
+        # Free structures
+        ###############
+        self._cosmo.struct_cleanup()
+        self._cosmo.empty()
+
+        return np.concatenate([popt1, [DA_reldev, f_reldev]]), shoot
+
     def _compute_maximum_relative_error_DA_f(self, rhoDE_fit, w_fit):
         """
         Return the relative error for the diameter angular distance and the
@@ -321,12 +368,11 @@ class Binning():
         ###############
 
         OmegaMF_fit = interp1d(zTMP, 1-rhoDE_fit/H_fit**2-rhoR[z <= zlim]/H_fit**2)   ####### THIS FITS OBSERVABLES CORRECTLY
-        #OmegaMF_fit = interp1d(zTMP, rhoM[z<=zlim]/H_fit**2)      ####### THIS FITS OBSERVABLES CORRECTLY
+        # OmegaMF_fit = interp1d(zTMP, rhoM[z<=zlim]/H_fit**2)      ####### THIS FITS OBSERVABLES CORRECTLY
         OmegaDEwF_fit = interp1d(zTMP, rhoDE_fit/H_fit**2 * w_fit)
 
         f_fit = integrate.solve_ivp(fprime(OmegaDEwF_fit, OmegaMF_fit), [zTMP[0], zTMP[-1]], [growthrate_at_z(self._cosmo, zTMP[0])],
                                     method='LSODA', dense_output=True)
-
 
         # Obtain rel. deviations.
         ################
@@ -338,7 +384,6 @@ class Binning():
         f_reldev = max(np.abs(f_fit.sol(zTMP)[0]/f.sol(zTMP)[0] - 1))
 
         return DA_reldev, f_reldev
-
 
     def compute_Pade_coefficients(self, params):
         """
@@ -501,10 +546,9 @@ class Binning():
         """
         # TODO: If this grows, consider creating a separate method
         if self._variable_to_fit == 'F':
-            self._params.update({'output': 'mPk', 'z_max_pk': 1000})
             fit_variable_function = self.compute_fit_coefficients_for_F
         elif self._variable_to_fit == 'w':
-            self.compute_w_coefficients,
+            fit_variable_function = self.compute_fit_coefficients_for_w
 
         self._create_output_files()
 
