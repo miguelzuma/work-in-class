@@ -47,35 +47,6 @@ class Binning():
 
         return [f + '-%s.txt' % i for f in fullfilenames[:-2]]
 
-    def _set_file_names(self, fname, outdir):
-        """
-        Set the file names and add a number if exists
-        """
-
-        fwzname = os.path.join(outdir, fname+'-wz-bins')
-        fwaname = os.path.join(outdir, fname+'-wa-bins')
-        fparamsname = os.path.join(outdir, fname+'-params')
-        fshootname = os.path.join(outdir, fname+'-shooting')
-        fPadename = os.path.join(outdir, fname+'-Pade')
-        fFitname = os.path.join(outdir, fname+'-fit-F')
-
-        i = 0
-
-        while (os.path.exists(fwzname + '-%s.txt' % i) or
-              os.path.exists(fwaname + '-%s.txt' % i) or
-              os.path.exists(fparamsname + '-%s.txt' % i) or
-              os.path.exists(fshootname + '-%s.txt' % i) or
-              os.path.exists(fPadename + '-%s.txt' % i) or
-              os.path.exists(fFitname + '-%s.txt' % i)):
-            i += 1
-
-        self._fwzname = fwzname + '-%s.txt' % i
-        self._fwaname = fwaname + '-%s.txt' % i
-        self._fparamsname = fparamsname + '-%s.txt' % i
-        self._fshootname= fshootname + '-%s.txt' % i
-        self._fPadename= fPadename + '-%s.txt' % i
-        self._fFitname= fFitname + '-%s.txt' % i
-
     def _set_default_values(self):
         """
         Set default values of parameters lists.
