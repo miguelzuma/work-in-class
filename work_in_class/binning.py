@@ -176,10 +176,9 @@ class Binning():
 
         return wzbins, wabins, shoot
 
-    def compute_fit_coefficients_for_F(self, params):
+    def _compute_common_init(self, params):
         """
-        Returns the coefficients of the polynomial fit of f(a) = \int w and the
-        maximum and minimum residual in absolute value.
+        Common first steps for compute methods
         """
         self._params.update(params)
         self._cosmo.set(self._params)
@@ -192,6 +191,15 @@ class Binning():
             self._cosmo.struct_cleanup()
             self._cosmo.empty()
             raise e
+
+        return b, shoot
+
+    def compute_fit_coefficients_for_F(self, params):
+        """
+        Returns the coefficients of the polynomial fit of f(a) = \int w and the
+        maximum and minimum residual in absolute value.
+        """
+        b, shoot = self._compute_common_init(params)
 
         # Compute the exact \int dlna a
         ###############################
