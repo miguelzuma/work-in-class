@@ -13,10 +13,39 @@ from scipy.interpolate import interp1d
 class Binning():
     def __init__(self, fname, outdir='./'):
         self._cosmo = Class()
-        # self._zbins = zbins
-        # self._abins = abins
-        self._set_file_names(fname, outdir)
+        self._fname = fname
+        self._outdir = outdir
         self._set_default_values()
+
+    def _set_full_filenames(self, filesuffixes):
+        """
+        Return a list with the fullnames of the others, increasing their number
+        in case they exist
+
+        Additionally, set the full file names, of self._fparamsname and
+        self.fshootname.
+        """
+        fullfilenames = []
+        for suffix in filesuffixes + ['params', 'shooting']:
+            fullfilenames.append(os.path.join(self._outdir, self._fname + '-' + suffix))
+
+        i = 0
+
+        bools = [True] * len(fullfilenames)
+
+        while 1:
+            for n, f in enumerate(fullfilenames):
+                bools[n] = os.path.exists(f + '-%s.txt' % i)
+
+            if True not in bools:
+                break
+
+            i += 1
+
+        self._fparamsname = fullfilenames[-2] + '-%s.txt' % i
+        self._fshootname = fullfilenames[-1] + '-%s.txt' % i
+
+        return [f + '-%s.txt' % i for f in fullfilenames[:-2]]
 
     def _set_file_names(self, fname, outdir):
         """
@@ -93,13 +122,22 @@ class Binning():
         """
         Set the fitting_function and the number of coefficients.
 
+        variable_to_fit must be one of 'F'or 'w'.
+
         fit_function_label will be written in the header of fit files.
         """
         self.reset()
         self._n_coeffs = n_coeffs
         self._fix_origin = False
-        self._variable_to_fit = variable_to_fit
+        self._list_variables_to_fit = ['F', 'w']
+        if variable_to_fit in self._list_variables_to_fit:
+            self._variable_to_fit = variable_to_fit
+        else:
+            raise ValueError('variable_to_fit must be one of {}'.format(self._list_variables_to_fit))
+
+        self._fit_function_label = fit_function_label
         self._binType = 'fit'
+        self._fFitname = self._set_full_filenames(['fit-' + variable_to_fit])[0]
 
     def set_bins(self, zbins, abins):
         """
@@ -109,6 +147,7 @@ class Binning():
         self._zbins = zbins
         self._abins = abins
         self._binType = 'bins'
+        self._fwzname, self._fwaname = self._set_full_filenames(['wz-bins', 'wa-bins'] )
 
     def _read_from_file(self, path):
         """
@@ -511,7 +550,7 @@ class Binning():
         The variable to fit is chosen in self.set_fit
         """
         # TODO: If this grows, consider creating a separate method
-        if self._variable_to_fit == 'f':
+        if self._variable_to_fit == 'F':
             self._params.update({'output': 'mPk', 'z_max_pk': 1000})
             fit_variable_function = self.compute_f_coefficients
         elif self._variable_to_fit == 'w':
@@ -601,7 +640,7 @@ class Binning():
                 f.write('# ' + ' '.join(coeff_header_num + coeff_header_den + res_header) + '\n')
         elif self._binType == 'fit':
             with open(self._fFitname, 'a') as f:
-                f.write('# ' + "Taylor fit for temporal variable ln(a) of \int dlna w\n")
+                f.write('# ' + "{} fit for temporal variable ln(a) of {}\n".format(self._fit_function_label, self._variable_to_fit))
                 if self._fix_origin:
                     coeff_header_num = ['c_{}'.format(n) for n in range(1, self._n_coeffs + 1)]
                 else:
