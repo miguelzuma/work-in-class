@@ -484,43 +484,6 @@ class Binning():
 
         self._save_computed(params, shoot, wbins)
 
-    def compute_f_from_params(self, params_func, number_of_rows):
-        """
-        Compute the w_i bins for the models given by the function
-        params_func iterated #iterations.
-        """
-        self._create_output_files()
-
-        wbins = []
-        params = []
-        shoot = []
-
-        for row in range(number_of_rows):
-            sys.stdout.write("{}/{}\n".format(row+1, number_of_rows))
-            # params_tmp = params_func().copy()
-
-            try:
-                wbins_tmp, shoot_tmp = self.compute_f_coefficients(params_func())
-                wbins.append(wbins_tmp)
-                params.append(self._params.copy())
-                shoot.append(shoot_tmp)
-                # Easily generalizable. It could be inputted a list with the
-                # desired derived parameters and store the whole dictionary.
-            except Exception as e:
-                sys.stderr.write(str(self._params) + '\n')
-                sys.stderr.write(str(e))
-                sys.stderr.write('\n')
-                continue
-
-            if len(wbins) == 5:
-                self._save_computed(params, shoot, wbins)
-
-                params = []
-                wbins = []
-                shoot = []
-
-        self._save_computed(params, shoot, wbins)
-
     def compute_fit_from_params(self, params_func, number_of_rows):
         """
         Compute the fit for the models given by the function
