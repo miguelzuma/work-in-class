@@ -88,8 +88,8 @@ class Binning():
         fit_function_label will be written in the header of fit files.
         """
         self.reset()
+        self._fit_function = fit_function
         self._n_coeffs = n_coeffs
-        self._fix_origin = False
         self._list_variables_to_fit = ['F', 'w']
         if variable_to_fit in self._list_variables_to_fit:
             self._variable_to_fit = variable_to_fit
@@ -175,7 +175,6 @@ class Binning():
         self._cosmo.empty()
 
         return wzbins, wabins, shoot
-
 
     def compute_f_coefficients(self, params):
         """
@@ -267,12 +266,7 @@ class Binning():
 
         # Fit to fit_function
         #####################
-        if not self._fix_origin:
-            popt1, yfit1 = fit(Taylor, X, Y1, self._n_coeffs)
-        else:
-            def Taylor_fix_origin(x, c):
-                return Taylor(x, np.concatenate([[0.], c]))
-            popt1, yfit1 = fit(Taylor_fix_origin, X, Y1, self._n_coeffs)
+        popt1, yfit1 = fit(self._fit_function, X, Y1, self._n_coeffs)
 
         # Compute D_A for fitted model
         ################
@@ -602,10 +596,7 @@ class Binning():
         elif self._binType == 'fit':
             with open(self._fFitname, 'a') as f:
                 f.write('# ' + "{} fit for temporal variable ln(a) of {}\n".format(self._fit_function_label, self._variable_to_fit))
-                if self._fix_origin:
-                    coeff_header_num = ['c_{}'.format(n) for n in range(1, self._n_coeffs + 1)]
-                else:
-                    coeff_header_num = ['c_{}'.format(n) for n in range(self._n_coeffs)]
+                coeff_header_num = ['c_{}'.format(n) for n in range(self._n_coeffs)]
                 res_header = ['max(rel.dev. D_A)', 'max(rel.dev. f)']
                 f.write('# ' + ' '.join(coeff_header_num + res_header) + '\n')
 
