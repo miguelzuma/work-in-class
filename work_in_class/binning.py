@@ -176,7 +176,7 @@ class Binning():
 
         return wzbins, wabins, shoot
 
-    def compute_f_coefficients(self, params):
+    def compute_fit_coefficients_for_F(self, params):
         """
         Returns the coefficients of the polynomial fit of f(a) = \int w and the
         maximum and minimum residual in absolute value.
@@ -494,7 +494,7 @@ class Binning():
         # TODO: If this grows, consider creating a separate method
         if self._variable_to_fit == 'F':
             self._params.update({'output': 'mPk', 'z_max_pk': 1000})
-            fit_variable_function = self.compute_f_coefficients
+            fit_variable_function = self.compute_fit_coefficients_for_F
         elif self._variable_to_fit == 'w':
             self.compute_w_coefficients,
 
