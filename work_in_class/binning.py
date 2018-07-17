@@ -81,7 +81,7 @@ class Binning():
         self._Pade_accuracy = accuracy
         self._binType = 'Pade'
 
-    def set_fit(self, fit_function, n_coeffs, variable_to_fit, fit_function_label='', z_max_pk=1000):
+    def set_fit(self, fit_function, n_coeffs, variable_to_fit, fit_function_label='', z_max_pk=1000, bounds=(-np.inf, np.inf)):
         """
         Set the fitting_function and the number of coefficients.
 
@@ -102,6 +102,7 @@ class Binning():
         self._binType = 'fit'
         self._fFitname = self._set_full_filenames(['fit-' + variable_to_fit])[0]
         self._params.update({'z_max_pk': z_max_pk})
+        self._fit_bounds = bounds
 
     def set_bins(self, zbins, abins):
         """
@@ -197,6 +198,12 @@ class Binning():
 
         return b, shoot
 
+    def _fit(self, X, Y):
+        """
+        Fits self._fit_function to X, Y, with self._n_coeffs.
+        """
+        return wicm.fit(self._fit_function, X, Y, self._n_coeffs, bounds=self._fit_bounds)
+
     def compute_fit_coefficients_for_F(self, params):
         """
         Returns the coefficients of the polynomial fit of f(a) = \int w and the
@@ -227,7 +234,7 @@ class Binning():
 
         # Fit to fit_function
         #####################
-        popt1, yfit1 = wicm.fit(self._fit_function, X, Y1, self._n_coeffs)
+        popt1, yfit1 = self._fit(X, Y1)
 
         # Obtain max. rel. dev. for DA and f.
         #####################
@@ -266,7 +273,7 @@ class Binning():
 
         # Fit to fit_function
         #####################
-        popt1, yfit1 = wicm.fit(self._fit_function, X, Y1, self._n_coeffs)
+        popt1, yfit1 = self._fit(X, Y1)
 
         # Obtain max. rel. dev. for DA and f.
         #####################
