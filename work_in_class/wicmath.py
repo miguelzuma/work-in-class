@@ -229,6 +229,16 @@ End of fit padde wrapper functions by Emilio Bellini.
 """
 
 
+def Taylor_legacy(x, c):
+    """
+    Taylor expansion without factorial terms
+    """
+    s = 0
+    for i, ci in enumerate(c):
+        s += ci * x**i
+    return s
+
+
 def Taylor(x, c):
     s = 0
     for i, ci in enumerate(c):
