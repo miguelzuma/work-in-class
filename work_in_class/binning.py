@@ -273,7 +273,7 @@ class Binning():
         X = np.log(z + 1)[z <= zlim]
 
         #####################
-        Y1 = logX[z < zlim]
+        Y1 = logX[z <= zlim]
 
         #####################
 
@@ -287,7 +287,7 @@ class Binning():
         rhoDE_fit = b['(.)rho_smg'][-1] * np.exp(yfit1)   ###### CHANGE WITH CHANGE OF FITTED THING
 
         Xw_fit, ThreewPlus1 = wicm.diff(X, yfit1)
-        w_fit = - ThreewPlus1 / 3. - 1
+        w_fit = ThreewPlus1 / 3. - 1  # The minus sign is taken into account by the CLASS ordering.
         w_fit = interp1d(Xw_fit, w_fit, bounds_error=False, fill_value='extrapolate')(X)
 
         DA_reldev, f_reldev = self._compute_maximum_relative_error_DA_f(rhoDE_fit, w_fit)
