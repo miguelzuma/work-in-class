@@ -9,6 +9,7 @@ import scipy.integrate as integrate
 import wicmath as wicm
 from wicmath import fit_pade
 from scipy.interpolate import interp1d
+import cosmo_extra
 
 class Binning():
     def __init__(self, fname, outdir='./'):
@@ -351,38 +352,6 @@ class Binning():
         wfit = interp1d(w)
         """
 
-        #####
-        # NOTE: Emilio's functions from classy.pyx. self should not be used like this, but let's do an exception.
-        #####
-
-        def growthrate_at_k_and_z(cosmo, k, z):
-            dz = 0.005
-            f=-0.5*(1+z)*(-3.*np.log(cosmo.pk(k,z))+4.*np.log(cosmo.pk(k,z+dz))-np.log(cosmo.pk(k,z+2.*dz)))/(2.*dz)
-            if (f==0.):
-                raise CosmoSevereError(
-                    "The step in redshift is too small to compute growth rate")
-            return f
-
-        def growthrate_at_z(cosmo, z):
-            k_fid = 0.01
-            return growthrate_at_k_and_z(cosmo, k_fid, z)
-        #########
-
-        def fprime(OmegaDEw, OmegaM):
-            """
-            Return value for df/dz.
-
-            w, OmegaDE and OmegaM must be functions of z
-            """
-            def wrap(z, f):
-                try:
-                    #output = 1.5 * OmegaM(z) - 0.5 * (1 - 3*w(z)*OmegaDE(z)) * f - f**2
-                    output = ((0.5 * (1 - 3*OmegaDEw(z))) * f + f**2 - 1.5 * OmegaM(z)) / (1+z)
-                except Exception as e:
-                    raise e
-                return output
-            return wrap
-
         b = self._cosmo.get_background()
 
         # Compute the exact growth rate
@@ -402,7 +371,7 @@ class Binning():
 
         # Use LSODA integrator as some solutions were wrong with RK45 and OK
         # with this.
-        f = integrate.solve_ivp(fprime(OmegaDEwF_exact, OmegaMF), time_boundaries, [growthrate_at_z(self._cosmo, z_max_pk)],
+        f = integrate.solve_ivp(cosmo_extra.fprime(OmegaDEwF_exact, OmegaMF), time_boundaries, [cosmo_extra.growthrate_at_z(self._cosmo, z_max_pk)],
                                 method='LSODA', dense_output=True)
 
 
@@ -410,11 +379,8 @@ class Binning():
         ################
         H_fit = np.sqrt(rhoM[z <= zlim] + rhoR[z <= zlim] + rhoDE_fit)
 
-        DA_fit = []
-        for i in z[z < zlim]:
-            #DA_fit.append(1/(1+i)*integrate.trapz(1/H_fit[zTMP<=i][::-1], zTMP[zTMP<=i][::-1]))
-            DA_fit.append(1/(1+i)*integrate.simps(1/H_fit[zTMP <= i][::-1], zTMP[zTMP <= i][::-1], even='last'))
-        DA_fit = np.array(DA_fit)
+        DA_fit = cosmo_extra.angular_distance(z[z < zlim], H_fit[zTMP < zlim])
+
 
         # Compute the growth rate for fitted model
         ###############
@@ -423,7 +389,7 @@ class Binning():
         # OmegaMF_fit = interp1d(zTMP, rhoM[z<=zlim]/H_fit**2)      ####### THIS FITS OBSERVABLES CORRECTLY
         OmegaDEwF_fit = interp1d(zTMP, rhoDE_fit/H_fit**2 * w_fit)
 
-        f_fit = integrate.solve_ivp(fprime(OmegaDEwF_fit, OmegaMF_fit), [zTMP[0], zTMP[-1]], [growthrate_at_z(self._cosmo, zTMP[0])],
+        f_fit = integrate.solve_ivp(cosmo_extra.fprime(OmegaDEwF_fit, OmegaMF_fit), [zTMP[0], zTMP[-1]], [cosmo_extra.growthrate_at_z(self._cosmo, zTMP[0])],
                                     method='LSODA', dense_output=True)
 
         # Obtain rel. deviations.
