@@ -232,7 +232,7 @@ End of fit padde wrapper functions by Emilio Bellini.
 def Taylor(x, c):
     s = 0
     for i, ci in enumerate(c):
-        s += ci * x**i
+        s += ci / np.math.factorial(i) * x**i
     return s
 
 
