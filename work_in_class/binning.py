@@ -256,12 +256,12 @@ class Binning():
 
     def compute_fit_coefficients_for_logX(self, params):
         """
-        Returns the coefficients of the polynomial fit of log(rho/rho_0) = \int
-        dlna (w+1) and the maximum and minimum residual in absolute value.
+        Returns the coefficients of the polynomial fit of log(rho/rho_0) = -3
+        \int dlna (w+1) and the maximum and minimum residual in absolute value.
         """
         b, shoot = self._compute_common_init(params)
 
-        # Compute the exact \int dlna (a + 1)
+        # Compute the exact -3 \int dlna (w + 1)
         ###############################
         z = b['z']
 
@@ -284,11 +284,11 @@ class Binning():
         # Obtain max. rel. dev. for DA and f.
         #####################
 
-        rhoDE_fit = b['(.)rho_smg'][-1]*np.exp(yfit1)   ###### CHANGE WITH CHANGE OF FITTED THING
+        rhoDE_fit = b['(.)rho_smg'][-1] * np.exp(yfit1)   ###### CHANGE WITH CHANGE OF FITTED THING
 
-        Xw_fit, w_fit_tmp = wicm.diff(X, yfit1)
-        w_fit = w_fit_tmp + 1
-        w_fit = -interp1d(Xw_fit, w_fit, bounds_error=False, fill_value='extrapolate')(X)
+        Xw_fit, ThreewPlus1 = wicm.diff(X, yfit1)
+        w_fit = - ThreewPlus1 / 3. - 1
+        w_fit = interp1d(Xw_fit, w_fit, bounds_error=False, fill_value='extrapolate')(X)
 
         DA_reldev, f_reldev = self._compute_maximum_relative_error_DA_f(rhoDE_fit, w_fit)
 
