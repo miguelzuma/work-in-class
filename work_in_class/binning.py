@@ -379,7 +379,7 @@ class Binning():
         ################
         H_fit = np.sqrt(rhoM[z <= zlim] + rhoR[z <= zlim] + rhoDE_fit)
 
-        DA_fit = cosmo_extra.angular_distance(z[z < zlim], H_fit[zTMP < zlim])
+        DA_fit = cosmo_extra.angular_distance(z[z <= zlim], H_fit[zTMP <= zlim])
 
 
         # Compute the growth rate for fitted model
