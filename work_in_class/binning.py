@@ -82,7 +82,7 @@ class Binning():
         self._Pade_accuracy = accuracy
         self._binType = 'Pade'
 
-    def set_fit(self, fit_function, n_coeffs, variable_to_fit, fit_function_label='', z_max_pk=1000, bounds=(-np.inf, np.inf)):
+    def set_fit(self, fit_function, n_coeffs, variable_to_fit, fit_function_label='', z_max_pk=1000, bounds=(-np.inf, np.inf), p0=[]):
         """
         Set the fitting_function and the number of coefficients.
 
@@ -93,7 +93,7 @@ class Binning():
         self.reset()
         self._fit_function = fit_function
         self._n_coeffs = n_coeffs
-        self._list_variables_to_fit = ['F', 'w', 'logX']
+        self._list_variables_to_fit = ['F', 'w', 'logX', 'logXnormal']
         if variable_to_fit in self._list_variables_to_fit:
             self._variable_to_fit = variable_to_fit
         else:
@@ -104,6 +104,7 @@ class Binning():
         self._fFitname = self._set_full_filenames(['fit-' + variable_to_fit])[0]
         self._params.update({'z_max_pk': z_max_pk})
         self._fit_bounds = bounds
+        self._p0 = p0
 
     def set_bins(self, zbins, abins):
         """
@@ -203,7 +204,7 @@ class Binning():
         """
         Fits self._fit_function to X, Y, with self._n_coeffs.
         """
-        return wicm.fit(self._fit_function, X, Y, self._n_coeffs, bounds=self._fit_bounds)
+        return wicm.fit(self._fit_function, X, Y, self._n_coeffs, bounds=self._fit_bounds, p0=self._p0)
 
     def compute_fit_coefficients_for_F(self, params):
         """
@@ -254,7 +255,7 @@ class Binning():
 
         return np.concatenate([popt1, [DA_reldev, f_reldev]]), shoot
 
-    def compute_fit_coefficients_for_logX(self, params):
+    def compute_fit_coefficients_for_logX_normalized(self, params):
         """
         Returns the coefficients of the polynomial fit of log(rho/rho_0) = -3
         \int dlna (w+1) and the maximum and minimum residual in absolute value.
@@ -287,6 +288,52 @@ class Binning():
         rhoDE_fit = b['(.)rho_smg'][-1] * np.exp(yfit1)   ###### CHANGE WITH CHANGE OF FITTED THING
 
         Xw_fit, ThreewPlus1 = wicm.diff(X, yfit1)
+        w_fit = ThreewPlus1 / 3. - 1  # The minus sign is taken into account by the CLASS ordering.
+        w_fit = interp1d(Xw_fit, w_fit, bounds_error=False, fill_value='extrapolate')(X)
+
+        DA_reldev, f_reldev = self._compute_maximum_relative_error_DA_f(rhoDE_fit, w_fit)
+
+        # Free structures
+        ###############
+        self._cosmo.struct_cleanup()
+        self._cosmo.empty()
+
+        return np.concatenate([popt1, [DA_reldev, f_reldev]]), shoot
+
+    def compute_fit_coefficients_for_logX(self, params):
+        """
+        Returns the coefficients of the fit of ln(rho_de) and the maximum and
+        minimum residual in absolute value.
+        """
+        b, shoot = self._compute_common_init(params)
+
+        # Compute the exact log(rho)
+        ###############################
+        z = b['z']
+
+        logX = np.log(b['(.)rho_smg'])
+
+        #####
+
+        zlim = self._params['z_max_pk']
+        X = np.log(z + 1)[z <= zlim]
+
+        #####################
+        Y1 = logX[z <= zlim]
+
+        #####################
+
+        # Fit to fit_function
+        #####################
+
+        popt1, yfit1 = self._fit(X, Y1)
+
+        # Obtain max. rel. dev. for DA and f.
+        #####################
+
+        rhoDE_fit = np.exp(yfit1)   ###### CHANGE WITH CHANGE OF FITTED THING
+
+        Xw_fit, ThreewPlus1 = wicm.diff(X, yfit1 - yfit1[-1])
         w_fit = ThreewPlus1 / 3. - 1  # The minus sign is taken into account by the CLASS ordering.
         w_fit = interp1d(Xw_fit, w_fit, bounds_error=False, fill_value='extrapolate')(X)
 
@@ -569,6 +616,8 @@ class Binning():
             fit_variable_function = self.compute_fit_coefficients_for_w
         elif self._variable_to_fit == 'logX':
             fit_variable_function = self.compute_fit_coefficients_for_logX
+        elif self._variable_to_fit == 'logXnormal':
+            fit_variable_function = self.compute_fit_coefficients_for_logX_normalized
 
         self._create_output_files()
 
