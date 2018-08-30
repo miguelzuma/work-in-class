@@ -93,7 +93,7 @@ class Binning():
         self.reset()
         self._fit_function = fit_function
         self._n_coeffs = n_coeffs
-        self._list_variables_to_fit = ['F', 'w', 'logX', 'logXnormal']
+        self._list_variables_to_fit = ['F', 'w', 'logRho', 'logX']
         if variable_to_fit in self._list_variables_to_fit:
             self._variable_to_fit = variable_to_fit
         else:
@@ -255,7 +255,7 @@ class Binning():
 
         return np.concatenate([popt1, [DA_reldev, f_reldev]]), shoot
 
-    def compute_fit_coefficients_for_logX_normalized(self, params):
+    def compute_fit_coefficients_for_logX(self, params):
         """
         Returns the coefficients of the polynomial fit of log(rho/rho_0) = -3
         \int dlna (w+1) and the maximum and minimum residual in absolute value.
@@ -300,7 +300,7 @@ class Binning():
 
         return np.concatenate([popt1, [DA_reldev, f_reldev]]), shoot
 
-    def compute_fit_coefficients_for_logX(self, params):
+    def compute_fit_coefficients_for_logRho(self, params):
         """
         Returns the coefficients of the fit of ln(rho_de) and the maximum and
         minimum residual in absolute value.
@@ -614,10 +614,10 @@ class Binning():
             fit_variable_function = self.compute_fit_coefficients_for_F
         elif self._variable_to_fit == 'w':
             fit_variable_function = self.compute_fit_coefficients_for_w
+        elif self._variable_to_fit == 'logRho':
+            fit_variable_function = self.compute_fit_coefficients_for_logRho
         elif self._variable_to_fit == 'logX':
             fit_variable_function = self.compute_fit_coefficients_for_logX
-        elif self._variable_to_fit == 'logXnormal':
-            fit_variable_function = self.compute_fit_coefficients_for_logX_normalized
 
         self._create_output_files()
 
