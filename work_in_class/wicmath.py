@@ -229,6 +229,15 @@ End of fit padde wrapper functions by Emilio Bellini.
 """
 
 
+def Pade(x, c):
+    """
+    Pade. the first half of the coeffs will be in the numerator. The rest in the
+    denominator.
+    """
+    l = len(c)/2
+    return pade_approx(x, c[:l], c[l:])
+
+
 def Taylor_legacy(x, c):
     """
     Taylor expansion without factorial terms
