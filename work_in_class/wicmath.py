@@ -3,6 +3,7 @@
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.optimize import curve_fit
+from scipy.special import factorial
 
 
 def __deviation(x, y, cx, cy, kind):
@@ -233,9 +234,13 @@ def Pade(x, c):
     """
     Pade. the first half of the coeffs will be in the numerator. The rest in the
     denominator.
+
+    Coeffs are scaled by the factorial of the acompanying monomial magnitude order.
     """
     l = len(c)/2
-    return pade_approx(x, c[:l], c[l:])
+    coeff_num = c[:l] / factorial(range(len(c[:l])), exact=True)
+    coeff_den = c[l:] / factorial(range(len(c[l:])), exact=True)
+    return pade_approx(x, coeff_num, coeff_den)
 
 
 def Taylor_legacy(x, c):
