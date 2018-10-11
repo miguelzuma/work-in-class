@@ -117,6 +117,15 @@ def reflect_data(data):
     return data_rf
 
 
+def log_modulus(data):
+    """
+    Log10-modulus transform data.
+    Inspired by: https://blogs.sas.com/content/iml/2014/07/14/log-transformation-of-pos-neg.html
+    """
+
+    return np.sign(data) * np.log10(np.abs(data) + 1)
+
+
 def pade(an, m):
     """
     Return Pade approximation coefficients of a polynomial.
