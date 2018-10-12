@@ -4,6 +4,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 from scipy.optimize import curve_fit
 from scipy.special import factorial
+from scipy import stats
 
 
 def __deviation(x, y, cx, cy, kind):
@@ -124,6 +125,32 @@ def log_modulus(data):
     """
 
     return np.sign(data) * np.log10(np.abs(data) + 1)
+
+
+def sample_log_data(dat, bins):
+    """
+    Return data sampled in the logarithmic-scaled distribution of dat.
+    """
+    H = []
+    for i in [np.log10(dat[dat > 0]), np.log10(-dat[dat < 0]), dat[dat == 0]]:
+        h, x = np.histogram(i, bins=bins)
+        H.append(stats.rv_histogram([h,x]))
+
+    probs1 = len(dat[dat > 0]) / float(len(dat))
+    probs2 = len(dat[dat < 0]) / float(len(dat))
+
+    data = []
+
+    for counter in dat:
+        sign = stats.uniform.rvs()
+        if sign < probs1:
+            data.append(10**(H[0].rvs()))
+        elif (sign >= probs1) & (sign <= (probs1 + probs2)):
+            data.append(-10**(H[1].rvs()))
+        else:
+            data.append(0)
+
+    return data
 
 
 def pade(an, m):
