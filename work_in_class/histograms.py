@@ -250,6 +250,10 @@ class Histograms():
         plt.yticks(range(len(self.bins))[::bins_step], self.bins[::bins_step])
 
         cbar.set_label(clabel)
+        if '$' not in xlabel:
+            xlabel = '$' + xlabel + '$'
+        if '$' not in ylabel:
+            ylabel = '$' + xlabel + '$'
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
         plt.title(title)
@@ -277,6 +281,10 @@ class Histograms():
 
         cbarP.set_label(clabel + " Positive values")
         cbarN.set_label(clabel + " Negative values")
+        if '$' not in xlabel:
+            xlabel = '$' + xlabel + '$'
+        if '$' not in ylabel:
+            ylabel = '$' + xlabel + '$'
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
         plt.title(title)
