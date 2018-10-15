@@ -127,6 +127,14 @@ def log_modulus(data):
     return np.sign(data) * np.log10(np.abs(data) + 1)
 
 
+def log_modulus_inverse(data):
+    """
+    Log10-modulus inverse function transform data.
+    """
+
+    return np.sign(data) * (10.**(np.abs(data)) - 1)
+
+
 def sample_log_data(dat, bins):
     """
     Return data sampled in the logarithmic-scaled distribution of dat.
