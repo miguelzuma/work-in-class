@@ -246,8 +246,11 @@ class Histograms():
         plt.imshow(self.correlations)
         cbar = plt.colorbar()
 
-        plt.xticks(range(len(self.bins))[::bins_step], self.bins[::bins_step])
-        plt.yticks(range(len(self.bins))[::bins_step], self.bins[::bins_step])
+        if '$' not in self.bins:
+            bins = [r'${}$'.format(i) for i in self.bins]
+
+        plt.xticks(range(len(self.bins))[::bins_step], bins[::bins_step])
+        plt.yticks(range(len(self.bins))[::bins_step], bins[::bins_step])
 
         cbar.set_label(clabel)
         if '$' not in xlabel:
@@ -276,8 +279,11 @@ class Histograms():
         plt.imshow(-self.covariance, norm=colors.LogNorm(), cmap=cm.winter)
         cbarN = plt.colorbar()
 
-        plt.xticks(range(len(self.bins))[::bins_step], self.bins[::bins_step])
-        plt.yticks(range(len(self.bins))[::bins_step], self.bins[::bins_step])
+        if '$' not in self.bins:
+            bins = [r'${}$'.format(i) for i in self.bins]
+
+        plt.xticks(range(len(self.bins))[::bins_step], bins[::bins_step])
+        plt.yticks(range(len(self.bins))[::bins_step], bins[::bins_step])
 
         cbarP.set_label(clabel + " Positive values")
         cbarN.set_label(clabel + " Negative values")
