@@ -1,10 +1,11 @@
 #!/usr/bin/python
 
-import numpy as np
 from scipy.interpolate import interp1d
 from scipy.optimize import curve_fit
 from scipy.special import factorial
 from scipy import stats
+import numpy as np
+import warnings
 
 
 def __deviation(x, y, cx, cy, kind):
@@ -133,6 +134,48 @@ def log_modulus_inverse(data):
     """
 
     return np.sign(data) * (10.**(np.abs(data)) - 1)
+
+def log_complex(data, regularize=True):
+    """
+    Return log10(x) if x>0 and i*log(x) if x<0.
+
+    If regularize is True, change 0 by 1e-100
+    """
+    dat = np.array(data)
+    output = np.array(data, dtype=complex)
+
+    if regularize:
+        # TODO: In order not to oversize the positive values, consider
+        # multiplying by a (-1)^n term, with n drawn from a binomial
+        # distribution with even probability.
+        warnings.warn("Changing 0's to 1e-100")
+        output[dat == 0] = (1e-100 + 0j)
+
+    output = np.log10(np.abs(output), dtype=complex)
+    output[dat < 0] *= 1j
+
+    return output
+
+def log_complex_inverse(data, threshold=1e-3):
+    """
+    Return the inverse function of log_complex.
+    """
+    #TODO: Optimize this!!!
+    flat_data = data.flatten()
+    shape_data = np.shape(data)
+    output = np.zeros(len(flat_data))
+
+    for i, value in enumerate(flat_data):
+        if np.abs(value.real/value.imag) < threshold:
+            output[i] = -10.**value.imag
+        elif np.abs(value.imag/value.real) < threshold:
+            output[i] = 10. ** value.real
+        else:
+            raise ValueError('Log_complex transformation cannot be inverted ' + \
+                             'since both parts of item #{} ({}) are allowed '.format(i, value) + \
+                             'by threshold: try increasing it')
+
+    return output.reshape(shape_data)
 
 
 def sample_log_data(dat, bins):
