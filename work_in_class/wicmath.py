@@ -161,7 +161,7 @@ def log_complex_inverse(data, threshold=1e-3):
     Return the inverse function of log_complex.
     """
     #TODO: Optimize this!!!
-    flat_data = data.flatten()
+    flat_data = np.array(data).flatten()
     shape_data = np.shape(data)
     output = np.zeros(len(flat_data))
 
