@@ -215,10 +215,6 @@ class Histograms():
 
         hist_diagonal.bins = [r'D_{{{}}}'.format(i) for i in range(len(eigenValues))]
 
-        hist_diagonal.compute(self.nbins)
-
-        hist_diagonal.compute_covariance_matrix()
-
         return hist_diagonal, eigenValues, transfMatrix
 
     def plot_histogram(self, index, variable_binned='bin_i', xlabel='x',
