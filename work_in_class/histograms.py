@@ -183,6 +183,42 @@ class Histograms():
         for histogram_rf in self.histograms_rf:
             self.histograms_rf_rb.append(self._rebin_unit_variance(histogram_rf))
 
+    def hist_diagonalized_covariance_matrix(self):
+        """
+        Change basis to covariance matrix diagonal basis
+        """
+        eigenValues, eigenVectors = np.linalg.eigh(self.covariance)
+        # Sort eigenValues decreasingly
+        idx = np.abs(eigenValues).argsort()[::-1]
+        eigenValues = eigenValues[idx]
+        eigenVectors = eigenVectors[:, idx]
+
+        sys.stdout.write('Eigenvalues: {}\n'.format(eigenValues))
+
+        transfMatrix = eigenVectors.T
+
+        hist_diagonal = Histograms()
+
+        ################################################################################
+        # Since we diagonlize the covariance matrix: TDT^t = C, C = <(x - <x>)(x-<x>)^t>
+        # what we are transforming is, actually, T(x - <x>).
+        #
+        # Using Tx would require addition of T_truncated^t <Tx> when going back to
+        # original basis.
+        ################################################################################
+
+        hist_diagonal.data = transfMatrix.dot(self.data - np.mean(self.data,
+                                                                  axis=1)[:,
+                                                                          None])
+
+        hist_diagonal.bins = [r'D_{{{}}}'.format(i) for i in range(len(eigenValues))]
+
+        hist_diagonal.compute(self.nbins)
+
+        hist_diagonal.compute_covariance_matrix()
+
+        return hist_diagonal, eigenValues, transfMatrix
+
     def plot_histogram(self, index, variable_binned='bin_i', xlabel='x',
                        xlim=[None, None], outpath=''):
         """
