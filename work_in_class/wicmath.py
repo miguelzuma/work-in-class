@@ -346,6 +346,11 @@ def Taylor(x, c):
         s += ci / np.math.factorial(i) * x**i
     return s
 
+def Taylor_log(x, c):
+    s = 0
+    for i, ci in enumerate(c):
+        s += np.sign(ci) * (10.**np.abs(1./ci) - 1) / np.math.factorial(i) * x**i
+    return s
 
 def _wrapper_fit(function):
     def wrapper_out(x, n_coeffs, *args):
