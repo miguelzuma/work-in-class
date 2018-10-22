@@ -187,6 +187,8 @@ class Histograms():
         """
         Change basis to covariance matrix diagonal basis
         """
+        if not self.covariance:
+            self.compute_covariance_matrix()
         eigenValues, eigenVectors = np.linalg.eigh(self.covariance)
         # Sort eigenValues decreasingly
         idx = np.abs(eigenValues).argsort()[::-1]
