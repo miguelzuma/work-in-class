@@ -93,7 +93,7 @@ class Binning():
         self.reset()
         self._fit_function = fit_function
         self._n_coeffs = n_coeffs
-        self._list_variables_to_fit = ['F', 'w', 'logRho', 'logX']
+        self._list_variables_to_fit = ['F', 'w', 'logRho', 'logX', 'X']
         if variable_to_fit in self._list_variables_to_fit:
             self._variable_to_fit = variable_to_fit
         else:
@@ -288,6 +288,51 @@ class Binning():
         rhoDE_fit = b['(.)rho_smg'][-1] * np.exp(yfit1)   ###### CHANGE WITH CHANGE OF FITTED THING
 
         Xw_fit, ThreewPlus1 = wicm.diff(X, yfit1)
+        w_fit = ThreewPlus1 / 3. - 1  # The minus sign is taken into account by the CLASS ordering.
+        w_fit = interp1d(Xw_fit, w_fit, bounds_error=False, fill_value='extrapolate')(X)
+
+        DA_reldev, f_reldev = self._compute_maximum_relative_error_DA_f(rhoDE_fit, w_fit)
+
+        # Free structures
+        ###############
+        self._cosmo.struct_cleanup()
+        self._cosmo.empty()
+
+        return np.concatenate([popt1, [DA_reldev, f_reldev]]), shoot
+
+    def compute_fit_coefficients_for_X(self, params):
+        """
+        Returns the coefficients of the polynomial fit of rho/rho_0 = exp[-3
+        \int dlna (w+1)] and the maximum and minimum residual in absolute value.
+        """
+        b, shoot = self._compute_common_init(params)
+
+        # Compute the exact -3 \int dlna (w + 1)
+        ###############################
+        z = b['z']
+
+        Y = b['(.)rho_smg']/b['(.)rho_smg'][-1]
+
+        #####
+
+        zlim = self._params['z_max_pk']
+        X = np.log(z + 1)[z <= zlim]
+
+        #####################
+        Y1 = Y[z <= zlim]
+
+        #####################
+
+        # Fit to fit_function
+        #####################
+        popt1, yfit1 = self._fit(X, Y1)
+
+        # Obtain max. rel. dev. for DA and f.
+        #####################
+
+        rhoDE_fit = b['(.)rho_smg'][-1] * yfit1   ###### CHANGE WITH CHANGE OF FITTED THING
+
+        Xw_fit, ThreewPlus1 = wicm.diff(X, yfit1) / yfit1
         w_fit = ThreewPlus1 / 3. - 1  # The minus sign is taken into account by the CLASS ordering.
         w_fit = interp1d(Xw_fit, w_fit, bounds_error=False, fill_value='extrapolate')(X)
 
@@ -618,6 +663,8 @@ class Binning():
             fit_variable_function = self.compute_fit_coefficients_for_logRho
         elif self._variable_to_fit == 'logX':
             fit_variable_function = self.compute_fit_coefficients_for_logX
+        elif self._variable_to_fit == 'X':
+            fit_variable_function = self.compute_fit_coefficients_for_X
 
         self._create_output_files()
 
