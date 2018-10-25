@@ -82,7 +82,7 @@ class Binning():
         self._Pade_accuracy = accuracy
         self._binType = 'Pade'
 
-    def set_fit(self, fit_function, n_coeffs, variable_to_fit, fit_function_label='', z_max_pk=1000, bounds=(-np.inf, np.inf), p0=[]):
+    def set_fit(self, fit_function, n_coeffs, variable_to_fit, fit_function_label='', z_max_pk=1000, bounds=(-np.inf, np.inf), p0=[], xvar='ln(1+z)'):
         """
         Set the fitting_function and the number of coefficients.
 
@@ -105,6 +105,11 @@ class Binning():
         self._params.update({'z_max_pk': z_max_pk})
         self._fit_bounds = bounds
         self._p0 = p0
+        list_fit_xvar = ['ln(1+z)', 'lna', 'a']
+        if xvar in list_fit_xvar:
+            self._fit_xvar = xvar
+        else:
+            raise ValueError('xvar must be one of {}'.format(list_fit_xvar))
 
     def set_bins(self, zbins, abins):
         """
@@ -206,6 +211,22 @@ class Binning():
         """
         return wicm.fit(self._fit_function, X, Y, self._n_coeffs, bounds=self._fit_bounds, p0=self._p0)
 
+    def _get_fit_xvar_and_log1Plusz(self, z):
+        """
+        Return the X array to fit and log(1+z)
+        """
+        if self._fit_xvar == 'ln(1+z)':
+            X = np.log(z + 1)
+            lna = X
+        elif self._fit_xvar == 'lna':
+            X = - np.log(z + 1)
+            lna = - X
+        elif self._fit_xvar == 'a':
+            X = 1. / (1 + z)
+            lna = np.log(z + 1)
+
+        return X, lna
+
     def compute_fit_coefficients_for_F(self, params):
         """
         Returns the coefficients of the polynomial fit of f(a) = \int w and the
@@ -226,7 +247,8 @@ class Binning():
         #####
 
         zlim = self._params['z_max_pk']
-        X = np.log(z + 1)[z<=zlim]
+        # Note that lna is log(1+z). I used this name because is more convenient
+        X, lna = self._get_fit_xvar_and_log1Plusz(z[z <= zlim])
 
         #####################
         zTMP = z[z<=zlim]
@@ -243,8 +265,8 @@ class Binning():
 
         rhoDE_fit = b['(.)rho_smg'][-1]*np.exp(-3 * yfit1) *(1+zTMP)**3   ###### CHANGE WITH CHANGE OF FITTED THING
 
-        Xw_fit, w_fit = wicm.diff(X, yfit1)
-        w_fit = -interp1d(Xw_fit, w_fit, bounds_error=False, fill_value='extrapolate')(X)
+        Xw_fit, w_fit = wicm.diff(lna, yfit1)
+        w_fit = -interp1d(Xw_fit, w_fit, bounds_error=False, fill_value='extrapolate')(lna)
 
         DA_reldev, f_reldev = self._compute_maximum_relative_error_DA_f(rhoDE_fit, w_fit)
 
@@ -271,7 +293,8 @@ class Binning():
         #####
 
         zlim = self._params['z_max_pk']
-        X = np.log(z + 1)[z <= zlim]
+        # Note that lna is log(1+z). I used this name because is more convenient
+        X, lna = self._get_fit_xvar_and_log1Plusz(z[z <= zlim])
 
         #####################
         Y1 = logX[z <= zlim]
@@ -287,9 +310,9 @@ class Binning():
 
         rhoDE_fit = b['(.)rho_smg'][-1] * np.exp(yfit1)   ###### CHANGE WITH CHANGE OF FITTED THING
 
-        Xw_fit, ThreewPlus1 = wicm.diff(X, yfit1)
+        Xw_fit, ThreewPlus1 = wicm.diff(lna, yfit1)
         w_fit = ThreewPlus1 / 3. - 1  # The minus sign is taken into account by the CLASS ordering.
-        w_fit = interp1d(Xw_fit, w_fit, bounds_error=False, fill_value='extrapolate')(X)
+        w_fit = interp1d(Xw_fit, w_fit, bounds_error=False, fill_value='extrapolate')(lna)
 
         DA_reldev, f_reldev = self._compute_maximum_relative_error_DA_f(rhoDE_fit, w_fit)
 
@@ -316,7 +339,8 @@ class Binning():
         #####
 
         zlim = self._params['z_max_pk']
-        X = np.log(z + 1)[z <= zlim]
+        # Note that lna is log(1+z). I used this name because is more convenient
+        X, lna = self._get_fit_xvar_and_log1Plusz(z[z <= zlim])
 
         #####################
         Y1 = Y[z <= zlim]
@@ -332,9 +356,9 @@ class Binning():
 
         rhoDE_fit = b['(.)rho_smg'][-1] * yfit1   ###### CHANGE WITH CHANGE OF FITTED THING
 
-        Xw_fit, ThreewPlus1 = wicm.diff(X, yfit1) / yfit1
+        Xw_fit, ThreewPlus1 = wicm.diff(lna, yfit1) / yfit1
         w_fit = ThreewPlus1 / 3. - 1  # The minus sign is taken into account by the CLASS ordering.
-        w_fit = interp1d(Xw_fit, w_fit, bounds_error=False, fill_value='extrapolate')(X)
+        w_fit = interp1d(Xw_fit, w_fit, bounds_error=False, fill_value='extrapolate')(lna)
 
         DA_reldev, f_reldev = self._compute_maximum_relative_error_DA_f(rhoDE_fit, w_fit)
 
@@ -361,7 +385,8 @@ class Binning():
         #####
 
         zlim = self._params['z_max_pk']
-        X = np.log(z + 1)[z <= zlim]
+        # Note that lna is log(1+z). I used this name because is more convenient
+        X, lna = self._get_fit_xvar_and_log1Plusz(z[z <= zlim])
 
         #####################
         Y1 = logX[z <= zlim]
@@ -378,9 +403,9 @@ class Binning():
 
         rhoDE_fit = np.exp(yfit1)   ###### CHANGE WITH CHANGE OF FITTED THING
 
-        Xw_fit, ThreewPlus1 = wicm.diff(X, yfit1 - yfit1[-1])
+        Xw_fit, ThreewPlus1 = wicm.diff(lna, yfit1 - yfit1[-1])
         w_fit = ThreewPlus1 / 3. - 1  # The minus sign is taken into account by the CLASS ordering.
-        w_fit = interp1d(Xw_fit, w_fit, bounds_error=False, fill_value='extrapolate')(X)
+        w_fit = interp1d(Xw_fit, w_fit, bounds_error=False, fill_value='extrapolate')(lna)
 
         DA_reldev, f_reldev = self._compute_maximum_relative_error_DA_f(rhoDE_fit, w_fit)
 
@@ -403,7 +428,8 @@ class Binning():
         z, w = b['z'], b['w_smg']
 
         zlim = self._params['z_max_pk']
-        X = np.log(z + 1)[z <= zlim]
+        # Note that lna is log(1+z). I used this name because is more convenient
+        X, lna = self._get_fit_xvar_and_log1Plusz(z[z <= zlim])
 
         #####################
         zTMP = z[z <= zlim]
@@ -423,8 +449,10 @@ class Binning():
 
         rhoDE_fit = b['(.)rho_smg'][-1] * np.exp(-3 * Fint) * (1+zTMP)**3   # CHANGE WITH CHANGE OF FITTED THING
 
-        Xw_fit, w_fit = X, yfit1
-        w_fit = interp1d(Xw_fit, w_fit, bounds_error=False, fill_value='extrapolate')(X)
+        # TODO: needed?
+        # Xw_fit, w_fit = X, yfit1
+        # w_fit = interp1d(Xw_fit, w_fit, bounds_error=False, fill_value='extrapolate')(X)
+        w_fit = yfit1
 
         DA_reldev, f_reldev = self._compute_maximum_relative_error_DA_f(rhoDE_fit, w_fit)
 
