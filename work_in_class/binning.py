@@ -778,7 +778,7 @@ class Binning():
                 f.write('# ' + ' '.join(coeff_header_num + coeff_header_den + res_header) + '\n')
         elif self._binType == 'fit':
             with open(self._fFitname, 'a') as f:
-                f.write('# ' + "{} fit for temporal variable ln(a) of {}\n".format(self._fit_function_label, self._variable_to_fit))
+                f.write('# ' + "{} fit for temporal variable {} of {}\n".format(self._fit_function_label, self._fit_xvar, self._variable_to_fit))
                 coeff_header_num = ['c_{}'.format(n) for n in range(self._n_coeffs)]
                 res_header = ['max(rel.dev. D_A)', 'max(rel.dev. f)']
                 f.write('# ' + ' '.join(coeff_header_num + res_header) + '\n')
