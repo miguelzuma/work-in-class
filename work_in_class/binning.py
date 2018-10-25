@@ -359,9 +359,10 @@ class Binning():
 
         rhoDE_fit = b['(.)rho_smg'][-1] * yfit1   ###### CHANGE WITH CHANGE OF FITTED THING
 
-        Xw_fit, ThreewPlus1 = wicm.diff(lna, yfit1) / (yfit1[:-1] + np.diff(yfit1)/2.)
+        Xw_fit, diff = wicm.diff(lna, yfit1)
+        diff = interp1d(Xw_fit, diff, bounds_error=False, fill_value='extrapolate')(lna)
+        ThreewPlus1  = diff / yfit1
         w_fit = ThreewPlus1 / 3. - 1  # The minus sign is taken into account by the CLASS ordering.
-        w_fit = interp1d(Xw_fit, w_fit, bounds_error=False, fill_value='extrapolate')(lna)
 
         DA_reldev, f_reldev = self._compute_maximum_relative_error_DA_f(rhoDE_fit, w_fit)
 
