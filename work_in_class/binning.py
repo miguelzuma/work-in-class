@@ -105,7 +105,7 @@ class Binning():
         self._params.update({'z_max_pk': z_max_pk})
         self._fit_bounds = bounds
         self._p0 = p0
-        list_fit_xvar = ['ln(1+z)', 'lna', 'a']
+        list_fit_xvar = ['ln(1+z)', 'lna', 'a', '(1-a)']
         if xvar in list_fit_xvar:
             self._fit_xvar = xvar
         else:
@@ -223,6 +223,9 @@ class Binning():
             lna = - X
         elif self._fit_xvar == 'a':
             X = 1. / (1 + z)
+            lna = np.log(z + 1)
+        elif self._fit_xvar == '(1-a)':
+            X = (z / (1 + z))
             lna = np.log(z + 1)
 
         return X, lna
