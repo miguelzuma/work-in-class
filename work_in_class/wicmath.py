@@ -201,7 +201,7 @@ def sample_log_data(dat, bins):
         else:
             data.append(0)
 
-    return data
+    return np.array(data)
 
 
 def pade(an, m):
