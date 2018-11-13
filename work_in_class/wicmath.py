@@ -358,6 +358,12 @@ def Taylor_c0(x, c):
 def Taylor_legacy_c0(x, c):
     return Taylor_legacy(x, np.concatenate([[0.], c]))
 
+def Taylor_c1(x, c):
+    return Taylor(x, np.concatenate([[1.], c]))
+
+def Taylor_legacy_c1(x, c):
+    return Taylor_legacy(x, np.concatenate([[1.], c]))
+
 def _wrapper_fit(function):
     def wrapper_out(x, n_coeffs, *args):
         coeffs = list(args)
