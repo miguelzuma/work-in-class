@@ -254,7 +254,7 @@ class Histograms():
         """
         # TODO: Check error on shapes
         freq, y = zip(*self.histograms)
-        prob = np.concatenate(np.array([row/np.sum(row, dtype=float) for row in freq]))
+        prob = np.concatenate(np.array([row/np.sum(row, dtype=float) * 100 for row in freq]))
         y = np.array([row[:-1] for row in y])
         x = np.concatenate(np.array([self.bins[i]*np.ones(len(row)) for i, row in enumerate(y)]))
         y = np.concatenate(y)
