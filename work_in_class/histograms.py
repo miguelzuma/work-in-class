@@ -310,8 +310,10 @@ class Histograms():
         plt.imshow(self.covariance, norm=colors.LogNorm(), cmap=cm.Reds)
         cbarP = plt.colorbar()
 
-        plt.imshow(-self.covariance, norm=colors.LogNorm(), cmap=cm.winter)
-        cbarN = plt.colorbar()
+        if np.any(self.covariance < 0):
+            plt.imshow(-self.covariance, norm=colors.LogNorm(), cmap=cm.winter)
+            cbarN = plt.colorbar()
+            cbarN.set_label(clabel + " Negative values")
 
         if '$' not in self.bins:
             bins = [r'${}$'.format(i) for i in self.bins]
@@ -320,7 +322,6 @@ class Histograms():
         plt.yticks(range(len(self.bins))[::bins_step], bins[::bins_step])
 
         cbarP.set_label(clabel + " Positive values")
-        cbarN.set_label(clabel + " Negative values")
         if '$' not in xlabel:
             xlabel = r'${}$'.format(xlabel)
         if '$' not in ylabel:
