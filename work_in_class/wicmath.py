@@ -56,11 +56,14 @@ def absolute_deviation(x, y, cx, cy):
     return X, abs_dev
 
 
-def find_nearest(array, value):
+def find_nearest(array, value, reldev=True):
     """
     Return index of the array element closest to value.
     """
-    idx = (np.abs(array - value)).argmin()
+    if reldev:
+        idx = (np.abs(1 - array / value)).argmin()
+    else:
+        idx = (np.abs(array - value)).argmin()
 
     return idx
 
@@ -363,6 +366,16 @@ def Taylor_c1(x, c):
 
 def Taylor_legacy_c1(x, c):
     return Taylor_legacy(x, np.concatenate([[1.], c]))
+
+def bins_equally_spaced(x, c):
+    h, x = np.histogram(x, bins=len(c))
+    result = []
+
+    for i, bin in enumerate(x[:-1]):
+        result += [c[i]] * h[i]
+
+    return np.array(result).flatten()
+
 
 def _wrapper_fit(function):
     def wrapper_out(x, n_coeffs, *args):
