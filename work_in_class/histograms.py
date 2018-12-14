@@ -277,7 +277,7 @@ class Histograms():
         """
         Plot the correlation matrix.
         """
-        plt.imshow(self.correlations)
+        plt.imshow(self.correlations, vmin=-1, vmax=1)
         cbar = plt.colorbar()
 
         if '$' not in self.bins:
