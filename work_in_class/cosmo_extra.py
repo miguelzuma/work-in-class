@@ -34,13 +34,17 @@ def fprime(OmegaDEw, OmegaM):
             raise e
         return output
     return wrap
-def angular_distance(z, H):
+def angular_distance(z, H, z_points=None):
     """
     Return the angular distance.
     z, H must be CLASS-like arrays
     """
     DA_fit = []
-    for i in z:
+    if z_points is None:
+        z_points = z
+
+    for i in z_points:
         #DA_fit.append(1/(1+i)*integrate.trapz(1/H_fit[zTMP<=i][::-1], zTMP[zTMP<=i][::-1]))
         DA_fit.append(1/(1+i)*integrate.simps(1/H[z <= i][::-1], z[z <= i][::-1], even='last'))
+
     return np.array(DA_fit)
