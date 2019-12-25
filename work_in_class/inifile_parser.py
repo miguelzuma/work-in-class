@@ -10,9 +10,9 @@ def inifile_parser(filename):
     params = {}
     with open(filename) as f:
         for line in f:
-            if '=' in line:
-                var, key = line.strip().split(" = ")
-                params[var] = key
+            if not ('#' in line) and ('=' in line):
+                var, key = line.split("=")
+                params[var.strip()] = key.strip()
     return params
 
 

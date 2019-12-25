@@ -94,7 +94,7 @@ class Model():
 
     def compute_models(self, params, varied_name, index_variable, values,
                        back=[], thermo=[], prim=[], pert=[], trans=[],
-                       pk=[0.0001, 0.1, 100], extra=[], update=True,
+                       pk=[-4, -1, 100], extra=[], update=True,
                        cosmo_msg=False, texname=""):
         """
         Fill dic with the hi_class output structures for the model with given
@@ -157,7 +157,7 @@ class Model():
             except Exception, e:
                 print "Error: skipping {}={}".format(key, val)
                 if cosmo_msg:
-                    print e
+                    print str(e) + '\n'
 
                 continue
 
@@ -222,9 +222,8 @@ class Model():
             except CosmoSevereError:
                 pass
 
-
             if ("output" in self.cosmo.pars) and ('mPk' in self.cosmo.pars['output']):
-                k_array = np.linspace(*pk)
+                k_array = np.logspace(*pk)
                 pk_array = np.array([self.cosmo.pk(k, 0) for k in k_array])
 
                 d['pk'] = {'k': k_array, 'pk': pk_array}
